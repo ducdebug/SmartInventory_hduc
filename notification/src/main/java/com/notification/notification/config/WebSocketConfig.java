@@ -12,21 +12,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Register the "/ws" endpoint, enabling the SockJS protocol
-        // SockJS is used to enable fallback options for browsers that don't support WebSocket
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*") // For development; restrict in production
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // Set prefix for messages bound for the message broker (server -> client)
         registry.enableSimpleBroker("/topic", "/queue");
-        
-        // Set prefix for messages bound for @MessageMapping methods (client -> server)
         registry.setApplicationDestinationPrefixes("/app");
-        
-        // Uses "/topic" for broadcasts and "/queue" for user-specific messages
     }
 }

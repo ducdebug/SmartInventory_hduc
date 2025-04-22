@@ -16,7 +16,6 @@ import com.ims.smartinventory.entity.product.*;
 import com.ims.smartinventory.entity.storage.*;
 import com.ims.smartinventory.exception.StorageException;
 import com.ims.smartinventory.repository.*;
-import com.ims.smartinventory.service.NotificationProducerService;
 import com.ims.smartinventory.service.ProductService;
 import com.ims.smartinventory.util.VolumeCalculator;
 import org.springframework.stereotype.Service;
@@ -38,14 +37,14 @@ public class ProductServiceImpl implements ProductService {
     private final DispatchItemRepository dispatchItemRepository;
     private final DispatchRepository dispatchRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
-    private final NotificationProducerService notificationProducerService;
+    private final NotificationProducerServiceImpl notificationProducerService;
 
     public ProductServiceImpl(LotRepository lotRepository, ProductRepository productRepository,
                               SlotShelfRepository slotShelfRepository, SlotSectionRepository slotSectionRepository,
                               SectionRepository sectionRepository, PriceRepository priceRepository, 
                               LotItemRepository lotItemRepository, DispatchItemRepository dispatchItemRepository, 
                               DispatchRepository dispatchRepository, InventoryTransactionRepository inventoryTransactionRepository,
-                              NotificationProducerService notificationProducerService) {
+                              NotificationProducerServiceImpl notificationProducerService) {
         this.lotRepository = lotRepository;
         this.productRepository = productRepository;
         this.slotShelfRepository = slotShelfRepository;

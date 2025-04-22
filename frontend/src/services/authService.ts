@@ -1,53 +1,84 @@
 import axios from 'axios';
-import { User } from '../types/auth';
+import { User, LoginCredentials, RegisterData } from '../types/auth';
+import { API_BASE_URL } from '../config';
 
-const API_BASE_URL = 'http://localhost:8080/api'; 
+// Create axios instance with base URL
+const api = axios.create({
+  baseURL: API_BASE_URL
+});
+
+// Add token to all requests if it exists
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 const authService = {
-  login: async (credentials: { username: string; password: string }) => {
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials);
-    const { token, username, role } = response.data;
-  
-    console.log('Login response:', response.data);
-  
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify({ username, role }));
-  
-    return { username, role } as User;
+  login: async (credentials: LoginCredentials): Promise<User> => {
+    try {
+      const response = await api.post('/auth/login', credentials);
+      const { token, username, role } = response.data;
+    
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify({ username, role }));
+    
+      return { username, role } as User;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw new Error('Authentication failed. Please check your credentials.');
+    }
   },
  
-register: async (userData: { username: string; password: string; role: string }) => {
-  const response = await axios.post(`${API_BASE_URL}/auth/signup`, userData);
-  const { token, username, role } = response.data;
+  register: async (userData: RegisterData): Promise<User> => {
+    try {
+      const response = await api.post('/auth/register', userData);
+      const { token, username, role } = response.data;
 
-  localStorage.setItem('token', token);
-  localStorage.setItem('user', JSON.stringify({ username, role }));
-  localStorage.setItem('role', role);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify({ username, role }));
 
-  return { username, role } as User;
-},
+      return { username, role } as User;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw new Error('Registration failed. Please try again.');
+    }
+  },
 
-getCurrentUser: (): User | null => {
-  try {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    const user = JSON.parse(userStr);
+  getCurrentUser: (): User | null => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return null;
+      
+      const user = JSON.parse(userStr);
+      if (!user.username || !user.role) return null;
+      
+      return user as User;
+    } catch (err) {
+      console.error('Error getting current user:', err);
+      return null;
+    }
+  },
 
-    if (!user.username || !user.role) return null;
-    return user;
-  } catch (err) {
-    console.error('Error parsing user from localStorage:', err);
-    return null;
-  }
-},
-
-  logout: () => {
+  logout: (): void => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   },
 
-  getToken: () => {
+  getToken: (): string | null => {
     return localStorage.getItem('token');
+  },
+  
+  isAuthenticated: (): boolean => {
+    return !!localStorage.getItem('token');
   }
 };
 

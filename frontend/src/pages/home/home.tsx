@@ -173,6 +173,10 @@ const Home: React.FC = () => {
                 className="section-box redesigned-section"
                 onClick={() => handleSectionClick(section.id)}
                 aria-label={`Section ${section.name}`}
+                style={{ 
+                  gridRow: section.y + 1,    // +1 because grid starts at 1, not 0
+                  gridColumn: section.x + 1  // +1 because grid starts at 1, not 0
+                }}
               >
                 <div className="section-header">
                   <h2 className="section-name">{section.name}</h2>

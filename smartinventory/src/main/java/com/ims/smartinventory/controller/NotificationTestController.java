@@ -1,6 +1,6 @@
 package com.ims.smartinventory.controller;
 
-import com.ims.smartinventory.service.NotificationProducerService;
+import com.ims.smartinventory.service.impl.NotificationProducerServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/test")
 public class NotificationTestController {
 
-    private final NotificationProducerService notificationProducerService;
+    private final NotificationProducerServiceImpl notificationProducerService;
 
     @Autowired
-    public NotificationTestController(NotificationProducerService notificationProducerService) {
+    public NotificationTestController(NotificationProducerServiceImpl notificationProducerService) {
         this.notificationProducerService = notificationProducerService;
     }
 

@@ -47,8 +47,8 @@ public class SectionServiceImpl implements SectionService {
         boolean found = false;
 
         outer:
-        for (int y = 0; y < 100; y++) {      // 100 là max hàng tùy kho
-            for (int x = 0; x <= 1; x++) {   // chỉ có x = 0 và 1
+        for (int y = 0; y < 100; y++) {
+            for (int x = 0; x <= 1; x++) {
                 String key = x + "," + y;
                 if (!usedCoords.contains(key)) {
                     newX = x;
