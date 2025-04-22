@@ -1,0 +1,71 @@
+.shelf-detail-main {
+    padding: 2rem;
+  }
+  
+  .shelf-table {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .shelf-slots {
+    display: grid;
+    gap: 6px;
+    background-color: #f3f4f6;
+    padding: 10px;
+    border: 2px solid #9ca3af;
+    border-radius: 4px;
+  }
+  
+  .shelf-slot {
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    border: 2px solid #4b5563;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+  
+  .shelf-slot.occupied {
+    background-color: #f87171;
+  }
+  
+  .shelf-legs {
+    display: flex;
+    justify-content: space-between;
+    width: 80%;
+    margin-top: 10px;
+  }
+  
+  .leg {
+    width: 30px;
+    height: 40px;
+    background-color: #4b5563;
+    border-radius: 4px;
+  }
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background-color: white;
+    padding: 24px;
+    border-radius: 8px;
+    width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  

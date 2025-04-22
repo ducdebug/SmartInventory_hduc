@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification WebSocket Client</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .notification {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .notification.admin {
+            background-color: #ffe6e6;
+        }
+        .notification.unread {
+            border-left: 5px solid #3498db;
+        }
+        .notification .time {
+            font-size: 0.8em;
+            color: #777;
+        }
+        .notification .message {
+            margin-top: 5px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        #connectionStatus {
+            font-weight: bold;
+        }
+        #notifications {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .tab {
+            display: inline-block;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #eee;
+            border-radius: 4px 4px 0 0;
+        }
+        .tab.active {
+            background-color: #ddd;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 0 4px 4px 4px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Notification WebSocket Client</h1>
+    
+    <div class="controls">
+        <p>Connection Status: <span id="connectionStatus">Disconnected</span></p>
+        <div>
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" value="admin">
+            <button id="connectBtn">Connect</button>
+            <button id="disconnectBtn" disabled>Disconnect</button>
+        </div>
+    </div>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="user">User Notifications</div>
+        <div class="tab" data-tab="admin">Admin Notifications</div>
+    </div>
+    
+    <div id="userNotifications" class="tab-content active">
+        <h2>User Notifications</h2>
+        <div id="notifications"></div>
+    </div>
+    
+    <div id="adminNotifications" class="tab-content">
+        <h2>Admin Notifications</h2>
+        <div id="adminNotificationsContent"></div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let userSubscription = null;
+        let adminSubscription = null;
+        
+        // DOM elements
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const userIdInput = document.getElementById('userId');
+        const notifications = document.getElementById('notifications');
+        const adminNotificationsContent = document.getElementById('adminNotificationsContent');
+        
+        // Tab handling
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                // Show corresponding content
+                document.getElementById(this.dataset.tab + 'Notifications').classList.add('active');
+            });
+        });
+        
+        // Connect button click
+        connectBtn.addEventListener('click', function() {
+            if (stompClient) {
+                disconnect();
+            }
+            connect();
+        });
+        
+        // Disconnect button click
+        disconnectBtn.addEventListener('click', function() {
+            disconnect();
+        });
+        
+        // Connect to WebSocket server
+        function connect() {
+            const userId = userIdInput.value || 'guest';
+            connectionStatus.textContent = 'Connecting...';
+            
+            // Create SockJS connection
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            // Connect to server
+            stompClient.connect({}, function(frame) {
+                connectionStatus.textContent = 'Connected: ' + frame;
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                
+                // Subscribe to user-specific notifications
+                userSubscription = stompClient.subscribe('/queue/notifications/' + userId, function(notification) {
+                    showNotification(JSON.parse(notification.body), false);
+                });
+                
+                // If user is admin, subscribe to admin notifications too
+                if (userId === 'admin') {
+                    adminSubscription = stompClient.subscribe('/topic/admin/notifications', function(notification) {
+                        showNotification(JSON.parse(notification.body), true);
+                    });
+                }
+            }, function(error) {
+                connectionStatus.textContent = 'Error: ' + error;
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            });
+        }
+        
+        // Disconnect from WebSocket server
+        function disconnect() {
+            if (stompClient !== null) {
+                if (userSubscription) userSubscription.unsubscribe();
+                if (adminSubscription) adminSubscription.unsubscribe();
+                stompClient.disconnect();
+                stompClient = null;
+            }
+            
+            connectionStatus.textContent = 'Disconnected';
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+        }
+        
+        // Display notification
+        function showNotification(notification, isAdmin) {
+            const container = isAdmin ? adminNotificationsContent : notifications;
+            const notificationDiv = document.createElement('div');
+            notificationDiv.classList.add('notification');
+            if (!notification.read) notificationDiv.classList.add('unread');
+            if (isAdmin) notificationDiv.classList.add('admin');
+            
+            const time = new Date(notification.createdAt).toLocaleString();
+            
+            notificationDiv.innerHTML = `
+                <div class="time">To: ${notification.toUserId} • ${time}</div>
+                <div class="message">${notification.message}</div>
+                <button class="mark-read" data-id="${notification.id}">Mark as Read</button>
+            `;
+            
+            // Add to top of list
+            container.insertBefore(notificationDiv, container.firstChild);
+            
+            // Add event listener to mark-read button
+            notificationDiv.querySelector('.mark-read').addEventListener('click', function() {
+                const notificationId = this.dataset.id;
+                markAsRead(notificationId, notificationDiv);
+            });
+        }
+        
+        // Mark notification as read
+        function markAsRead(notificationId, element) {
+            if (stompClient) {
+                stompClient.send("/app/notifications/read/" + notificationId, {}, {});
+                element.classList.remove('unread');
+                element.querySelector('.mark-read').disabled = true;
+            }
+        }
+    </script>
+</body>
+</html>

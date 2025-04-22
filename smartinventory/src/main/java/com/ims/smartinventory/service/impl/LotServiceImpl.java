@@ -1,0 +1,84 @@
+package com.ims.smartinventory.service.impl;
+
+import com.ims.smartinventory.dto.Response.LotDto;
+import com.ims.smartinventory.dto.Response.LotItemDto;
+import com.ims.smartinventory.entity.management.LotEntity;
+import com.ims.smartinventory.entity.management.LotItemEntity;
+import com.ims.smartinventory.repository.LotRepository;
+import com.ims.smartinventory.service.LotService;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+@Service
+public class LotServiceImpl implements LotService {
+
+    private final LotRepository lotRepository;
+    private final ProductServiceImpl productService;
+
+    public LotServiceImpl(LotRepository lotRepository, ProductServiceImpl productService) {
+        this.lotRepository = lotRepository;
+        this.productService = productService;
+    }
+
+    @Override
+    public List<LotDto> getLotHistory() {
+        List<LotEntity> lots = lotRepository.findAllWithItemsAndUser();
+
+        return lots.stream().map(lot -> {
+            LotDto dto = new LotDto();
+            dto.setImportDate(lot.getImportDate().toString());
+            dto.setStorageStrategy(lot.getStorageStrategy().name());
+            dto.setUsername(lot.getUser().getUsername());
+
+            // Danh sách item đã gộp
+            List<LotItemDto> groupedItems = new ArrayList<>();
+            List<Map<String, Object>> groupedDetails = new ArrayList<>();
+
+            for (LotItemEntity item : lot.getItems()) {
+                if (item.getProduct() == null) continue;
+
+                Map<String, Object> currentDetail = productService.extractDetail(item.getProduct());
+                boolean merged = false;
+
+                for (int i = 0; i < groupedItems.size(); i++) {
+                    LotItemDto existing = groupedItems.get(i);
+                    Map<String, Object> existingDetail = groupedDetails.get(i);
+
+                    boolean sameName = existing.getProductName().equals(item.getProductName());
+                    boolean samePrice = Objects.equals(existing.getPrice(), item.getPrice() != null ? item.getPrice().getValue() : null);
+                    boolean sameCurrency = Objects.equals(existing.getCurrency(), item.getPrice() != null ? item.getPrice().getCurrency() : null);
+                    boolean sameDetail = productService.matchesDetail(item.getProduct(), existingDetail);
+
+                    if (sameName && samePrice && sameCurrency && sameDetail) {
+                        existing.setQuantity(existing.getQuantity() + item.getQuantity());
+                        merged = true;
+                        break;
+                    }
+                }
+
+                if (!merged) {
+                    LotItemDto itemDto = new LotItemDto();
+                    itemDto.setProductName(item.getProductName());
+                    itemDto.setQuantity(item.getQuantity());
+                    itemDto.setImportDate(item.getImportDate().toString());
+
+                    if (item.getPrice() != null) {
+                        itemDto.setPrice(item.getPrice().getValue());
+                        itemDto.setCurrency(item.getPrice().getCurrency());
+                    }
+
+                    groupedItems.add(itemDto);
+                    groupedDetails.add(currentDetail); // lưu riêng để so sánh
+                }
+            }
+
+            dto.setItems(groupedItems);
+            return dto;
+        }).toList();
+    }
+
+}
