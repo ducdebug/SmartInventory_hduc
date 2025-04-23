@@ -7,8 +7,12 @@ import Register from './pages/register/register';
 import { AuthProvider } from './hooks/useAuth'; 
 import Navbar from './components/layout/navbar/navbar';
 import PrivateRoute from "./components/privateroute";
+import AdminRoute from "./components/adminroute";
 import LotHistoryPage from './pages/lothistory/LotHistoryPage';
 import RetrieveProductPage from './pages/retrieveproductpage/RetrieveProductPage';
+import DashboardPage from './pages/dashboard/dashboard';
+import UserManagement from './pages/user-management/user-management';
+import ExportManagementPage from './pages/export-management/ExportManagementPage';
 
 function App() {
   return (
@@ -49,6 +53,25 @@ function App() {
             <PrivateRoute>
               <RetrieveProductPage />
             </PrivateRoute>
+          } />
+          
+          <Route path='/dashboard' element={
+            <PrivateRoute>
+              <DashboardPage />
+            </PrivateRoute>
+          } />
+          
+          {/* Admin-only routes */}
+          <Route path='/user-management' element={
+            <AdminRoute>
+              <UserManagement />
+            </AdminRoute>
+          } />
+          
+          <Route path='/export-management' element={
+            <AdminRoute>
+              <ExportManagementPage />
+            </AdminRoute>
           } />
           
           {/* Redirect any unknown paths to home */}

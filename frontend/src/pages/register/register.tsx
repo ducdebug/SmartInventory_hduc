@@ -119,7 +119,6 @@ const Register: React.FC = () => {
               onChange={handleChange}
               className="form-select"
             >
-              <option value="ADMIN">Administrator</option>
               <option value="SUPPLIER">Supplier</option>
               <option value="BUYER">Buyer</option>
             </select>

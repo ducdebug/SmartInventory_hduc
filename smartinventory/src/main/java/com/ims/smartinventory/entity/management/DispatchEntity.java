@@ -19,6 +19,8 @@ public class DispatchEntity {
 
     private Date exportDate;
 
+    private boolean accepted;
+
     @Enumerated(EnumType.STRING)
     private StorageStrategy storageStrategy;
 

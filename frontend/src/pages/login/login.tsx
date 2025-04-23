@@ -10,7 +10,6 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/');
@@ -28,7 +27,6 @@ const Login: React.FC = () => {
     
     try {
       await login(form);
-      // Navigation happens in useEffect when isAuthenticated changes
     } catch (err) {
       setError(authError || 'Invalid credentials. Please try again.');
     } finally {

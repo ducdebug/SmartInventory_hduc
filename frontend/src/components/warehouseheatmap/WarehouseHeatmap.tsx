@@ -25,10 +25,8 @@ const WarehouseHeatmap: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Using existing getSectionInfo and transforming the data
         const data = await inventoryService.getSectionInfo();
         
-        // Transform the data to match our expected format
         const transformedData = data.map((section: any) => ({
           id: section.id,
           name: section.name,
@@ -53,13 +51,10 @@ const WarehouseHeatmap: React.FC = () => {
   }, []);
 
   const getColorForUtilization = (percentage: number): string => {
-    // Color gradient from green (0%) to yellow (50%) to red (100%)
     if (percentage < 50) {
-      // Green to yellow gradient
       const greenValue = 255 - Math.floor((percentage / 50) * 55);
       return `rgb(${255 - greenValue}, 255, 0)`;
     } else {
-      // Yellow to red gradient
       const redValue = 255;
       const greenValue = Math.floor(255 - ((percentage - 50) / 50) * 255);
       return `rgb(${redValue}, ${greenValue}, 0)`;
@@ -67,7 +62,6 @@ const WarehouseHeatmap: React.FC = () => {
   };
 
   const handleSectionClick = (id: string) => {
-    // Navigate to section detail
     window.location.href = `/sections/${id}`;
   };
 
@@ -109,7 +103,6 @@ const WarehouseHeatmap: React.FC = () => {
             className="heatmap-section"
             style={{ 
               backgroundColor: getColorForUtilization(section.utilizationPercentage),
-              // Make sections with more slots larger (proportional to log of slot count)
               width: `${Math.max(100, 100 + Math.log(section.totalSlots) * 20)}px`,
               height: `${Math.max(100, 100 + Math.log(section.totalSlots) * 15)}px`
             }}

@@ -51,11 +51,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
 
     try {
+      console.log('Attempting login with credentials:', credentials);
       const loggedInUser = await authService.login(credentials);
+      console.log('Login successful, user:', loggedInUser);
       setUser(loggedInUser);
       setIsAuthenticated(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      console.error('Login error in hook:', err);
+      const errorMessage = err instanceof Error ? err.message : "Login failed";
+      console.error('Setting error message:', errorMessage);
+      setError(errorMessage);
       throw err;
     } finally {
       setIsLoading(false);

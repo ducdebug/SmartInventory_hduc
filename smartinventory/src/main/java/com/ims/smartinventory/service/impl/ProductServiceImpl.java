@@ -88,6 +88,7 @@ public class ProductServiceImpl implements ProductService {
         lot.setImportDate(new Date());
         lot.setUser(currentUser);
         lot.setStorageStrategy(batchRequest.getStorageStrategy());
+        lot.setAccepted(false); // Set to pending (needs approval)
         lot = lotRepository.save(lot);
 
         List<Map<String, Object>> productDetails = batchRequest.getProductDetails();
@@ -437,7 +438,6 @@ public class ProductServiceImpl implements ProductService {
         dispatch.setUser(currentUser);
         dispatch = dispatchRepository.save(dispatch);
         
-        // Keep track of all exported product IDs to check volume later
         List<String> exportedProductIds = new ArrayList<>();
 
         for (ProductExportRequestDto.ProductExportItem item : request.getProducts()) {
@@ -465,7 +465,6 @@ public class ProductServiceImpl implements ProductService {
                 case RANDOM -> Collections.shuffle(candidates);
             }
             for (BaseProductEntity product : candidates) {
-                // Add to exported products list
                 exportedProductIds.add(product.getId());
                 
                 product.setDispatch(dispatch);
@@ -507,10 +506,8 @@ public class ProductServiceImpl implements ProductService {
             }
         }
         
-        // After completing the export, check remaining product volume and notify if necessary
         checkProductVolumeAndNotify(exportedProductIds);
     }
-
 
     boolean matchesDetail(BaseProductEntity product, Map<String, Object> detail) {
         Map<String, Object> actual = extractDetail(product);
@@ -525,23 +522,72 @@ public class ProductServiceImpl implements ProductService {
         return true;
     }
     
+    @Transactional
+    @Override
+    public String createRetrieveRequest(ProductExportRequestDto request, UserEntity currentUser) {
+        // Create a pending lot for the retrieve request
+        LotEntity lot = new LotEntity();
+        lot.setImportDate(new Date());
+        lot.setUser(currentUser);
+        lot.setStorageStrategy(StorageStrategy.FIFO); // Default strategy for retrieval
+        lot.setAccepted(false); // Set to pending by default
+        lot = lotRepository.save(lot);
+        
+        // Create lot items for each product in the request
+        for (ProductExportRequestDto.ProductExportItem item : request.getProducts()) {
+            int quantity = item.getQuantity();
+            
+            // Find a reference product to get details
+            BaseProductEntity reference = null;
+            
+            if (item.getProductId() != null) {
+                reference = productRepository.findById(item.getProductId()).orElse(null);
+            }
+            
+            // If we don't have a reference product, use the name and details from the request
+            String productName = reference != null ? reference.getName() : item.getName();
+            
+            // Create a lot item for this product
+            LotItemEntity lotItem = new LotItemEntity();
+            lotItem.setLot(lot);
+            lotItem.setProduct(null); // Not associated with a specific product yet
+            lotItem.setProductName(productName);
+            lotItem.setQuantity(quantity);
+            lotItem.setImportDate(new Date());
+            
+            // Create a price entity if we have price info
+            if (reference != null && reference.getPrice() != null) {
+                PriceEntity price = new PriceEntity();
+                price.setTransactionType(TransactionType.EXPORT);
+                price.setValue(reference.getPrice().getValue());
+                price.setCurrency(reference.getPrice().getCurrency());
+                price = priceRepository.save(price);
+                lotItem.setPrice(price);
+            }
+            
+            lotItemRepository.save(lotItem);
+        }
+        
+        // Send notification to admin about the new retrieve request
+        notificationProducerService.sendNotification("admin", 
+            "New retrieval request created by " + currentUser.getUsername() + 
+            ". Request ID: " + lot.getId());
+        
+        return lot.getId();
+    }
+    
     @Override
     public boolean checkProductVolumeAndNotify(List<String> exportedProductIds) {
-        // Get all remaining products (not exported)
         List<BaseProductEntity> remainingProducts = productRepository.findAll().stream()
-                .filter(p -> p.getDispatch() == null) // Not exported
+                .filter(p -> p.getDispatch() == null)
                 .toList();
         
-        // Group products by type for better volume analysis
         Map<String, List<BaseProductEntity>> productsByType = new HashMap<>();
         
-        // Calculate total volume for each product type
         for (BaseProductEntity product : remainingProducts) {
             String type = product.getClass().getSimpleName();
             productsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(product);
         }
-        
-        // Calculate total volumes by product type
         Map<String, Double> volumeByType = new HashMap<>();
         double totalRemainingVolume = 0.0;
         
@@ -555,9 +601,7 @@ public class ProductServiceImpl implements ProductService {
             totalRemainingVolume += typeVolume;
         }
         
-        // Check if we need to send a notification
         if (VolumeCalculator.isVolumeBelowThreshold(totalRemainingVolume)) {
-            // Create detailed message for admin
             StringBuilder messageBuilder = new StringBuilder();
             messageBuilder.append("WARNING: Low inventory volume detected after export. ");
             messageBuilder.append("Total remaining volume: ").append(String.format("%.2f", totalRemainingVolume)).append(" units. ");
@@ -569,7 +613,6 @@ public class ProductServiceImpl implements ProductService {
                 messageBuilder.append(type).append(": ").append(String.format("%.2f", volume)).append(" units, ");
             }
             
-            // Send notification to admin
             notificationProducerService.sendNotification("admin", messageBuilder.toString());
             return true;
         }

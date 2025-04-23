@@ -22,30 +22,49 @@ api.interceptors.request.use(
 const authService = {
   login: async (credentials: LoginCredentials): Promise<User> => {
     try {
-      const response = await api.post('/auth/login', credentials);
+      const response = await axios.post('http://localhost:8080/api/auth/login', credentials, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Login successful response:', response.data);
       const { token, username, role } = response.data;
     
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify({ username, role }));
     
       return { username, role } as User;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw new Error('Authentication failed. Please check your credentials.');
+    } catch (error: any) {
+      console.error('Login error details:', error);
+      if (error.response) {
+        console.error('Error response status:', error.response.status);
+        console.error('Error response data:', error.response.data);
+        throw new Error(typeof error.response.data === 'string' ? error.response.data : 'Authentication failed');
+      }
+      throw new Error('Authentication failed. Please check your credentials and connectivity.');
     }
   },
  
   register: async (userData: RegisterData): Promise<User> => {
     try {
-      const response = await api.post('/auth/register', userData);
+      const response = await axios.post('http://localhost:8080/api/auth/register', userData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
       const { token, username, role } = response.data;
 
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify({ username, role }));
 
       return { username, role } as User;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
+      if (error.response && error.response.data) {
+        throw new Error(typeof error.response.data === 'string' ? error.response.data : 'Registration failed');
+      }
       throw new Error('Registration failed. Please try again.');
     }
   },

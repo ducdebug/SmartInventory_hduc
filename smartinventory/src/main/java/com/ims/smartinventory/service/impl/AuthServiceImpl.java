@@ -34,6 +34,14 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
+        
+        if (!user.isEnabled()) {
+            if (user.isDeleted()) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "This account has been deleted");
+            } else if (!user.isEnabled()) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "This account has been blocked");
+            }
+        }
 
         String token = jwtUtil.generateToken(user);
 

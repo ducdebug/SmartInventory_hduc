@@ -60,10 +60,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserEntity user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
-            List<GrantedAuthority> authorities = new ArrayList<>();
-
+            // Use the authorities from the user entity
             UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(user, null, authorities);
+                    new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }

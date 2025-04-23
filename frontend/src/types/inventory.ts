@@ -92,9 +92,11 @@ export interface SectionEntity {
 }
 
 export interface Lot {
+  id: string;
   importDate: string;
   storageStrategy: string;
   username: string;
+  accepted: boolean;
   items: LotItem[];
 }
 export interface LotItem {

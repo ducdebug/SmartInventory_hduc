@@ -19,6 +19,16 @@ public interface ProductService {
     void exportGroupedProducts(ProductExportRequestDto request, UserEntity currentUser);
     
     /**
+     * Creates a retrieve request (pending lot) for a buyer
+     * 
+     * @param request The export request containing products to retrieve
+     * @param currentUser The buyer creating the request
+     * @return The ID of the created lot
+     */
+    @Transactional
+    String createRetrieveRequest(ProductExportRequestDto request, UserEntity currentUser);
+    
+    /**
      * Check if the remaining volume of products after export is below a critical threshold
      * and send a notification if necessary
      *

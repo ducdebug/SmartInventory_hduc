@@ -45,6 +45,7 @@ public abstract class BaseProductEntity {
     @JoinColumn(name = "slot_section_id", referencedColumnName = "id", nullable = true)
     private SlotSection slotSection;
 
+
     public abstract boolean isExpired();
     public Date getExpirationDate() { return null; }
 }

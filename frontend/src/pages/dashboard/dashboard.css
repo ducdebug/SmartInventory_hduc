@@ -1,0 +1,11 @@
+.dashboard-page {
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  padding: 20px 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-page {
+    padding: 10px 0;
+  }
+}

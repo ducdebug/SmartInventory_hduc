@@ -19,6 +19,7 @@ public class LotEntity {
 
     private Date importDate;
 
+    private boolean accepted;
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
