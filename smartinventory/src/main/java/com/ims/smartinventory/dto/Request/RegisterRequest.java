@@ -1,9 +1,11 @@
 package com.ims.smartinventory.dto.Request;
 
 import com.ims.smartinventory.config.UserRole;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class RegisterRequest {
     private String username;
     private String password;

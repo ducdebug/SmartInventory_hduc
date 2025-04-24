@@ -91,12 +91,26 @@ const Navbar: React.FC = () => {
             <span>Dashboard</span>
           </Link>
           
-          <Link to="/inventory" className={location.pathname === '/inventory' ? 'active' : ''}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 7L12 3L4 7M20 7V17L12 21M20 7L12 11M12 21L4 17V7M12 21V11M4 7L12 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>Inventory</span>
-          </Link>
+          {/* Admin: Sections instead of Inventory */}
+          {user?.role === 'ADMIN' && (
+            <Link to="/sections" className={location.pathname === '/sections' ? 'active' : ''}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 7L12 3L4 7M20 7V17L12 21M20 7L12 11M12 21L4 17V7M12 21V11M4 7L12 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>Sections</span>
+            </Link>
+          )}
+          
+          {/* Buyer: History link */}
+          {user?.role === 'BUYER' && (
+            <Link to="/history" className={location.pathname === '/history' ? 'active' : ''}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>History</span>
+            </Link>
+          )}
           
           {user?.role === 'ADMIN' && (
             <Link to="/lot-history" className={location.pathname === '/lot-history' ? 'active' : ''}>

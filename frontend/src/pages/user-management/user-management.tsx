@@ -18,7 +18,6 @@ const UserManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if current user is admin
     if (user?.role !== 'ADMIN') {
       setError('Unauthorized: Admin access required');
       setLoading(false);
@@ -60,7 +59,7 @@ const UserManagement: React.FC = () => {
           }
         }
       );
-      fetchUsers(); // Refresh user list
+      fetchUsers();
     } catch (err) {
       console.error('Error toggling user block status:', err);
       setError('Failed to update user status');
@@ -79,7 +78,7 @@ const UserManagement: React.FC = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      fetchUsers(); // Refresh user list
+      fetchUsers();
     } catch (err) {
       console.error('Error deleting user:', err);
       setError('Failed to delete user');

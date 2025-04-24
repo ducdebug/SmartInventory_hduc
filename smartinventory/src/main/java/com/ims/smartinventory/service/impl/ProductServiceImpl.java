@@ -88,7 +88,7 @@ public class ProductServiceImpl implements ProductService {
         lot.setImportDate(new Date());
         lot.setUser(currentUser);
         lot.setStorageStrategy(batchRequest.getStorageStrategy());
-        lot.setAccepted(false); // Set to pending (needs approval)
+        lot.setAccepted(false);
         lot = lotRepository.save(lot);
 
         List<Map<String, Object>> productDetails = batchRequest.getProductDetails();
@@ -448,7 +448,6 @@ public class ProductServiceImpl implements ProductService {
                     .orElseThrow(() -> new StorageException("Reference product not found: " + productId));
 
             StorageStrategy strategy = reference.getLot().getStorageStrategy();
-            dispatch.setStorageStrategy(strategy);
             List<BaseProductEntity> candidates = new ArrayList<>(productRepository.findAll().stream()
                     .filter(p -> p.getDispatch() == null)
                     .filter(p -> matchesDetail(p, extractDetail(reference)))

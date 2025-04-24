@@ -18,10 +18,20 @@
         <outputRelativeToContentRoot value="true" />
         <module name="smartinventory" />
       </profile>
+      <profile name="Annotation profile for authService" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
+        </processorPath>
+        <module name="authService" />
+      </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="authService" options="-parameters" />
       <module name="notification" options="-parameters" />
       <module name="smartinventory" options="-parameters" />
     </option>

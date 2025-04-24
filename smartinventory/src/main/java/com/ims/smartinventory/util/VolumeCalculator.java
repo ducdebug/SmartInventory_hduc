@@ -66,12 +66,10 @@ public class VolumeCalculator {
     }
 
     private static double calculateCosmeticVolume(CosmeticProductEntity cosmetic) {
-        // Use actual volume if available, otherwise estimate
         return cosmetic.getVolume() > 0 ? cosmetic.getVolume() / 1000.0 : 0.2; // Convert to liters
     }
 
     private static double calculateElectronicsVolume(ElectronicsProductEntity electronics) {
-        // Estimate based on type
         String type = electronics.getType().toLowerCase();
         
         if (type.contains("phone")) {
@@ -86,21 +84,14 @@ public class VolumeCalculator {
     }
 
     private static double calculateRawMaterialVolume(RawMaterialProductEntity material) {
-        // Default estimation based on material type
         return 2.0;
     }
 
     private static double calculatePharmaceuticalVolume(PharmaceuticalProductEntity pharma) {
-        // Most pharmaceuticals are small
         return 0.1;
     }
 
-    /**
-     * Check if the total volume of products is below the critical threshold
-     *
-     * @param totalVolume The total volume to check
-     * @return true if volume is below threshold, false otherwise
-     */
+
     public static boolean isVolumeBelowThreshold(double totalVolume) {
         return totalVolume < MIN_VOLUME_THRESHOLD;
     }

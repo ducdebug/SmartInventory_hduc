@@ -57,7 +57,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
         response.setMovementAnalysis(Arrays.asList(getProductMovementAnalysis()));
         response.setStorageAllocation(Arrays.asList(getStorageAllocation()));
         response.setSectionUtilization(Arrays.asList(getSectionUtilization()));
-        response.setStrategyPerformance(Arrays.asList(getStrategyPerformance()));
         response.setSummaryStats(getSummaryStatistics());
         
         return response;
@@ -97,7 +96,9 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
             
             // Find all dispatches created during this month
             List<DispatchEntity> dispatchesInMonth = dispatchRepository.findAll().stream()
-                    .filter(dispatch -> dispatch.getExportDate().after(monthStart) && dispatch.getExportDate().before(monthEnd))
+                    .filter(dispatch -> dispatch.getExportDate() != null && 
+                           dispatch.getExportDate().after(monthStart) && 
+                           dispatch.getExportDate().before(monthEnd))
                     .collect(Collectors.toList());
             
             // Count products per type for each lot
@@ -250,86 +251,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
     }
     
     @Override
-    public InventoryAnalyticsResponse.StrategyPerformanceData[] getStrategyPerformance() {
-        Map<StorageStrategy, InventoryAnalyticsResponse.StrategyPerformanceData> strategyMap = new HashMap<>();
-        
-        // Initialize strategy data
-        for (StorageStrategy strategy : StorageStrategy.values()) {
-            InventoryAnalyticsResponse.StrategyPerformanceData data = new InventoryAnalyticsResponse.StrategyPerformanceData();
-            data.setStrategy(strategy.name());
-            data.setAvgDaysInInventory(0);
-            data.setTurnoverRate(0);
-            strategyMap.put(strategy, data);
-        }
-        
-        // Get all dispatches with their associated products
-        List<DispatchEntity> dispatches = dispatchRepository.findAll();
-        
-        // Calculate metrics for each strategy
-        Map<StorageStrategy, List<Long>> daysByStrategy = new HashMap<>();
-        Map<StorageStrategy, Integer> exportCountByStrategy = new HashMap<>();
-        Map<StorageStrategy, Integer> importCountByStrategy = new HashMap<>();
-        
-        // Initialize counters
-        for (StorageStrategy strategy : StorageStrategy.values()) {
-            daysByStrategy.put(strategy, new ArrayList<>());
-            exportCountByStrategy.put(strategy, 0);
-            importCountByStrategy.put(strategy, 0);
-        }
-        
-        // Calculate days in inventory for dispatched products
-        for (DispatchEntity dispatch : dispatches) {
-            StorageStrategy strategy = dispatch.getStorageStrategy();
-            
-            for (DispatchItemEntity item : dispatch.getItems()) {
-                if (item.getProduct() != null && item.getProduct().getLot() != null) {
-                    // Calculate days between import and export
-                    Date importDate = item.getProduct().getLot().getImportDate();
-                    Date exportDate = dispatch.getExportDate();
-                    
-                    if (importDate != null && exportDate != null) {
-                        long days = ChronoUnit.DAYS.between(
-                                importDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
-                                exportDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                        );
-                        
-                        daysByStrategy.get(strategy).add(days);
-                        exportCountByStrategy.put(strategy, exportCountByStrategy.get(strategy) + 1);
-                    }
-                }
-            }
-        }
-        
-        // Count total imports by strategy
-        List<LotEntity> lots = lotRepository.findAll();
-        for (LotEntity lot : lots) {
-            StorageStrategy strategy = lot.getStorageStrategy();
-            importCountByStrategy.put(strategy, importCountByStrategy.get(strategy) + lot.getItems().size());
-        }
-        
-        // Calculate averages and turnover rates
-        for (StorageStrategy strategy : StorageStrategy.values()) {
-            InventoryAnalyticsResponse.StrategyPerformanceData data = strategyMap.get(strategy);
-            
-            // Calculate average days in inventory
-            List<Long> days = daysByStrategy.get(strategy);
-            if (!days.isEmpty()) {
-                double avgDays = days.stream().mapToLong(Long::longValue).average().orElse(0);
-                data.setAvgDaysInInventory(avgDays);
-            }
-            
-            // Calculate turnover rate
-            int imports = importCountByStrategy.get(strategy);
-            int exports = exportCountByStrategy.get(strategy);
-            if (imports > 0) {
-                data.setTurnoverRate((double) exports / imports);
-            }
-        }
-        
-        return strategyMap.values().toArray(new InventoryAnalyticsResponse.StrategyPerformanceData[0]);
-    }
-    
-    @Override
     public InventoryAnalyticsResponse.SummaryStatistics getSummaryStatistics() {
         InventoryAnalyticsResponse.SummaryStatistics stats = new InventoryAnalyticsResponse.SummaryStatistics();
         
@@ -414,7 +335,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
         return stats;
     }
     
-
     private String getProductTypeName(BaseProductEntity product) {
         String className = product.getClass().getSimpleName();
         return className.replace("ProductEntity", "").toUpperCase();

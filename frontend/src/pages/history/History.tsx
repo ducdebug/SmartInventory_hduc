@@ -1,0 +1,174 @@
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import dispatchService, { Dispatch } from '../../services/dispatchService';
+import './History.css';
+
+const History: React.FC = () => {
+  const { user } = useAuth();
+  const [dispatches, setDispatches] = useState<Dispatch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDispatch, setSelectedDispatch] = useState<Dispatch | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('');
+
+  useEffect(() => {
+    fetchBuyerDispatches();
+  }, []);
+
+  const fetchBuyerDispatches = async () => {
+    setIsLoading(true);
+    try {
+      const data = await dispatchService.getBuyerDispatches();
+      setDispatches(data);
+    } catch (err) {
+      console.error('Error fetching dispatches:', err);
+      setError('Failed to load dispatch history. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDispatchSelect = (dispatch: Dispatch) => {
+    setSelectedDispatch(dispatch);
+  };
+
+  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+  };
+
+  const filteredDispatches = statusFilter 
+    ? dispatches.filter(dispatch => dispatch.status === statusFilter)
+    : dispatches;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'PENDING': return 'status-pending';
+      case 'ACCEPTED': return 'status-accepted';
+      case 'REJECTED': return 'status-rejected';
+      case 'COMPLETED': return 'status-completed';
+      default: return '';
+    }
+  };
+
+  if (user?.role !== 'BUYER') {
+    return (
+      <div className="history-container">
+        <div className="history-error">
+          This page is only accessible to users with the Buyer role.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="history-container">
+      <div className="history-header">
+        <h1>Your Dispatch History</h1>
+        <div className="history-controls">
+          <select 
+            value={statusFilter} 
+            onChange={handleStatusFilterChange}
+            className="status-filter"
+          >
+            <option value="">All Statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="ACCEPTED">Accepted</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="history-loading">Loading your dispatch history...</div>
+      ) : error ? (
+        <div className="history-error">{error}</div>
+      ) : filteredDispatches.length === 0 ? (
+        <div className="history-empty">
+          <p>No dispatches found with the selected filter.</p>
+        </div>
+      ) : (
+        <div className="history-content">
+          <div className="dispatch-list">
+            {filteredDispatches.map(dispatch => (
+              <div 
+                key={dispatch.id} 
+                className={`dispatch-card ${selectedDispatch?.id === dispatch.id ? 'selected' : ''}`}
+                onClick={() => handleDispatchSelect(dispatch)}
+              >
+                <div className="dispatch-card-header">
+                  <div className="dispatch-id">Dispatch #{dispatch.id.substring(0, 8)}</div>
+                  <div className={`dispatch-status ${getStatusBadgeClass(dispatch.status)}`}>
+                    {dispatch.status}
+                  </div>
+                </div>
+                <div className="dispatch-card-body">
+                  <div className="dispatch-date">
+                    Created: {formatDate(dispatch.createdAt)}
+                  </div>
+                  <div className="dispatch-summary">
+                    {dispatch.totalItems} {dispatch.totalItems === 1 ? 'item' : 'items'}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {selectedDispatch && (
+            <div className="dispatch-details">
+              <h2>Dispatch Details</h2>
+              <div className="dispatch-details-header">
+                <div>
+                  <strong>Dispatch ID:</strong> {selectedDispatch.id}
+                </div>
+                <div>
+                  <strong>Created:</strong> {formatDate(selectedDispatch.createdAt)}
+                </div>
+                <div>
+                  <strong>Status:</strong> 
+                  <span className={`status-badge ${getStatusBadgeClass(selectedDispatch.status)}`}>
+                    {selectedDispatch.status}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="dispatch-items">
+                <h3>Items</h3>
+                <table className="items-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Quantity</th>
+                      <th>Lot</th>
+                      <th>Expiration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedDispatch.items.map(item => (
+                      <tr key={item.id}>
+                        <td>{item.product.name}</td>
+                        <td>{item.quantity}</td>
+                        <td>{item.product.lotCode}</td>
+                        <td>
+                          {item.product.expirationDate 
+                            ? formatDate(item.product.expirationDate)
+                            : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default History;

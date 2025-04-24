@@ -39,12 +39,6 @@ public interface InventoryAnalyticsService {
     InventoryAnalyticsResponse.SectionUtilizationData[] getSectionUtilization();
     
     /**
-     * Get storage strategy performance metrics
-     * @return List of strategy performance data
-     */
-    InventoryAnalyticsResponse.StrategyPerformanceData[] getStrategyPerformance();
-    
-    /**
      * Get summary statistics for inventory
      * @return Summary statistics
      */

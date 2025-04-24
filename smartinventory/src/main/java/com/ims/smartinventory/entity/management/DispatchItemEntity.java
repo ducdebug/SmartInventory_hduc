@@ -17,9 +17,12 @@ public class DispatchItemEntity {
     private String id;
 
     private String productName;
+    
+    @Column(name = "product_ref_id")
+    private String productId;
 
     @ManyToOne(optional = true)
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private BaseProductEntity product;
 
     @ManyToOne
@@ -32,5 +35,6 @@ public class DispatchItemEntity {
 
     private int quantity;
 
+    @Temporal(TemporalType.TIMESTAMP)
     private Date exportDate;
 }

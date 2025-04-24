@@ -16,10 +16,13 @@ public class LotEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
+    
+    private String lotCode;
 
     private Date importDate;
 
     private boolean accepted;
+    
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
@@ -29,4 +32,11 @@ public class LotEntity {
 
     @OneToMany(mappedBy = "lot", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LotItemEntity> items;
+    
+    @PrePersist
+    protected void onCreate() {
+        if (lotCode == null || lotCode.isEmpty()) {
+            lotCode = "LOT-" + System.currentTimeMillis();
+        }
+    }
 }

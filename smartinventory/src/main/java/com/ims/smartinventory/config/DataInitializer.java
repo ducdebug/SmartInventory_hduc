@@ -25,7 +25,7 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.findByUsername("admin").isEmpty()) {
             UserEntity adminUser = new UserEntity();
             adminUser.setUsername("admin");
-            adminUser.setPassword(passwordEncoder.encode("admin"));
+            adminUser.setPassword(passwordEncoder.encode("1"));
             adminUser.setRole(UserRole.ADMIN);
             adminUser.setEnabled(true);
             adminUser.setDeleted(false);

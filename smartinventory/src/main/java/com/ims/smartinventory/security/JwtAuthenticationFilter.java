@@ -58,13 +58,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserEntity user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            // Use the authorities from the user entity
-            UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            try {
+                UserEntity user = userRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+                
+                // Debug output
+                System.out.println("JWT Authentication - User found: " + user.getUsername());
+                System.out.println("JWT Authentication - User role: " + user.getRole());
+                System.out.println("JWT Authentication - Authorities: " + user.getAuthorities());
+                
+                // Use the authorities from the user entity
+                UsernamePasswordAuthenticationToken authenticationToken =
+                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            } catch (Exception e) {
+                System.err.println("Error authenticating user: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
         filterChain.doFilter(request, response);
     }

@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/DATN.iml" filepath="$PROJECT_DIR$/.idea/DATN.iml" />
+      <module fileurl="file://$PROJECT_DIR$/smartinventory/smartinventory.iml" filepath="$PROJECT_DIR$/smartinventory/smartinventory.iml" />
     </modules>
   </component>
 </project>

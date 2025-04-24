@@ -1,27 +1,11 @@
 import axios from 'axios';
+import apiClient from '../utils/apiClient';
 import { User, LoginCredentials, RegisterData } from '../types/auth';
-import { API_BASE_URL } from '../config';
-
-// Create axios instance with base URL
-const api = axios.create({
-  baseURL: API_BASE_URL
-});
-
-// Add token to all requests if it exists
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 const authService = {
   login: async (credentials: LoginCredentials): Promise<User> => {
     try {
+      // For login, we use the base axios since we don't have a token yet
       const response = await axios.post('http://localhost:8080/api/auth/login', credentials, {
         headers: {
           'Content-Type': 'application/json'
@@ -48,6 +32,7 @@ const authService = {
  
   register: async (userData: RegisterData): Promise<User> => {
     try {
+      // For register, we use the base axios since we don't have a token yet
       const response = await axios.post('http://localhost:8080/api/auth/register', userData, {
         headers: {
           'Content-Type': 'application/json'

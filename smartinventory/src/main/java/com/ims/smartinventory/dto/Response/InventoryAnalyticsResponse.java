@@ -13,7 +13,6 @@ public class InventoryAnalyticsResponse {
     private List<ProductMovementData> movementAnalysis;
     private List<StorageAllocationData> storageAllocation;
     private List<SectionUtilizationData> sectionUtilization;
-    private List<StrategyPerformanceData> strategyPerformance;
     private SummaryStatistics summaryStats;
     
     @Data
@@ -48,14 +47,6 @@ public class InventoryAnalyticsResponse {
         private int totalSlots;
         private int usedSlots;
         private double utilizationPercentage;
-    }
-    
-    @Data
-    @NoArgsConstructor
-    public static class StrategyPerformanceData {
-        private String strategy;
-        private double avgDaysInInventory;
-        private double turnoverRate;
     }
     
     @Data

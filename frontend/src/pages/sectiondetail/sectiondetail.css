@@ -1,41 +1,251 @@
+.section-detail-wrapper {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 .section-detail-main {
-    padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 16px;
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+.back-button {
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  color: #4a5568;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background-color: #edf2f7;
+  color: #2d3748;
+}
+
+.content-container {
+  margin-top: 20px;
+}
+
+.section-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #718096;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* Shelves List Styling */
+.shelves-container {
+  margin-top: 24px;
+}
+
+.shelves-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.shelves-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+}
+
+.shelves-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.shelf-box {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.shelf-box.clickable {
+  cursor: pointer;
+}
+
+.shelf-box.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-color: #90cdf4;
+}
+
+.shelf-id {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+
+.shelf-dimensions {
+  font-size: 14px;
+  color: #4a5568;
+  margin-bottom: 4px;
+}
+
+.shelf-slots {
+  font-size: 14px;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Slots Grid Styling */
+.slots-container {
+  margin-top: 24px;
+  overflow-x: auto;
+}
+
+.slots-header {
+  margin-bottom: 16px;
+}
+
+.slots-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+}
+
+.slot-grid {
+  display: grid;
+  gap: 8px;
+  background-color: #f7fafc;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.slot-box {
+  width: 60px;
+  height: 60px;
+  background-color: white;
+  border: 2px solid #4a5568;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.slot-box.occupied {
+  background-color: #fed7d7;
+  border-color: #f56565;
+}
+
+.slot-coords {
+  font-weight: 600;
+}
+
+.slot-status {
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+.error-message {
+  color: #e53e3e;
+  text-align: center;
+  margin: 20px 0;
+  padding: 16px;
+  background-color: #fff5f5;
+  border: 1px solid #fc8181;
+  border-radius: 6px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .section-detail-main {
+    padding: 16px;
   }
   
-  .slot-grid {
-    display: grid;
-    gap: 6px;
-    background-color: #f3f4f6;
-    padding: 10px;
-    border: 1px solid #e5e7eb;
-  }
-  
-  .slot-box {
-    width: 40px;
-    height: 40px;
-    background-color: white;
-    border: 2px solid black;
-    font-size: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-  }
-  
-  .slot-box.occupied {
-    background-color: #f87171; /* red-400 */
-  }
-  
-  .shelves-list {
-    display: flex;
+  .section-header {
     flex-direction: column;
+    align-items: flex-start;
     gap: 12px;
   }
   
   .shelf-box {
-    padding: 10px;
-    border: 1px solid #d1d5db;
-    background-color: #f9fafb;
-    border-radius: 6px;
+    padding: 12px;
   }
   
+  .slot-box {
+    width: 50px;
+    height: 50px;
+    font-size: 10px;
+  }
+}

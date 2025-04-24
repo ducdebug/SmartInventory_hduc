@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/home/home';
+import SectionsPage from './pages/sections/sections';
 import SectionDetail from './pages/sectiondetail/sectiondetail';
 import ShelfDetail from './pages/shelfdetail/shelfdetail';
 import Login from './pages/login/login';
@@ -13,6 +14,7 @@ import RetrieveProductPage from './pages/retrieveproductpage/RetrieveProductPage
 import DashboardPage from './pages/dashboard/dashboard';
 import UserManagement from './pages/user-management/user-management';
 import ExportManagementPage from './pages/export-management/ExportManagementPage';
+import History from './pages/history/History';
 
 function App() {
   return (
@@ -31,16 +33,30 @@ function App() {
             </PrivateRoute>
           } />
           
-          <Route path="/sections/:sectionId" element={
+          {/* Buyer-specific routes */}
+          <Route path="/history" element={
             <PrivateRoute>
-              <SectionDetail />
+              <History />
             </PrivateRoute>
           } />
           
+          {/* Section routes - now admin only */}
+          <Route path="/sections" element={
+            <AdminRoute>
+              <SectionsPage />
+            </AdminRoute>
+          } />
+          
+          <Route path="/sections/:sectionId" element={
+            <AdminRoute>
+              <SectionDetail />
+            </AdminRoute>
+          } />
+          
           <Route path="/shelves/:shelfId" element={
-            <PrivateRoute>
+            <AdminRoute>
               <ShelfDetail />
-            </PrivateRoute>
+            </AdminRoute>
           } />
           
           <Route path='/lot-history' element={
