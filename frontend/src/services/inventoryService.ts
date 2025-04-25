@@ -1,11 +1,10 @@
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
-import { SlotInfo, ShelfInfo , ProductType, StorageStrategy} from '../types/inventory'; // điều chỉnh path nếu cần
+import apiClient from '../utils/apiClient';
+import { SlotInfo, ShelfInfo, ProductType, StorageStrategy } from '../types/inventory';
 
 const inventoryService = {
   getSectionInfo: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/warehouse/sections/info`);
+      const response = await apiClient.get('/warehouse/sections/info');
       console.log("Fetched sections:", response.data);
       return response.data;
     } catch (error) {
@@ -16,67 +15,75 @@ const inventoryService = {
 
   getSectionChildren: async (sectionId: string): Promise<SlotInfo[] | ShelfInfo[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/section/${sectionId}/children`);
+      const response = await apiClient.get(`/section/${sectionId}/children`);
       return response.data;
     } catch (error) {
       console.error('Error fetching section children:', error);
       throw error;
     }
   },
+  
   getSlotsByShelf: async (shelfId: string) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/shelf/shelves/${shelfId}/slots`);
+      const response = await apiClient.get(`/shelf/shelves/${shelfId}/slots`);
       return response.data;
     } catch (error) {
       console.error('Error fetching shelf slots:', error);
       throw error;
     }
   },
+  
   storeBatch: async (batchData: {
     productType: ProductType;
     storageStrategy: StorageStrategy;
     productDetails: Record<string, any>[];
   }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_BASE_URL}/inventory/batch`, batchData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.post('/inventory/batch', batchData);
       return response.data;
     } catch (error) {
       console.error('Error storing batch:', error);
       throw error;
     }
   },
+  
   getLotHistory: async () => {
-    const res = await axios.get(`${API_BASE_URL}/lot/history`);
-    console.log('Lot history:', res.data);
-    return res.data;
+    try {
+      const response = await apiClient.get('/lot/history');
+      console.log('Lot history:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching lot history:', error);
+      throw error;
+    }
   },  
   
   getPendingLots: async () => {
-    const res = await axios.get(`${API_BASE_URL}/lot/pending`);
-    console.log('Pending lots:', res.data);
-    return res.data;
+    try {
+      const response = await apiClient.get('/lot/pending');
+      console.log('Pending lots:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching pending lots:', error);
+      throw error;
+    }
   },
   
   getAcceptedLots: async () => {
-    const res = await axios.get(`${API_BASE_URL}/lot/accepted`);
-    console.log('Accepted lots:', res.data);
-    return res.data;
+    try {
+      const response = await apiClient.get('/lot/accepted');
+      console.log('Accepted lots:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching accepted lots:', error);
+      throw error;
+    }
   },
   
   acceptLot: async (lotId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post(`${API_BASE_URL}/lot/${lotId}/accept`, {}, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return res.data;
+      const response = await apiClient.post(`/lot/${lotId}/accept`, {});
+      return response.data;
     } catch (error) {
       console.error('Error accepting lot:', error);
       throw error;
@@ -84,20 +91,37 @@ const inventoryService = {
   },
   
   getLotDetails: async (lotId: string) => {
-    const res = await axios.get(`${API_BASE_URL}/lot/${lotId}`);
-    return res.data;
+    try {
+      const response = await apiClient.get(`/lot/${lotId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching lot details:', error);
+      throw error;
+    }
   },
 
   getProductBySlot: async (slotId: string) => {
-    const res = await axios.get(`${API_BASE_URL}/inventory/${slotId}/product`);
-    console.log('Product by slot:', res.data);
-    return res.data;
+    try {
+      const response = await apiClient.get(`/inventory/${slotId}/product`);
+      console.log('Product by slot:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching product by slot:', error);
+      throw error;
+    }
   },
+  
   getAllProducts: async () => {
-    const res = await axios.get(`${API_BASE_URL}/inventory/retrieveAll`);
-    console.log('All products:', res.data);
-    return res.data;
+    try {
+      const response = await apiClient.get('/inventory/retrieveAll');
+      console.log('All products:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all products:', error);
+      throw error;
+    }
   },
+  
   exportProducts: async (payload: {
     products: {
       quantity: number;
@@ -106,14 +130,9 @@ const inventoryService = {
     }[];
   }) => {
     try {
-      const token = localStorage.getItem('token');
       console.log('Exporting products:', payload);
-      const res = await axios.post(`${API_BASE_URL}/inventory/export`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return res.data;
+      const response = await apiClient.post('/inventory/export', payload);
+      return response.data;
     } catch (error) {
       console.error('Error exporting products:', error);
       throw error;
@@ -128,19 +147,15 @@ const inventoryService = {
     }[];
   }) => {
     try {
-      const token = localStorage.getItem('token');
       console.log('Creating retrieve request:', payload);
-      const res = await axios.post(`${API_BASE_URL}/inventory/retrieve-request`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return res.data;
+      const response = await apiClient.post('/inventory/retrieve-request', payload);
+      return response.data;
     } catch (error) {
       console.error('Error creating retrieve request:', error);
       throw error;
     }
   },
+  
   createSection: async (data: {
     name: string;
     y_slot: number;
@@ -153,15 +168,13 @@ const inventoryService = {
     }[];
   }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_BASE_URL}/inventory/section`,
+      const response = await apiClient.post(
+        '/inventory/section',
         data,
         {
           headers: {
-            'Content-Type': 'application/json', // 💥 BẮT BUỘC
-            Authorization: `Bearer ${token}`,
-          },
+            'Content-Type': 'application/json'
+          }
         }
       );
       return response.data;
@@ -173,7 +186,7 @@ const inventoryService = {
 
   getProductTypeDistribution: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/inventory/product-type-distribution`);
+      const response = await apiClient.get('/inventory/product-type-distribution');
       console.log("Product type distribution:", response.data);
       return response.data;
     } catch (error) {
@@ -184,7 +197,7 @@ const inventoryService = {
   
   getInventoryAnalytics: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/inventory/analytics`);
+      const response = await apiClient.get('/inventory/analytics');
       console.log("Inventory analytics:", response.data);
       return response.data;
     } catch (error) {

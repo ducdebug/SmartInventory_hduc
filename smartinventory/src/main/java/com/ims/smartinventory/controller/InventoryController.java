@@ -74,8 +74,8 @@ public class InventoryController {
             return ResponseEntity.status(403).body("Only buyers can create retrieval requests");
         }
         
-        productService.createRetrieveRequest(request, currentUser);
-        return ResponseEntity.ok().build();
+        String requestId = productService.createRetrieveRequest(request, currentUser);
+        return ResponseEntity.ok(requestId);
     }
 
     @GetMapping("/product-type-distribution")

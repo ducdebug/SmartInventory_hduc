@@ -25,6 +25,12 @@ public class DispatchEntity {
     @Enumerated(EnumType.STRING)
     private DispatchStatus status;
     
+    @Column(length = 500)
+    private String rejectionReason;
+    
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date completedAt;
+    
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
@@ -42,8 +48,12 @@ public class DispatchEntity {
         }
     }
     
-    public enum DispatchStatus {
-        PENDING,
-        ACCEPTED,
-        REJECTED}
+    public void setStatus(DispatchStatus newStatus) {
+        this.status = newStatus;
+        
+        // Update timestamps based on status changes
+        if (newStatus == DispatchStatus.COMPLETED) {
+            this.completedAt = new Date();
+        }
+    }
 }

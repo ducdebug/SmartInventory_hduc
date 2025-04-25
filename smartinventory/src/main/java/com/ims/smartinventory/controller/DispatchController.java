@@ -20,6 +20,7 @@ public class DispatchController {
         this.dispatchService = dispatchService;
     }
 
+    // Buyer-specific endpoints
     @GetMapping("/buyer")
     public ResponseEntity<List<DispatchHistoryResponse>> getBuyerDispatches(
             @AuthenticationPrincipal UserEntity currentUser
@@ -58,5 +59,118 @@ public class DispatchController {
         }
         
         return ResponseEntity.ok(dispatch);
+    }
+
+    // Admin-specific endpoints for export management
+    @GetMapping("/admin/pending")
+    public ResponseEntity<List<DispatchHistoryResponse>> getPendingDispatches(
+            @AuthenticationPrincipal UserEntity currentUser
+    ) {
+        if (currentUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        if (!"ADMIN".equals(currentUser.getRole().name())) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        List<DispatchHistoryResponse> dispatches = dispatchService.getPendingDispatches();
+        return ResponseEntity.ok(dispatches);
+    }
+
+    @GetMapping("/admin/completed")
+    public ResponseEntity<List<DispatchHistoryResponse>> getCompletedDispatches(
+            @AuthenticationPrincipal UserEntity currentUser
+    ) {
+        if (currentUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        if (!"ADMIN".equals(currentUser.getRole().name())) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        List<DispatchHistoryResponse> dispatches = dispatchService.getCompletedDispatches();
+        return ResponseEntity.ok(dispatches);
+    }
+
+    @PostMapping("/{dispatchId}/accept")
+    public ResponseEntity<DispatchDetailResponse> acceptDispatch(
+            @PathVariable String dispatchId,
+            @AuthenticationPrincipal UserEntity currentUser
+    ) {
+        if (currentUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        if (!"ADMIN".equals(currentUser.getRole().name())) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        DispatchDetailResponse updatedDispatch = dispatchService.acceptDispatch(dispatchId);
+        
+        if (updatedDispatch == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        return ResponseEntity.ok(updatedDispatch);
+    }
+
+    @PostMapping("/{dispatchId}/complete")
+    public ResponseEntity<DispatchDetailResponse> completeDispatch(
+            @PathVariable String dispatchId,
+            @AuthenticationPrincipal UserEntity currentUser
+    ) {
+        if (currentUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        if (!"ADMIN".equals(currentUser.getRole().name())) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        DispatchDetailResponse updatedDispatch = dispatchService.completeDispatch(dispatchId);
+        
+        if (updatedDispatch == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        return ResponseEntity.ok(updatedDispatch);
+    }
+
+    @PostMapping("/{dispatchId}/reject")
+    public ResponseEntity<DispatchDetailResponse> rejectDispatch(
+            @PathVariable String dispatchId,
+            @RequestBody RejectRequest rejectRequest,
+            @AuthenticationPrincipal UserEntity currentUser
+    ) {
+        if (currentUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        if (!"ADMIN".equals(currentUser.getRole().name())) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        DispatchDetailResponse updatedDispatch = dispatchService.rejectDispatch(dispatchId, rejectRequest.getReason());
+        
+        if (updatedDispatch == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        return ResponseEntity.ok(updatedDispatch);
+    }
+    
+    // Helper class for reject request
+    static class RejectRequest {
+        private String reason;
+        
+        public String getReason() {
+            return reason;
+        }
+        
+        public void setReason(String reason) {
+            this.reason = reason;
+        }
     }
 }

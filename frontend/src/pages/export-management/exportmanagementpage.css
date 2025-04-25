@@ -49,13 +49,19 @@
   margin-left: 0.5rem;
 }
 
-.lots-container {
+.dispatches-container {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
 }
 
-.lot-card {
+.dispatch-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.dispatch-card {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 1.5rem;
@@ -64,32 +70,32 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.lot-card:hover {
+.dispatch-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.lot-header {
+.dispatch-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #f5f5f5;
 }
 
-.lot-info h3 {
+.dispatch-info h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.2rem;
   font-weight: 600;
 }
 
-.lot-date {
+.dispatch-date {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   color: #666;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
   font-size: 0.9rem;
 }
 
@@ -99,64 +105,193 @@
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
-  margin-top: 0.5rem;
 }
 
-.status.pending {
+.status-pending {
   background-color: #fff8e1;
   color: #ffa000;
 }
 
-.status.completed {
+.status-accepted {
+  background-color: #e1f5fe;
+  color: #0288d1;
+}
+
+.status-rejected {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.status-completed {
   background-color: #e8f5e9;
   color: #2e7d32;
 }
 
-.accept-button {
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-button, .accept-button, .complete-button, .close-modal-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #1a73e8;
-  color: white;
   border: none;
   border-radius: 4px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+}
+
+.view-button {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.view-button:hover {
+  background-color: #e0e0e0;
+}
+
+.accept-button {
+  background-color: #1a73e8;
+  color: white;
 }
 
 .accept-button:hover {
   background-color: #1557b1;
 }
 
-.lot-items {
-  margin-top: 1rem;
+.complete-button {
+  background-color: #4caf50;
+  color: white;
 }
 
-.lot-items h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1rem;
-  color: #555;
+.complete-button:hover {
+  background-color: #3b8a3e;
 }
 
-table {
+.close-modal-button {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.dispatch-summary {
+  margin-top: 0.5rem;
+  color: #666;
+}
+
+.dispatch-summary p {
+  margin: 0;
+}
+
+.dispatch-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #777;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.detail-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-id, .detail-date, .detail-status {
+  margin-bottom: 0.5rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+}
+
+.dispatch-items {
+  margin-bottom: 2rem;
+}
+
+.dispatch-items h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.items-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-table th {
-  text-align: left;
+.items-table th, .items-table td {
   padding: 0.75rem;
-  background-color: #f9f9f9;
-  font-weight: 500;
-  color: #555;
+  text-align: left;
   border-bottom: 1px solid #eee;
 }
 
-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #f5f5f5;
+.items-table th {
+  background-color: #f9f9f9;
+  font-weight: 500;
+  color: #555;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
 }
 
 .empty-state {
