@@ -11,13 +11,10 @@ import java.util.stream.Collectors;
 
 @Service
 public interface DispatchService {
-
-    // Buyer-specific methods
     List<DispatchHistoryResponse> getBuyerDispatches(String buyerId);
 
     DispatchDetailResponse getDispatchDetails(String dispatchId, String buyerId);
     
-    // Admin-specific methods for export management
     List<DispatchHistoryResponse> getPendingDispatches();
     
     List<DispatchHistoryResponse> getCompletedDispatches();

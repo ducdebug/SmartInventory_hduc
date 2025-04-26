@@ -4,6 +4,8 @@ import com.ims.smartinventory.dto.Response.DispatchHistoryResponse;
 import com.ims.smartinventory.dto.Response.DispatchDetailResponse;
 import com.ims.smartinventory.entity.UserEntity;
 import com.ims.smartinventory.service.DispatchService;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,23 +22,18 @@ public class DispatchController {
         this.dispatchService = dispatchService;
     }
 
-    // Buyer-specific endpoints
     @GetMapping("/buyer")
     public ResponseEntity<List<DispatchHistoryResponse>> getBuyerDispatches(
             @AuthenticationPrincipal UserEntity currentUser
     ) {
-        // Debug log to check authentication details
-        System.out.println("DispatchController - currentUser: " + (currentUser != null ? currentUser.getUsername() : "null"));
-        System.out.println("DispatchController - user role: " + (currentUser != null ? currentUser.getRole() : "null"));
-        
         if (currentUser == null) {
             System.out.println("DispatchController - No authenticated user found");
-            return ResponseEntity.status(401).build(); // Unauthorized
+            return ResponseEntity.status(401).build();
         }
         
         if (!"BUYER".equals(currentUser.getRole().name())) {
             System.out.println("DispatchController - User does not have BUYER role: " + currentUser.getRole().name());
-            return ResponseEntity.status(403).build(); // Forbidden
+            return ResponseEntity.status(403).build();
         }
         
         List<DispatchHistoryResponse> dispatches = dispatchService.getBuyerDispatches(currentUser.getId());
@@ -61,7 +58,6 @@ public class DispatchController {
         return ResponseEntity.ok(dispatch);
     }
 
-    // Admin-specific endpoints for export management
     @GetMapping("/admin/pending")
     public ResponseEntity<List<DispatchHistoryResponse>> getPendingDispatches(
             @AuthenticationPrincipal UserEntity currentUser
@@ -78,7 +74,7 @@ public class DispatchController {
         return ResponseEntity.ok(dispatches);
     }
 
-    @GetMapping("/admin/completed")
+    @GetMapping("/admin/accepted-rejected")
     public ResponseEntity<List<DispatchHistoryResponse>> getCompletedDispatches(
             @AuthenticationPrincipal UserEntity currentUser
     ) {
@@ -116,28 +112,6 @@ public class DispatchController {
         return ResponseEntity.ok(updatedDispatch);
     }
 
-    @PostMapping("/{dispatchId}/complete")
-    public ResponseEntity<DispatchDetailResponse> completeDispatch(
-            @PathVariable String dispatchId,
-            @AuthenticationPrincipal UserEntity currentUser
-    ) {
-        if (currentUser == null) {
-            return ResponseEntity.status(401).build();
-        }
-        
-        if (!"ADMIN".equals(currentUser.getRole().name())) {
-            return ResponseEntity.status(403).build();
-        }
-        
-        DispatchDetailResponse updatedDispatch = dispatchService.completeDispatch(dispatchId);
-        
-        if (updatedDispatch == null) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        return ResponseEntity.ok(updatedDispatch);
-    }
-
     @PostMapping("/{dispatchId}/reject")
     public ResponseEntity<DispatchDetailResponse> rejectDispatch(
             @PathVariable String dispatchId,
@@ -161,16 +135,10 @@ public class DispatchController {
         return ResponseEntity.ok(updatedDispatch);
     }
     
-    // Helper class for reject request
+    @Setter
+    @Getter
     static class RejectRequest {
         private String reason;
-        
-        public String getReason() {
-            return reason;
-        }
-        
-        public void setReason(String reason) {
-            this.reason = reason;
-        }
+
     }
 }

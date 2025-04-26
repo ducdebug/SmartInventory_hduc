@@ -3,7 +3,7 @@ package com.ims.smartinventory.service.impl;
 import com.ims.smartinventory.dto.Response.DispatchDetailResponse;
 import com.ims.smartinventory.dto.Response.DispatchHistoryResponse;
 import com.ims.smartinventory.entity.management.DispatchEntity;
-import com.ims.smartinventory.entity.management.DispatchStatus;
+import com.ims.smartinventory.config.DispatchStatus;
 import com.ims.smartinventory.repository.DispatchRepository;
 import com.ims.smartinventory.service.DispatchService;
 import com.ims.smartinventory.service.NotificationProducerService;
@@ -47,7 +47,7 @@ public class DispatchServiceImpl implements DispatchService {
     @Override
     public List<DispatchHistoryResponse> getPendingDispatches() {
         List<DispatchEntity> dispatches = dispatchRepository.findByStatusInOrderByCreatedAtDesc(
-                List.of(DispatchStatus.PENDING, DispatchStatus.ACCEPTED)
+                List.of(DispatchStatus.PENDING)
         );
         return dispatches.stream()
                 .map(DispatchHistoryResponse::fromEntity)
@@ -57,7 +57,7 @@ public class DispatchServiceImpl implements DispatchService {
     @Override
     public List<DispatchHistoryResponse> getCompletedDispatches() {
         List<DispatchEntity> dispatches = dispatchRepository.findByStatusInOrderByCreatedAtDesc(
-                List.of(DispatchStatus.COMPLETED, DispatchStatus.REJECTED)
+                List.of(DispatchStatus.ACCEPTED, DispatchStatus.REJECTED)
         );
         return dispatches.stream()
                 .map(DispatchHistoryResponse::fromEntity)
@@ -77,10 +77,10 @@ public class DispatchServiceImpl implements DispatchService {
         dispatch = dispatchRepository.save(dispatch);
         
         // Send notification to the buyer
-        notificationProducerService.sendNotification(
-                dispatch.getBuyerId(), 
-                "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
-        );
+//        notificationProducerService.sendNotification(
+//                dispatch.getBuyerId(),
+//                "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
+//        );
         
         return DispatchDetailResponse.fromEntity(dispatch);
     }
@@ -90,17 +90,17 @@ public class DispatchServiceImpl implements DispatchService {
     public DispatchDetailResponse completeDispatch(String dispatchId) {
         DispatchEntity dispatch = dispatchRepository.findById(dispatchId).orElse(null);
         
-        if (dispatch == null || dispatch.getStatus() != DispatchStatus.ACCEPTED) {
+        if (dispatch == null || dispatch.getStatus() != DispatchStatus.PENDING) {
             return null;
         }
         
-        dispatch.setStatus(DispatchStatus.COMPLETED);
+        dispatch.setStatus(DispatchStatus.ACCEPTED);
         dispatch = dispatchRepository.save(dispatch);
         
         // Send notification to the buyer
         notificationProducerService.sendNotification(
-                dispatch.getBuyerId(), 
-                "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been completed."
+                dispatch.getBuyerId(),
+                "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
         );
         
         return DispatchDetailResponse.fromEntity(dispatch);

@@ -28,8 +28,15 @@ const History: React.FC = () => {
     }
   };
 
-  const handleDispatchSelect = (dispatch: Dispatch) => {
-    setSelectedDispatch(dispatch);
+  const handleDispatchSelect = async (dispatch: Dispatch) => {
+    try {
+      // Fetch the full details to ensure we have all data
+      const detailedDispatch = await dispatchService.getDispatchDetails(dispatch.id);
+      setSelectedDispatch(detailedDispatch);
+    } catch (err) {
+      console.error("Error fetching dispatch details:", err);
+      setError("Failed to fetch dispatch details. Please try again.");
+    }
   };
 
   const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -49,7 +56,6 @@ const History: React.FC = () => {
       case 'PENDING': return 'status-pending';
       case 'ACCEPTED': return 'status-accepted';
       case 'REJECTED': return 'status-rejected';
-      case 'COMPLETED': return 'status-completed';
       default: return '';
     }
   };
@@ -78,7 +84,6 @@ const History: React.FC = () => {
             <option value="PENDING">Pending</option>
             <option value="ACCEPTED">Accepted</option>
             <option value="REJECTED">Rejected</option>
-            <option value="COMPLETED">Completed</option>
           </select>
         </div>
       </div>
@@ -148,18 +153,24 @@ const History: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedDispatch.items.map(item => (
-                      <tr key={item.id}>
-                        <td>{item.product.name}</td>
-                        <td>{item.quantity}</td>
-                        <td>{item.product.lotCode}</td>
-                        <td>
-                          {item.product.expirationDate 
-                            ? formatDate(item.product.expirationDate)
-                            : 'N/A'}
-                        </td>
+                    {!selectedDispatch.items || selectedDispatch.items.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} style={{ textAlign: 'center' }}>No items found in this dispatch</td>
                       </tr>
-                    ))}
+                    ) : (
+                      selectedDispatch.items.map(item => (
+                        <tr key={item.id}>
+                          <td>{item.product?.name || 'N/A'}</td>
+                          <td>{item.quantity}</td>
+                          <td>{item.product?.lotCode || 'N/A'}</td>
+                          <td>
+                            {item.product?.expirationDate 
+                              ? formatDate(item.product.expirationDate)
+                              : 'N/A'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

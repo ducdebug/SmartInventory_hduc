@@ -68,7 +68,6 @@ public class LotServiceImpl implements LotService {
             List<LotDto> dtos = convertLotEntitiesToDtos(singleLot);
             return dtos.isEmpty() ? null : dtos.get(0);
         }
-        
         return null;
     }
 
@@ -81,7 +80,6 @@ public class LotServiceImpl implements LotService {
             dto.setUsername(lot.getUser().getUsername());
             dto.setAccepted(lot.isAccepted()); // Add this field to LotDto
 
-            // Danh sách item đã gộp
             List<LotItemDto> groupedItems = new ArrayList<>();
             List<Map<String, Object>> groupedDetails = new ArrayList<>();
 
@@ -119,7 +117,7 @@ public class LotServiceImpl implements LotService {
                     }
 
                     groupedItems.add(itemDto);
-                    groupedDetails.add(currentDetail); // lưu riêng để so sánh
+                    groupedDetails.add(currentDetail);
                 }
             }
 

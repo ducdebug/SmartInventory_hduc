@@ -1,5 +1,6 @@
 package com.ims.smartinventory.entity.management;
 
+import com.ims.smartinventory.config.DispatchStatus;
 import com.ims.smartinventory.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -51,8 +52,7 @@ public class DispatchEntity {
     public void setStatus(DispatchStatus newStatus) {
         this.status = newStatus;
         
-        // Update timestamps based on status changes
-        if (newStatus == DispatchStatus.COMPLETED) {
+        if (newStatus == DispatchStatus.ACCEPTED) {
             this.completedAt = new Date();
         }
     }

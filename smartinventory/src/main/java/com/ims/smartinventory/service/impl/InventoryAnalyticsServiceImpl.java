@@ -132,7 +132,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
     public InventoryAnalyticsResponse.ProductMovementData[] getProductMovementAnalysis() {
         Map<String, InventoryAnalyticsResponse.ProductMovementData> movementMap = new HashMap<>();
         
-        // Initialize for each product type
         for (ProductType type : ProductType.values()) {
             InventoryAnalyticsResponse.ProductMovementData data = new InventoryAnalyticsResponse.ProductMovementData();
             data.setCategory(type.name());
@@ -142,7 +141,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
             movementMap.put(type.name(), data);
         }
         
-        // Get import data from lot items
         List<LotItemEntity> allLotItems = new ArrayList<>();
         lotRepository.findAll().forEach(lot -> allLotItems.addAll(lot.getItems()));
         
@@ -156,7 +154,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
             }
         }
         
-        // Get export data from dispatch items
         List<DispatchItemEntity> allDispatchItems = new ArrayList<>();
         dispatchRepository.findAll().forEach(dispatch -> allDispatchItems.addAll(dispatch.getItems()));
         
@@ -169,8 +166,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
                 }
             }
         }
-        
-        // Calculate ratios
         for (InventoryAnalyticsResponse.ProductMovementData data : movementMap.values()) {
             if (data.getImports() > 0) {
                 data.setRatio((double) data.getExports() / data.getImports());
@@ -185,21 +180,17 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
         List<InventoryAnalyticsResponse.StorageAllocationData> result = new ArrayList<>();
         Map<String, Integer> productTypeCounts = new HashMap<>();
         
-        // Count current products by type
         List<BaseProductEntity> activeProducts = productRepository.findAll().stream()
                 .filter(p -> p.getDispatch() == null) // Not exported
-                .collect(Collectors.toList());
+                .toList();
         
-        // Count by product type
         for (BaseProductEntity product : activeProducts) {
             String productType = getProductTypeName(product);
             productTypeCounts.put(productType, productTypeCounts.getOrDefault(productType, 0) + 1);
         }
         
-        // Calculate total
         int totalProducts = activeProducts.size();
         
-        // Create response objects
         for (Map.Entry<String, Integer> entry : productTypeCounts.entrySet()) {
             InventoryAnalyticsResponse.StorageAllocationData data = new InventoryAnalyticsResponse.StorageAllocationData();
             data.setProductType(entry.getKey());
@@ -215,28 +206,23 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
     public InventoryAnalyticsResponse.SectionUtilizationData[] getSectionUtilization() {
         List<InventoryAnalyticsResponse.SectionUtilizationData> result = new ArrayList<>();
         
-        // Get all sections
         List<SectionEntity> sections = sectionRepository.findAllWithStorageConditions();
         
         for (SectionEntity section : sections) {
             InventoryAnalyticsResponse.SectionUtilizationData data = new InventoryAnalyticsResponse.SectionUtilizationData();
             data.setSectionName(section.getName());
             
-            // Get condition string (simplifying for display)
-            String conditionStr = section.getStorageConditions().isEmpty() ? 
+            String conditionStr = section.getStorageConditions().isEmpty() ?
                     "Regular" : 
                     section.getStorageConditions().get(0).getConditionType().name();
             data.setSectionCondition(conditionStr);
             
-            // Calculate utilization
             int totalSlots = section.getTotalSlots();
             int usedSlots;
             
             if (section.getNumShelves() > 0) {
-                // Section with shelves
                 usedSlots = slotShelfRepository.countUsedBySectionId(section.getId());
             } else {
-                // Section without shelves
                 usedSlots = slotSectionRepository.countUsedBySectionId(section.getId());
             }
             
@@ -253,14 +239,11 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
     @Override
     public InventoryAnalyticsResponse.SummaryStatistics getSummaryStatistics() {
         InventoryAnalyticsResponse.SummaryStatistics stats = new InventoryAnalyticsResponse.SummaryStatistics();
-        
-        // Count total active products
         List<BaseProductEntity> activeProducts = productRepository.findAll().stream()
-                .filter(p -> p.getDispatch() == null) // Not exported
-                .collect(Collectors.toList());
+                .filter(p -> p.getDispatch() == null)
+                .toList();
         stats.setTotalProducts(activeProducts.size());
         
-        // Calculate overall utilization
         int totalSlots = 0;
         int usedSlots = 0;
         
@@ -277,7 +260,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
         
         stats.setOverallUtilization(totalSlots > 0 ? (double) usedSlots / totalSlots : 0);
         
-        // Calculate overall turnover rate
         int totalImports = 0;
         List<LotEntity> lots = lotRepository.findAll();
         for (LotEntity lot : lots) {
@@ -292,7 +274,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
         
         stats.setOverallTurnoverRate(totalImports > 0 ? (double) totalExports / totalImports : 0);
         
-        // Count expiring products (within 30 days)
         LocalDate thirtyDaysLater = LocalDate.now().plusDays(30);
         Date thirtyDaysLaterDate = Date.from(thirtyDaysLater.atStartOfDay(ZoneId.systemDefault()).toInstant());
         
@@ -304,8 +285,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
             }
         }
         stats.setExpiringProductsCount(expiringCount);
-        
-        // Calculate monthly growth rate (comparing current month to previous month)
         LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
         LocalDate prevMonth = currentMonth.minusMonths(1);
         
@@ -313,19 +292,16 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
         Date prevMonthDate = Date.from(prevMonth.atStartOfDay(ZoneId.systemDefault()).toInstant());
         Date nextMonthDate = Date.from(currentMonth.plusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
         
-        // Count imports in current month
         int currentMonthImports = (int) lots.stream()
                 .filter(lot -> lot.getImportDate().after(currentMonthDate) && lot.getImportDate().before(nextMonthDate))
-                .flatMap(lot -> lot.getItems().stream())
-                .count();
+                .mapToLong(lot -> lot.getItems().size())
+                .sum();
         
-        // Count imports in previous month
         int prevMonthImports = (int) lots.stream()
                 .filter(lot -> lot.getImportDate().after(prevMonthDate) && lot.getImportDate().before(currentMonthDate))
-                .flatMap(lot -> lot.getItems().stream())
-                .count();
+                .mapToLong(lot -> lot.getItems().size())
+                .sum();
         
-        // Calculate growth rate
         if (prevMonthImports > 0) {
             stats.setMonthlyGrowthRate((double) (currentMonthImports - prevMonthImports) / prevMonthImports);
         } else {

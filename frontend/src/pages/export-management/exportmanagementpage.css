@@ -122,17 +122,14 @@
   color: #d32f2f;
 }
 
-.status-completed {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
+/* Status completed has been removed */
 
 .action-buttons {
   display: flex;
   gap: 0.5rem;
 }
 
-.view-button, .accept-button, .complete-button, .close-modal-button {
+.view-button, .accept-button, .reject-button, .close-modal-button, .cancel-button, .reject-confirm-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -162,18 +159,34 @@
   background-color: #1557b1;
 }
 
-.complete-button {
-  background-color: #4caf50;
+.reject-button {
+  background-color: #f44336;
   color: white;
 }
 
-.complete-button:hover {
-  background-color: #3b8a3e;
+.reject-button:hover {
+  background-color: #d32f2f;
 }
 
-.close-modal-button {
+/* Complete button styles have been removed */
+
+.close-modal-button, .cancel-button {
   background-color: #f5f5f5;
   color: #333;
+}
+
+.reject-confirm-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.reject-confirm-button:hover {
+  background-color: #d32f2f;
+}
+
+.reject-confirm-button:disabled {
+  background-color: #ffccbc;
+  cursor: not-allowed;
 }
 
 .dispatch-summary {
@@ -185,7 +198,7 @@
   margin: 0;
 }
 
-.dispatch-detail-modal {
+.dispatch-detail-modal, .rejection-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -206,6 +219,10 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.rejection-modal .modal-content {
+  max-width: 600px;
 }
 
 .modal-header {
@@ -292,6 +309,24 @@
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid #eee;
+}
+
+.rejection-reason {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  resize: vertical;
+}
+
+.rejection-reason:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
 }
 
 .empty-state {

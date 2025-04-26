@@ -1,5 +1,6 @@
 package com.ims.smartinventory.controller;
 
+import com.ims.smartinventory.config.UserRole;
 import com.ims.smartinventory.dto.Request.ProductBatchRequestDto;
 import com.ims.smartinventory.dto.Request.ProductExportRequestDto;
 import com.ims.smartinventory.dto.Request.ProductGroupResponseDto;
@@ -70,10 +71,10 @@ public class InventoryController {
     public ResponseEntity<?> createRetrieveRequest(
             @RequestBody ProductExportRequestDto request,
             @AuthenticationPrincipal UserEntity currentUser) {
-        if (currentUser == null || !"BUYER".equals(currentUser.getRole().name())) {
+        if (currentUser == null || !UserRole.BUYER.equals(currentUser.getRole())) {
             return ResponseEntity.status(403).body("Only buyers can create retrieval requests");
         }
-        
+
         String requestId = productService.createRetrieveRequest(request, currentUser);
         return ResponseEntity.ok(requestId);
     }

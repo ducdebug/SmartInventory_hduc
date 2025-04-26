@@ -1,9 +1,6 @@
 package com.ims.smartinventory.service.impl;
 
-import com.ims.smartinventory.config.ClothingSize;
-import com.ims.smartinventory.config.ProductType;
-import com.ims.smartinventory.config.StorageStrategy;
-import com.ims.smartinventory.config.TransactionType;
+import com.ims.smartinventory.config.*;
 import com.ims.smartinventory.dto.Request.ProductBatchRequestDto;
 import com.ims.smartinventory.dto.Request.ProductExportRequestDto;
 import com.ims.smartinventory.dto.Request.ProductGroupResponseDto;
@@ -57,6 +54,12 @@ public class ProductServiceImpl implements ProductService {
         this.inventoryTransactionRepository = inventoryTransactionRepository;
         this.notificationProducerService = notificationProducerService;
     }
+//
+//    @Transactional
+//    @Override
+//    public void newBatch(ProductBatchRequestDto batchRequest, UserEntity currentUser){
+//
+//    }
 
     @Transactional
     @Override
@@ -520,59 +523,58 @@ public class ProductServiceImpl implements ProductService {
         }
         return true;
     }
-    
+
     @Transactional
     @Override
     public String createRetrieveRequest(ProductExportRequestDto request, UserEntity currentUser) {
-        // Create a pending lot for the retrieve request
-        LotEntity lot = new LotEntity();
-        lot.setImportDate(new Date());
-        lot.setUser(currentUser);
-        lot.setStorageStrategy(StorageStrategy.FIFO); // Default strategy for retrieval
-        lot.setAccepted(false); // Set to pending by default
-        lot = lotRepository.save(lot);
-        
-        // Create lot items for each product in the request
+        // Create a new dispatch entity for the retrieval request
+        DispatchEntity dispatch = new DispatchEntity();
+        dispatch.setCreatedAt(new Date());
+        dispatch.setUser(currentUser);
+        dispatch.setBuyerId(currentUser.getId());
+        dispatch.setStatus(DispatchStatus.PENDING);
+        dispatch = dispatchRepository.save(dispatch);
+
+        // Process each product in the retrieval request
         for (ProductExportRequestDto.ProductExportItem item : request.getProducts()) {
             int quantity = item.getQuantity();
-            
-            // Find a reference product to get details
+
             BaseProductEntity reference = null;
-            
             if (item.getProductId() != null) {
                 reference = productRepository.findById(item.getProductId()).orElse(null);
             }
-            
-            // If we don't have a reference product, use the name and details from the request
+
             String productName = reference != null ? reference.getName() : item.getName();
-            
-            // Create a lot item for this product
-            LotItemEntity lotItem = new LotItemEntity();
-            lotItem.setLot(lot);
-            lotItem.setProduct(null); // Not associated with a specific product yet
-            lotItem.setProductName(productName);
-            lotItem.setQuantity(quantity);
-            lotItem.setImportDate(new Date());
-            
-            // Create a price entity if we have price info
-            if (reference != null && reference.getPrice() != null) {
-                PriceEntity price = new PriceEntity();
-                price.setTransactionType(TransactionType.EXPORT);
-                price.setValue(reference.getPrice().getValue());
-                price.setCurrency(reference.getPrice().getCurrency());
-                price = priceRepository.save(price);
-                lotItem.setPrice(price);
+
+            // Create a dispatch item
+            DispatchItemEntity dispatchItem = new DispatchItemEntity();
+            dispatchItem.setDispatch(dispatch);
+            dispatchItem.setProductName(productName);
+            dispatchItem.setQuantity(quantity);
+            dispatchItem.setExportDate(new Date());
+
+            if (reference != null) {
+                dispatchItem.setProductId(reference.getId());
             }
-            
-            lotItemRepository.save(lotItem);
+
+            if (reference != null && reference.getPrice() != null) {
+                PriceEntity exportPrice = new PriceEntity();
+                exportPrice.setTransactionType(TransactionType.EXPORT);
+                exportPrice.setValue(reference.getPrice().getValue());
+                exportPrice.setCurrency(reference.getPrice().getCurrency());
+                exportPrice = priceRepository.save(exportPrice);
+                dispatchItem.setPrice(exportPrice);
+            }
+
+            dispatchItemRepository.save(dispatchItem);
         }
-        
-        // Send notification to admin about the new retrieve request
-        notificationProducerService.sendNotification("admin", 
-            "New retrieval request created by " + currentUser.getUsername() + 
-            ". Request ID: " + lot.getId());
-        
-        return lot.getId();
+
+        // Send notification to admin
+//        notificationProducerService.sendNotification("admin",
+//                "New retrieval request created by " + currentUser.getUsername() +
+//                        ". Request ID: " + dispatch.getId());
+
+        return dispatch.getId();
     }
     
     @Override

@@ -10,6 +10,8 @@ const ExportManagementPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDispatch, setSelectedDispatch] = useState<Dispatch | null>(null);
+  const [rejectDispatchId, setRejectDispatchId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -51,20 +53,34 @@ const ExportManagementPage: React.FC = () => {
     }
   };
 
-  const handleCompleteDispatch = async (dispatchId: string) => {
+  // Complete functionality has been removed
+
+  const handleRejectDispatch = async () => {
+    if (!rejectDispatchId) return;
+    
     try {
-      await dispatchService.completeDispatch(dispatchId);
+      await dispatchService.rejectDispatch(rejectDispatchId, rejectionReason);
+      // Close the rejection modal
+      setRejectDispatchId(null);
+      setRejectionReason('');
       // Refresh the data
       fetchDispatchData();
-      alert('Dispatch completed successfully!');
+      alert('Dispatch rejected successfully!');
     } catch (err) {
       console.error(err);
-      alert('Failed to complete dispatch');
+      alert('Failed to reject dispatch');
     }
   };
 
-  const handleViewDetails = (dispatch: Dispatch) => {
-    setSelectedDispatch(dispatch);
+  const handleViewDetails = async (dispatch: Dispatch) => {
+    try {
+      // Fetch the full details to ensure we have all data
+      const detailedDispatch = await dispatchService.getDispatchDetails(dispatch.id);
+      setSelectedDispatch(detailedDispatch);
+    } catch (err) {
+      console.error("Error fetching dispatch details:", err);
+      alert("Failed to fetch dispatch details. Please try again.");
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -76,7 +92,6 @@ const ExportManagementPage: React.FC = () => {
       case 'PENDING': return 'status-pending';
       case 'ACCEPTED': return 'status-accepted';
       case 'REJECTED': return 'status-rejected';
-      case 'COMPLETED': return 'status-completed';
       default: return '';
     }
   };
@@ -105,7 +120,7 @@ const ExportManagementPage: React.FC = () => {
           className={`tab ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
-          Export History
+          Accepted/Rejected
         </button>
       </div>
       
@@ -146,27 +161,28 @@ const ExportManagementPage: React.FC = () => {
                         View Details
                       </button>
                       {dispatch.status === 'PENDING' && (
-                        <button 
-                          className="accept-button"
-                          onClick={() => handleAcceptDispatch(dispatch.id)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M5 13L9 17L19 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          Accept
-                        </button>
+                        <>
+                          <button 
+                            className="accept-button"
+                            onClick={() => handleAcceptDispatch(dispatch.id)}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M5 13L9 17L19 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            Accept
+                          </button>
+                          <button 
+                            className="reject-button"
+                            onClick={() => setRejectDispatchId(dispatch.id)}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M18 6L6 18M6 6L18 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            Reject
+                          </button>
+                        </>
                       )}
-                      {dispatch.status === 'ACCEPTED' && (
-                        <button 
-                          className="complete-button"
-                          onClick={() => handleCompleteDispatch(dispatch.id)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M5 13L9 17L19 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          Complete
-                        </button>
-                      )}
+                      {/* Complete button has been removed */}
                     </div>
                   </div>
                   
@@ -258,18 +274,24 @@ const ExportManagementPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedDispatch.items.map(item => (
-                      <tr key={item.id}>
-                        <td>{item.product.name}</td>
-                        <td>{item.quantity}</td>
-                        <td>{item.product.lotCode || 'N/A'}</td>
-                        <td>
-                          {item.product.expirationDate 
-                            ? formatDate(item.product.expirationDate)
-                            : 'N/A'}
-                        </td>
+                    {!selectedDispatch.items || selectedDispatch.items.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} style={{ textAlign: 'center' }}>No items found in this dispatch</td>
                       </tr>
-                    ))}
+                    ) : (
+                      selectedDispatch.items.map(item => (
+                        <tr key={item.id}>
+                          <td>{item.product?.name || 'N/A'}</td>
+                          <td>{item.quantity}</td>
+                          <td>{item.product?.lotCode || 'N/A'}</td>
+                          <td>
+                            {item.product?.expirationDate 
+                              ? formatDate(item.product.expirationDate)
+                              : 'N/A'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -277,27 +299,60 @@ const ExportManagementPage: React.FC = () => {
               <div className="modal-actions">
                 <button className="close-modal-button" onClick={() => setSelectedDispatch(null)}>Close</button>
                 {selectedDispatch.status === 'PENDING' && (
-                  <button 
-                    className="accept-button"
-                    onClick={() => {
-                      handleAcceptDispatch(selectedDispatch.id);
-                      setSelectedDispatch(null);
-                    }}
-                  >
-                    Accept Dispatch
-                  </button>
+                  <>
+                    <button 
+                      className="accept-button"
+                      onClick={() => {
+                        handleAcceptDispatch(selectedDispatch.id);
+                        setSelectedDispatch(null);
+                      }}
+                    >
+                      Accept Dispatch
+                    </button>
+                    <button 
+                      className="reject-button"
+                      onClick={() => {
+                        setRejectDispatchId(selectedDispatch.id);
+                        setSelectedDispatch(null);
+                      }}
+                    >
+                      Reject Dispatch
+                    </button>
+                  </>
                 )}
-                {selectedDispatch.status === 'ACCEPTED' && (
-                  <button 
-                    className="complete-button"
-                    onClick={() => {
-                      handleCompleteDispatch(selectedDispatch.id);
-                      setSelectedDispatch(null);
-                    }}
-                  >
-                    Mark as Completed
-                  </button>
-                )}
+                {/* Complete button has been removed */}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Rejection Modal */}
+      {rejectDispatchId && (
+        <div className="rejection-modal">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Reject Dispatch</h2>
+              <button className="close-button" onClick={() => setRejectDispatchId(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p>Please provide a reason for rejecting this dispatch request:</p>
+              <textarea
+                className="rejection-reason"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Enter rejection reason..."
+                rows={4}
+              />
+              <div className="modal-actions">
+                <button className="cancel-button" onClick={() => setRejectDispatchId(null)}>Cancel</button>
+                <button 
+                  className="reject-confirm-button"
+                  onClick={handleRejectDispatch}
+                  disabled={!rejectionReason.trim()}
+                >
+                  Confirm Rejection
+                </button>
               </div>
             </div>
           </div>

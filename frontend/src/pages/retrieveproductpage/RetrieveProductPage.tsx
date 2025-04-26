@@ -69,10 +69,8 @@ const RetrieveProductPage: React.FC = () => {
       setIsSubmitting(true);
       setError(null);
       
-      // Make the request
       const result = await inventoryService.createRetrieveRequest({ products: productsToRetrieve });
       
-      // Set success state
       setSubmitSuccess(true);
       if (result && typeof result === 'string') {
         setRequestId(result);

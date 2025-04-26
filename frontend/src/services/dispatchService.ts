@@ -2,10 +2,10 @@ import apiClient from '../utils/apiClient';
 import { handleAxiosError } from '../utils/errorHandler';
 
 export interface DispatchProduct {
-  id: string;
-  name: string;
-  quantity: number;
-  lotCode: string;
+  id?: string;
+  name?: string;
+  quantity?: number;
+  lotCode?: string;
   expirationDate?: string;
 }
 
@@ -13,15 +13,15 @@ export interface DispatchItem {
   id: string;
   productId: string;
   quantity: number;
-  product: DispatchProduct;
+  product?: DispatchProduct;
 }
 
 export interface Dispatch {
   id: string;
   createdAt: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED';
-  items: DispatchItem[];
-  totalItems: number;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  items?: DispatchItem[];
+  totalItems?: number;
 }
 
 const dispatchService = {
@@ -35,7 +35,7 @@ const dispatchService = {
       // Transform API response to match our frontend model
       return response.data.map((item: any) => ({
         ...item,
-        status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED'
+        status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
       }));
     } catch (error) {
       console.error('Error in getBuyerDispatches:', error);
@@ -47,10 +47,9 @@ const dispatchService = {
     try {
       const response = await apiClient.get(`/api/dispatches/${dispatchId}`);
       
-      // Transform API response to match our frontend model
       return {
         ...response.data,
-        status: response.data.status as 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED'
+        status: response.data.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
       };
     } catch (error) {
       throw handleAxiosError(error, 'Failed to fetch dispatch details');
@@ -66,7 +65,7 @@ const dispatchService = {
       // Transform API response to match our frontend model
       return response.data.map((item: any) => ({
         ...item,
-        status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED'
+        status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
       }));
     } catch (error) {
       console.error('Error in getPendingDispatches:', error);
@@ -76,13 +75,13 @@ const dispatchService = {
 
   getCompletedDispatches: async (): Promise<Dispatch[]> => {
     try {
-      const response = await apiClient.get('/api/dispatches/admin/completed');
-      console.log('Completed dispatches:', response.data);
-      
+      const response = await apiClient.get('/api/dispatches/admin/accepted-rejected');
+      console.log('Accepted/Rejected dispatches:', response.data);
+
       // Transform API response to match our frontend model
       return response.data.map((item: any) => ({
         ...item,
-        status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED'
+        status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
       }));
     } catch (error) {
       console.error('Error in getCompletedDispatches:', error);
@@ -97,7 +96,7 @@ const dispatchService = {
       
       return {
         ...response.data,
-        status: response.data.status as 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED'
+        status: response.data.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
       };
     } catch (error) {
       console.error('Error in acceptDispatch:', error);
@@ -112,7 +111,7 @@ const dispatchService = {
       
       return {
         ...response.data,
-        status: response.data.status as 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED'
+        status: response.data.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
       };
     } catch (error) {
       console.error('Error in rejectDispatch:', error);
@@ -123,11 +122,11 @@ const dispatchService = {
   completeDispatch: async (dispatchId: string): Promise<Dispatch> => {
     try {
       const response = await apiClient.post(`/api/dispatches/${dispatchId}/complete`);
-      console.log('Dispatch completed:', response.data);
+      console.log('Dispatch accepted:', response.data);
       
       return {
         ...response.data,
-        status: response.data.status as 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED'
+        status: response.data.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
       };
     } catch (error) {
       console.error('Error in completeDispatch:', error);
