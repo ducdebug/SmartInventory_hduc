@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import BatchCreateModal from '../../batchcreatemodal/batchcreatemodal';
+import NotificationDropdown from '../../notification/NotificationDropdown';
 import './navbar.css';
 
 const Navbar: React.FC = () => {
@@ -165,13 +166,7 @@ const Navbar: React.FC = () => {
           {isAuthenticated ? (
             <>
               <div className="notifications">
-                <button className="icon-button" aria-label="Notifications">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 5C10 3.89543 10.8954 3 12 3C13.1046 3 14 3.89543 14 5C16.3402 5.8193 18 8.13232 18 10.8889V15.5556L20 17.5556V18.5556H4V17.5556L6 15.5556V10.8889C6 8.13232 7.65979 5.8193 10 5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M9 18.5C9 20.433 10.343 22 12 22C13.657 22 15 20.433 15 18.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span className="notification-badge">3</span>
-                </button>
+                <NotificationDropdown />
               </div>
               
               <div className="user-profile" ref={userMenuRef}>

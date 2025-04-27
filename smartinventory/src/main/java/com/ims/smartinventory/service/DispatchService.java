@@ -15,6 +15,8 @@ public interface DispatchService {
 
     DispatchDetailResponse getDispatchDetails(String dispatchId, String buyerId);
     
+    DispatchDetailResponse getDispatchDetailsAdmin(String dispatchId);
+    
     List<DispatchHistoryResponse> getPendingDispatches();
     
     List<DispatchHistoryResponse> getCompletedDispatches();

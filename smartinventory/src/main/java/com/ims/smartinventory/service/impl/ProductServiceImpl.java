@@ -437,7 +437,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void exportGroupedProducts(ProductExportRequestDto request, UserEntity currentUser) {
         DispatchEntity dispatch = new DispatchEntity();
-        dispatch.setExportDate(new Date());
+        dispatch.setStatus(DispatchStatus.ACCEPTED);
+        dispatch.setCompletedAt(new Date()); // Using completedAt for export date
         dispatch.setUser(currentUser);
         dispatch = dispatchRepository.save(dispatch);
         
@@ -527,11 +528,9 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     @Override
     public String createRetrieveRequest(ProductExportRequestDto request, UserEntity currentUser) {
-        // Create a new dispatch entity for the retrieval request
         DispatchEntity dispatch = new DispatchEntity();
         dispatch.setCreatedAt(new Date());
         dispatch.setUser(currentUser);
-        dispatch.setBuyerId(currentUser.getId());
         dispatch.setStatus(DispatchStatus.PENDING);
         dispatch = dispatchRepository.save(dispatch);
 

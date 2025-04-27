@@ -74,8 +74,16 @@ const ExportManagementPage: React.FC = () => {
 
   const handleViewDetails = async (dispatch: Dispatch) => {
     try {
+      console.log("Fetching details for dispatch:", dispatch.id);
       // Fetch the full details to ensure we have all data
       const detailedDispatch = await dispatchService.getDispatchDetails(dispatch.id);
+      console.log("Detailed dispatch data:", detailedDispatch);
+      
+      // Check if we have items in the dispatch
+      if (!detailedDispatch.items || detailedDispatch.items.length === 0) {
+        console.warn("No items found in the dispatch details!");
+      }
+      
       setSelectedDispatch(detailedDispatch);
     } catch (err) {
       console.error("Error fetching dispatch details:", err);
@@ -279,18 +287,23 @@ const ExportManagementPage: React.FC = () => {
                         <td colSpan={4} style={{ textAlign: 'center' }}>No items found in this dispatch</td>
                       </tr>
                     ) : (
-                      selectedDispatch.items.map(item => (
-                        <tr key={item.id}>
-                          <td>{item.product?.name || 'N/A'}</td>
-                          <td>{item.quantity}</td>
-                          <td>{item.product?.lotCode || 'N/A'}</td>
-                          <td>
-                            {item.product?.expirationDate 
-                              ? formatDate(item.product.expirationDate)
-                              : 'N/A'}
-                          </td>
-                        </tr>
-                      ))
+                      selectedDispatch.items.map(item => {
+                        // Log item data to debug
+                        console.log('Rendering item:', item);
+                        
+                        return (
+                          <tr key={item.id}>
+                            <td>{item.product?.name || (item.productId ? `Product #${item.productId.substring(0, 8)}` : 'N/A')}</td>
+                            <td>{item.quantity}</td>
+                            <td>{item.product?.lotCode || 'N/A'}</td>
+                            <td>
+                              {item.product?.expirationDate 
+                                ? formatDate(item.product.expirationDate)
+                                : 'N/A'}
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

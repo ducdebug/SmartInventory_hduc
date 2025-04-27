@@ -10,6 +10,7 @@ import com.ims.smartinventory.service.NotificationProducerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,18 @@ public class DispatchServiceImpl implements DispatchService {
     @Override
     public DispatchDetailResponse getDispatchDetails(String dispatchId, String buyerId) {
         DispatchEntity dispatch = dispatchRepository.findByIdAndBuyerId(dispatchId, buyerId)
+                .orElse(null);
+
+        if (dispatch == null) {
+            return null;
+        }
+
+        return DispatchDetailResponse.fromEntity(dispatch);
+    }
+    
+    @Override
+    public DispatchDetailResponse getDispatchDetailsAdmin(String dispatchId) {
+        DispatchEntity dispatch = dispatchRepository.findById(dispatchId)
                 .orElse(null);
 
         if (dispatch == null) {
@@ -72,7 +85,6 @@ public class DispatchServiceImpl implements DispatchService {
         if (dispatch == null || dispatch.getStatus() != DispatchStatus.PENDING) {
             return null;
         }
-        
         dispatch.setStatus(DispatchStatus.ACCEPTED);
         dispatch = dispatchRepository.save(dispatch);
         

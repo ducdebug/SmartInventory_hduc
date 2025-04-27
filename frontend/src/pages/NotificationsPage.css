@@ -1,0 +1,221 @@
+.notifications-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.notifications-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.notifications-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-indicator.connected {
+  background-color: #4caf50;
+}
+
+.status-indicator.disconnected {
+  background-color: #f44336;
+}
+
+.retry-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  margin-left: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+.retry-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.clear-all-btn {
+  background-color: #f5f5f5;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clear-all-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+  text-align: center;
+}
+
+.empty-icon {
+  margin-bottom: 16px;
+}
+
+.empty-state h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 500;
+  color: #333;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 16px;
+  color: #666;
+}
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.notification-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-date {
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.notification-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notification-item {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+  background-color: #f9f9f9;
+}
+
+.notification-item.unread {
+  background-color: #f0f7ff;
+  border-left: 4px solid #2196f3;
+}
+
+.notification-item.unread:hover {
+  background-color: #e5f1ff;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-message {
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.notification-time {
+  font-size: 14px;
+  color: #666;
+}
+
+.mark-read-btn {
+  background-color: transparent;
+  border: 1px solid #2196f3;
+  color: #2196f3;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.mark-read-btn:hover {
+  background-color: #2196f3;
+  color: white;
+}
+
+.mark-read-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .notifications-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .notifications-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .notification-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .mark-read-btn {
+    margin-top: 12px;
+    align-self: flex-end;
+  }
+}

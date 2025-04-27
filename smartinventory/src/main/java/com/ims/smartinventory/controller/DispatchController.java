@@ -48,8 +48,16 @@ public class DispatchController {
         if (currentUser == null) {
             return ResponseEntity.status(401).build();
         }
-
-        DispatchDetailResponse dispatch = dispatchService.getDispatchDetails(dispatchId, currentUser.getId());
+        
+        DispatchDetailResponse dispatch;
+        
+        // If the user is an admin, use the admin-specific method
+        if ("ADMIN".equals(currentUser.getRole().name())) {
+            dispatch = dispatchService.getDispatchDetailsAdmin(dispatchId);
+        } else {
+            // For buyers or other roles, use the regular method
+            dispatch = dispatchService.getDispatchDetails(dispatchId, currentUser.getId());
+        }
         
         if (dispatch == null) {
             return ResponseEntity.notFound().build();

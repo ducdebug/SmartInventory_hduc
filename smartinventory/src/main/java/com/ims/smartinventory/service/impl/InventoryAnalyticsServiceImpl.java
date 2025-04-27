@@ -96,9 +96,9 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
             
             // Find all dispatches created during this month
             List<DispatchEntity> dispatchesInMonth = dispatchRepository.findAll().stream()
-                    .filter(dispatch -> dispatch.getExportDate() != null && 
-                           dispatch.getExportDate().after(monthStart) && 
-                           dispatch.getExportDate().before(monthEnd))
+                    .filter(dispatch -> dispatch.getCompletedAt() != null && 
+                           dispatch.getCompletedAt().after(monthStart) && 
+                           dispatch.getCompletedAt().before(monthEnd))
                     .collect(Collectors.toList());
             
             // Count products per type for each lot

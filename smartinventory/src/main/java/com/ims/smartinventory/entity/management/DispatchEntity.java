@@ -19,9 +19,6 @@ public class DispatchEntity {
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
-    
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date exportDate;
 
     @Enumerated(EnumType.STRING)
     private DispatchStatus status;
@@ -35,8 +32,6 @@ public class DispatchEntity {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
-    
-    private String buyerId;
 
     @OneToMany(mappedBy = "dispatch", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DispatchItemEntity> items;
@@ -55,5 +50,13 @@ public class DispatchEntity {
         if (newStatus == DispatchStatus.ACCEPTED) {
             this.completedAt = new Date();
         }
+    }
+    
+    /**
+     * Get the buyer ID from the user entity
+     * @return the buyer ID
+     */
+    public String getBuyerId() {
+        return user != null ? user.getId() : null;
     }
 }

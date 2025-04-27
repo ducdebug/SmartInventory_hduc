@@ -5,7 +5,6 @@ import { User, LoginCredentials, RegisterData } from '../types/auth';
 const authService = {
   login: async (credentials: LoginCredentials): Promise<User> => {
     try {
-      // For login, we use the base axios since we don't have a token yet
       const response = await axios.post('http://localhost:8080/api/auth/login', credentials, {
         headers: {
           'Content-Type': 'application/json'
