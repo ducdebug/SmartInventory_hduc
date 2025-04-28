@@ -36,3 +36,21 @@
     transform: rotate(360deg);
   }
 }
+
+/* Layout styles for footer integration */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1 0 auto;
+  padding-bottom: 2rem; /* Add space between content and footer */
+}

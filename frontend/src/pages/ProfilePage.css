@@ -1,0 +1,134 @@
+/* ProfilePage CSS */
+.profile-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.profile-title {
+  margin-bottom: 24px;
+}
+
+.profile-card {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.profile-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.avatar-container {
+  position: relative;
+  cursor: pointer;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.profile-avatar {
+  display: block;
+}
+
+.avatar-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 24px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.avatar-container:hover .avatar-upload-overlay {
+  opacity: 1;
+}
+
+.avatar-placeholder {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  margin-bottom: 16px;
+}
+
+.upload-button {
+  margin-bottom: 16px;
+}
+
+.profile-btn {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  border: none;
+  border-radius: 0.25rem;
+  background-color: #eff6ff;
+  color: #2563eb;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin: 0 0 0.5rem 0;
+  text-decoration: none;
+}
+
+.profile-btn:hover {
+  background-color: #dbeafe;
+}
+
+.profile-btn:active {
+  background-color: #bfdbfe;
+  transform: translateY(1px);
+}
+
+.profile-btn svg {
+  margin-right: 0.5rem;
+}
+
+/* Password form styling */
+.password-form .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.info-row {
+  margin-bottom: 12px;
+  display: flex;
+}
+
+.info-label {
+  font-weight: 600;
+  margin-right: 8px;
+  min-width: 100px;
+}
+
+.info-value {
+  color: #1f2937;
+}
+
+.form-actions {
+  margin-top: 16px;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .responsive-card {
+    margin-bottom: 16px;
+  }
+}

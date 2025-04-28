@@ -13,11 +13,20 @@ const authService = {
       
       console.log('Login successful response:', response.data);
       const { token, username, role } = response.data;
+      
+      // Get user profile to fetch img_url
+      const userResponse = await axios.get('http://localhost:8080/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const img_url = userResponse.data.img_url || null;
     
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ username, role }));
+      localStorage.setItem('user', JSON.stringify({ username, role, img_url }));
     
-      return { username, role } as User;
+      return { username, role, img_url } as User;
     } catch (error: any) {
       console.error('Login error details:', error);
       if (error.response) {
@@ -40,10 +49,19 @@ const authService = {
       
       const { token, username, role } = response.data;
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ username, role }));
+      // Get user profile to fetch img_url
+      const userResponse = await axios.get('http://localhost:8080/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const img_url = userResponse.data.img_url || null;
 
-      return { username, role } as User;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify({ username, role, img_url }));
+
+      return { username, role, img_url } as User;
     } catch (error: any) {
       console.error('Registration error:', error);
       if (error.response && error.response.data) {

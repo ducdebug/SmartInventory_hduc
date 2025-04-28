@@ -75,30 +75,38 @@
   box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
 }
 
-.warehouse-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.warehouse-layout {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  position: relative;
   margin: 30px 0;
 }
 
-@media (min-width: 768px) {
-  .warehouse-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.warehouse-row {
+  display: flex;
+  gap: 20px;
 }
 
-@media (min-width: 1024px) {
-  .warehouse-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.warehouse-cell {
+  flex: 1;
+  min-width: 200px;
+  min-height: 180px;
 }
 
-@media (min-width: 1280px) {
-  .warehouse-grid {
-    grid-template-columns: repeat(5, 1fr);
-  }
+.empty-section {
+  height: 100%;
+  min-height: 180px;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9f9f9;
+}
+
+.coordinate-label {
+  color: #999;
+  font-size: 14px;
 }
 
 .section-box {

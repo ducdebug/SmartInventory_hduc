@@ -112,17 +112,7 @@ const Navbar: React.FC = () => {
               <span>History</span>
             </Link>
           )}
-          
-          {user?.role === 'ADMIN' && (
-            <Link to="/lot-history" className={location.pathname === '/lot-history' ? 'active' : ''}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Lot Management</span>
-            </Link>
-          )}
-          
+
           {user?.role === 'BUYER' && (
             <Link to="/retrieve" className={location.pathname === '/retrieve' ? 'active' : ''}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -135,13 +125,13 @@ const Navbar: React.FC = () => {
           
           {user?.role === 'ADMIN' && (
             <>
-              <Link to="/user-management" className={location.pathname === '/user-management' ? 'active' : ''}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>User Management</span>
-              </Link>
+             <Link to="/lot-history" className={location.pathname === '/lot-history' ? 'active' : ''}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                            <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <span>Lot Management</span>
+                        </Link>
               <Link to="/export-management" className={location.pathname === '/export-management' ? 'active' : ''}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -149,6 +139,13 @@ const Navbar: React.FC = () => {
                 </svg>
                 <span>Export Management</span>
               </Link>
+                  <Link to="/user-management" className={location.pathname === '/user-management' ? 'active' : ''}>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                              <span>User Management</span>
+                            </Link>
             </>
           )}
           
@@ -175,7 +172,15 @@ const Navbar: React.FC = () => {
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
                   <div className="avatar-container">
-                    <div className="avatar">{user?.username?.charAt(0).toUpperCase()}</div>
+                    {user?.img_url ? (
+                      <img 
+                        src={user.img_url.startsWith('data:') ? user.img_url : `data:image/jpeg;base64,${user.img_url}`}
+                        alt={user.username}
+                        className="avatar-image"
+                      />
+                    ) : (
+                      <div className="avatar">{user?.username?.charAt(0).toUpperCase()}</div>
+                    )}
                     <span className="user-status online"></span>
                   </div>
                   <div className="user-details">
@@ -186,6 +191,13 @@ const Navbar: React.FC = () => {
                 
                 {isUserMenuOpen && (
                   <div className="user-menu">
+                    <Link to="/profile" className="profile-btn" onClick={() => setIsUserMenuOpen(false)}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>Profile</span>
+                    </Link>
                     <button className="logout-btn" onClick={handleLogout}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M17 16L21 12M21 12L17 8M21 12H7M13 16V17C13 18.6569 11.6569 20 10 20H6C4.34315 20 3 18.6569 3 17V7C3 5.34315 4.34315 4 6 4H10C11.6569 4 13 5.34315 13 7V8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

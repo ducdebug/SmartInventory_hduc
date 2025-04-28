@@ -1,6 +1,7 @@
 package com.ims.smartinventory.service.impl;
 
 import com.ims.smartinventory.config.UserRole;
+import com.ims.smartinventory.dto.Request.ChangePasswordRequest;
 import com.ims.smartinventory.dto.Request.LoginRequest;
 import com.ims.smartinventory.dto.Request.RegisterRequest;
 import com.ims.smartinventory.dto.Response.JwtResponse;
@@ -9,6 +10,7 @@ import com.ims.smartinventory.exception.AuthException;
 import com.ims.smartinventory.repository.UserRepository;
 import com.ims.smartinventory.security.JwtUtil;
 import com.ims.smartinventory.service.AuthService;
+import com.ims.smartinventory.util.ImageUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +65,16 @@ public class AuthServiceImpl implements AuthService {
         user.setRole(request.getRole() != null ? request.getRole() : UserRole.BUYER);
         user.setEnabled(true);
         user.setDeleted(false);
+        
+        // Handle profile image if provided
+        try {
+            if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+                String base64Image = ImageUtil.convertToBase64(request.getProfileImage());
+                user.setImg_url(base64Image);
+            }
+        } catch (IOException e) {
+            throw new AuthException("Failed to process profile image: " + e.getMessage());
+        }
 
         userRepository.save(user);
 
@@ -68,5 +82,19 @@ public class AuthServiceImpl implements AuthService {
         loginRequest.setUsername(request.getUsername());
         loginRequest.setPassword(request.getPassword());
         return login(loginRequest);
+    }
+    
+    @Transactional
+    @Override
+    public void changePassword(String userId, ChangePasswordRequest request) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+        
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }

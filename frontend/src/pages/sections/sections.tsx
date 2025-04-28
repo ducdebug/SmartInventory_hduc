@@ -164,37 +164,59 @@ const SectionsPage: React.FC = () => {
         ) : filteredSections.length === 0 ? (
           <div className="no-sections-message" role="alert">No sections found</div>
         ) : (
-          <div className="warehouse-grid">
-            {filteredSections.map(section => (
-              <button
-                key={section.id}
-                className="section-box redesigned-section"
-                onClick={() => handleSectionClick(section.id)}
-                aria-label={`Section ${section.name}`}
-              >
-                <div className="section-header">
-                  <h2 className="section-name">{section.name}</h2>
-                  <span className="slot-info">
-                    {section.usedSlots} / {section.totalSlots} slots used
-                  </span>
+          <div className="warehouse-layout">
+            {(() => {
+              const maxX = Math.max(...filteredSections.map(s => s.x), 0);
+              const maxY = Math.max(...filteredSections.map(s => s.y), 0);
+              
+              const grid = Array(maxY + 1).fill(null).map(() => Array(maxX + 1).fill(null));
+              
+              filteredSections.forEach(section => {
+                if (section.x <= maxX && section.y <= maxY) {
+                  grid[section.y][section.x] = section;
+                }
+              });
+              
+              return grid.map((row, y) => (
+                <div key={`row-${y}`} className="warehouse-row">
+                  {row.map((section, x) => (
+                    <div key={`cell-${x}-${y}`} className="warehouse-cell">
+                      {section ? (
+                        <button
+                          className="section-box redesigned-section"
+                          onClick={() => handleSectionClick(section.id)}
+                          aria-label={`Section ${section.name}`}
+                        >
+                          <div className="section-header">
+                            <h2 className="section-name">{section.name}</h2>
+                            <span className="slot-info">
+                              {section.usedSlots} / {section.totalSlots} slots used
+                            </span>
+                          </div>
+                          <div className="section-body">
+                            <p className="shelf-info">
+                              <strong>Shelves:</strong> {section.numShelves > 0 ? section.numShelves : 'None'}
+                            </p>
+                            <div className="condition-info">
+                              <strong>Conditions:</strong>
+                              <ul className="condition-list">
+                                {section.storageConditions.map((cond: { conditionType: string }, idx: number) => (
+                                  <li key={idx} className="condition-item">
+                                    <span className="condition-type">{cond.conditionType.replace(/_/g, ' ')}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </button>
+                      ) : (
+                        <div className="empty-section"></div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div className="section-body">
-                  <p className="shelf-info">
-                    <strong>Shelves:</strong> {section.numShelves > 0 ? section.numShelves : 'None'}
-                  </p>
-                  <div className="condition-info">
-                    <strong>Conditions:</strong>
-                    <ul className="condition-list">
-                      {section.storageConditions.map((cond, idx) => (
-                        <li key={idx} className="condition-item">
-                          <span className="condition-type">{cond.conditionType.replace(/_/g, ' ')}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </button>
-            ))}
+              ));
+            })()}
           </div>
         )}
       </main>

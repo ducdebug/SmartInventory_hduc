@@ -32,6 +32,9 @@ public class UserEntity implements UserDetails {
     private boolean enabled;
     private boolean deleted;
 
+    @Column(columnDefinition = "longtext")
+    private String img_url;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()));
