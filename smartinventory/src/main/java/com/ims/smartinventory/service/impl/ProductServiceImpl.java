@@ -1,5 +1,6 @@
 package com.ims.smartinventory.service.impl;
 
+import com.ims.common.entity.UserEntity;
 import com.ims.smartinventory.config.*;
 import com.ims.smartinventory.dto.Request.ProductBatchRequestDto;
 import com.ims.smartinventory.dto.Request.ProductExportRequestDto;
@@ -7,7 +8,6 @@ import com.ims.smartinventory.dto.Request.ProductGroupResponseDto;
 import com.ims.smartinventory.dto.Response.ProductResponse;
 import com.ims.smartinventory.entity.BaseProductEntity;
 import com.ims.smartinventory.entity.PriceEntity;
-import com.ims.smartinventory.entity.UserEntity;
 import com.ims.smartinventory.entity.management.*;
 import com.ims.smartinventory.entity.product.*;
 import com.ims.smartinventory.entity.storage.*;
@@ -38,8 +38,8 @@ public class ProductServiceImpl implements ProductService {
 
     public ProductServiceImpl(LotRepository lotRepository, ProductRepository productRepository,
                               SlotShelfRepository slotShelfRepository, SlotSectionRepository slotSectionRepository,
-                              SectionRepository sectionRepository, PriceRepository priceRepository, 
-                              LotItemRepository lotItemRepository, DispatchItemRepository dispatchItemRepository, 
+                              SectionRepository sectionRepository, PriceRepository priceRepository,
+                              LotItemRepository lotItemRepository, DispatchItemRepository dispatchItemRepository,
                               DispatchRepository dispatchRepository, InventoryTransactionRepository inventoryTransactionRepository,
                               NotificationProducerServiceImpl notificationProducerService) {
         this.lotRepository = lotRepository;
@@ -260,6 +260,7 @@ public class ProductServiceImpl implements ProductService {
         }
         return map;
     }
+
     private boolean isSuitableForConditions(SectionEntity section, List<ProductBatchRequestDto.StorageConditionDto> requiredConditions) {
         List<StorageConditionEntity> sectionConditions = section.getStorageConditions();
 
@@ -267,9 +268,9 @@ public class ProductServiceImpl implements ProductService {
 
         for (ProductBatchRequestDto.StorageConditionDto required : requiredConditions) {
             boolean matched = sectionConditions.stream().anyMatch(actual ->
-                    actual.getConditionType() == required.getConditionType()
-                            && required.getMinValue() >= actual.getMinValue()
-                            && required.getMaxValue() <= actual.getMaxValue()
+                            actual.getConditionType() == required.getConditionType()
+                                    && required.getMinValue() >= actual.getMinValue()
+                                    && required.getMaxValue() <= actual.getMaxValue()
                     //cần thêm điều kiện về unit
             );
 
@@ -433,6 +434,7 @@ public class ProductServiceImpl implements ProductService {
 
         return response;
     }
+
     @Transactional
     @Override
     public void exportGroupedProducts(ProductExportRequestDto request, UserEntity currentUser) {
@@ -441,7 +443,7 @@ public class ProductServiceImpl implements ProductService {
         dispatch.setCompletedAt(new Date()); // Using completedAt for export date
         dispatch.setUser(currentUser);
         dispatch = dispatchRepository.save(dispatch);
-        
+
         List<String> exportedProductIds = new ArrayList<>();
 
         for (ProductExportRequestDto.ProductExportItem item : request.getProducts()) {
@@ -463,13 +465,14 @@ public class ProductServiceImpl implements ProductService {
             }
             switch (strategy) {
                 case FIFO -> candidates.sort(Comparator.comparing(p -> p.getLot().getImportDate()));
-                case LIFO -> candidates.sort(Comparator.comparing((BaseProductEntity p) -> p.getLot().getImportDate()).reversed());
+                case LIFO ->
+                        candidates.sort(Comparator.comparing((BaseProductEntity p) -> p.getLot().getImportDate()).reversed());
                 case FEFO -> candidates.sort(Comparator.comparing(BaseProductEntity::getExpirationDate));
                 case RANDOM -> Collections.shuffle(candidates);
             }
             for (BaseProductEntity product : candidates) {
                 exportedProductIds.add(product.getId());
-                
+
                 product.setDispatch(dispatch);
                 if (product.getSlotShelf() != null) {
                     SlotShelf shelf = product.getSlotShelf();
@@ -508,7 +511,7 @@ public class ProductServiceImpl implements ProductService {
                 inventoryTransactionRepository.save(tx);
             }
         }
-        
+
         checkProductVolumeAndNotify(exportedProductIds);
     }
 
@@ -575,48 +578,48 @@ public class ProductServiceImpl implements ProductService {
 
         return dispatch.getId();
     }
-    
+
     @Override
     public boolean checkProductVolumeAndNotify(List<String> exportedProductIds) {
         List<BaseProductEntity> remainingProducts = productRepository.findAll().stream()
                 .filter(p -> p.getDispatch() == null)
                 .toList();
-        
+
         Map<String, List<BaseProductEntity>> productsByType = new HashMap<>();
-        
+
         for (BaseProductEntity product : remainingProducts) {
             String type = product.getClass().getSimpleName();
             productsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(product);
         }
         Map<String, Double> volumeByType = new HashMap<>();
         double totalRemainingVolume = 0.0;
-        
+
         for (Map.Entry<String, List<BaseProductEntity>> entry : productsByType.entrySet()) {
             String type = entry.getKey();
             double typeVolume = entry.getValue().stream()
                     .mapToDouble(VolumeCalculator::calculateProductVolume)
                     .sum();
-            
+
             volumeByType.put(type, typeVolume);
             totalRemainingVolume += typeVolume;
         }
-        
+
         if (VolumeCalculator.isVolumeBelowThreshold(totalRemainingVolume)) {
             StringBuilder messageBuilder = new StringBuilder();
             messageBuilder.append("WARNING: Low inventory volume detected after export. ");
             messageBuilder.append("Total remaining volume: ").append(String.format("%.2f", totalRemainingVolume)).append(" units. ");
             messageBuilder.append("Breakdown by product type: ");
-            
+
             for (Map.Entry<String, Double> entry : volumeByType.entrySet()) {
                 String type = entry.getKey().replace("ProductEntity", "");
                 double volume = entry.getValue();
                 messageBuilder.append(type).append(": ").append(String.format("%.2f", volume)).append(" units, ");
             }
-            
+
             notificationProducerService.sendNotification("admin", messageBuilder.toString());
             return true;
         }
-        
+
         return false;
     }
 }

@@ -19,6 +19,13 @@ public class ProductBatchRequestDto {
     private List<Map<String, Object>> productDetails;
     private boolean onShelf;
 
+    public int getTotalQuantity() {
+        return productDetails == null ? 0 :
+                productDetails.stream()
+                        .mapToInt(p -> ((Number) p.getOrDefault("quantity", 1)).intValue())
+                        .sum();
+    }
+
     @Getter
     @Setter
     @AllArgsConstructor
@@ -27,12 +34,5 @@ public class ProductBatchRequestDto {
         private double minValue;
         private double maxValue;
         private String unit;
-    }
-
-    public int getTotalQuantity() {
-        return productDetails == null ? 0 :
-                productDetails.stream()
-                        .mapToInt(p -> ((Number) p.getOrDefault("quantity", 1)).intValue())
-                        .sum();
     }
 }

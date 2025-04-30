@@ -47,5 +47,8 @@ public abstract class BaseProductEntity {
 
 
     public abstract boolean isExpired();
-    public Date getExpirationDate() { return null; }
+
+    public Date getExpirationDate() {
+        return null;
+    }
 }

@@ -17,6 +17,7 @@ public class SectionController {
     public SectionController(SectionService sectionService) {
         this.sectionService = sectionService;
     }
+
     @GetMapping("/{sectionId}/children")
     public ResponseEntity<List<?>> getSectionChildren(@PathVariable String sectionId) {
         List<?> response = sectionService.getSectionChildren(sectionId);

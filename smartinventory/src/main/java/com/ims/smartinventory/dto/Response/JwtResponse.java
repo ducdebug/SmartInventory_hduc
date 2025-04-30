@@ -1,6 +1,6 @@
 package com.ims.smartinventory.dto.Response;
 
-import com.ims.smartinventory.config.UserRole;
+import com.ims.common.config.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

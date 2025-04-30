@@ -17,6 +17,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     private final SectionRepository sectionRepository;
     private final SlotShelfRepository slotShelfRepository;
     private final SlotSectionRepository slotSectionRepository;
+
     @Autowired
     public WarehouseServiceImpl(SectionRepository sectionRepository, SlotShelfRepository slotShelfRepository, SlotSectionRepository slotSectionRepository) {
         this.sectionRepository = sectionRepository;

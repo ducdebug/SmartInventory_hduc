@@ -26,6 +26,7 @@ public class FoodProductEntity extends BaseProductEntity {
     public boolean isExpired() {
         return new Date().after(expirationDate);
     }
+
     @Override
     public Date getExpirationDate() {
         return expirationDate;

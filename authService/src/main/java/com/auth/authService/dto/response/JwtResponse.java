@@ -1,15 +1,25 @@
 package com.auth.authService.dto.response;
 
-import com.auth.authService.config.UserRole;
+import com.ims.common.config.UserRole;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class JwtResponse {
     private String token;
+    private String id;
     private String username;
     private UserRole role;
+    private String img_url;
+
+    public JwtResponse(String token, String id, String username, UserRole role) {
+        this.token = token;
+        this.id = id;
+        this.username = username;
+        this.role = role;
+        this.img_url = null;
+    }
 }

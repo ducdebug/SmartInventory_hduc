@@ -5,61 +5,74 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { User, LoginCredentials, RegisterData } from "../types/auth";
-import authService from "../services/authService";
+import { User as AuthUser, LoginCredentials, RegisterData } from "../types/auth";
+import authService, { User as ServiceUser } from "../services/authService";
+import { useProfileImage } from "../context/ProfileImageContext";
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
   error: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterData, profileImage?: File) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
-// ⚠️ Tạo context
+    const mapServiceUserToAuthUser = (serviceUser: ServiceUser): AuthUser => {
+  return {
+    username: serviceUser.username,
+    role: serviceUser.role as AuthUser['role'],
+    img_url: serviceUser.img_url
+  };
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ✅ Provider component để bọc App
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const profileImage = useProfileImage();
 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
         const currentUser = authService.getCurrentUser();
         if (currentUser) {
-          setUser(currentUser);
+          setUser(mapServiceUserToAuthUser(currentUser));
           setIsAuthenticated(true);
+          
+          if (currentUser.img_url) {
+            profileImage.updateProfileImage(currentUser.img_url);
+          }
         }
       } catch (err) {
-        console.error("Auth initialization error:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
     initializeAuth();
-  }, []);
+  }, [profileImage]);
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log('Attempting login with credentials:', credentials);
       const loggedInUser = await authService.login(credentials);
-      console.log('Login successful, user:', loggedInUser);
-      setUser(loggedInUser);
+      setUser(mapServiceUserToAuthUser(loggedInUser));
       setIsAuthenticated(true);
+      
+      if (loggedInUser.img_url) {
+        profileImage.updateProfileImage(loggedInUser.img_url);
+      } else {
+        profileImage.clearProfileImage();
+      }
     } catch (err) {
-      console.error('Login error in hook:', err);
       const errorMessage = err instanceof Error ? err.message : "Login failed";
-      console.error('Setting error message:', errorMessage);
       setError(errorMessage);
       throw err;
     } finally {
@@ -67,13 +80,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const register = async (data: RegisterData) => {
+  const register = async (data: RegisterData, profileImage?: File) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const registeredUser = await authService.register(data);
-      setUser(registeredUser);
+      const registeredUser = await authService.register(data, profileImage);
+      
+      setUser(mapServiceUserToAuthUser(registeredUser));
       setIsAuthenticated(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -87,11 +101,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
 
     try {
+      profileImage.clearProfileImage();
+      
       await authService.logout();
       setUser(null);
       setIsAuthenticated(false);
     } catch (err) {
-      console.error("Logout error:", err);
     } finally {
       setIsLoading(false);
     }

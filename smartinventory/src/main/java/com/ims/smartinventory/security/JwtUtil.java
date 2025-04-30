@@ -1,6 +1,6 @@
 package com.ims.smartinventory.security;
 
-import com.ims.smartinventory.entity.UserEntity;
+import com.ims.common.entity.UserEntity;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -47,9 +47,11 @@ public class JwtUtil {
     public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
+
     public String extractRole(String token) {
         return (String) extractAllClaims(token).get("role");
     }
+
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }

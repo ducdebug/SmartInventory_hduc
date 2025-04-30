@@ -1,15 +1,10 @@
 package com.auth.authService.dto.response;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
+@AllArgsConstructor
 public class AuthErrorResponse {
     private String message;
-
-    public AuthErrorResponse(String message) {
-        this.message = message;
-    }
-
 }

@@ -17,7 +17,7 @@ public class DispatchHistoryResponse {
     private Date createdAt;
     private String status;
     private int totalItems;
-    
+
     public static DispatchHistoryResponse fromEntity(DispatchEntity entity) {
         return DispatchHistoryResponse.builder()
                 .id(entity.getId())

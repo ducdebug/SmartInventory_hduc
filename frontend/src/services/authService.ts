@@ -1,106 +1,138 @@
-import axios from 'axios';
-import apiClient from '../utils/apiClient';
-import { User, LoginCredentials, RegisterData } from '../types/auth';
+import authApiClient from '../utils/authApiClient';
+import { UserRole } from '../types/auth';
+
+export interface LoginData {
+  username: string;
+  password: string;
+}
+
+export interface RegisterData {
+  username: string;
+  password: string;
+  role?: UserRole;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  role: string;
+  token: string;
+  img_url?: string;
+}
+
+const tokenKey = 'authToken';
+const userKey = 'user';
+const userRoleKey = 'userRole';
+const userIdKey = 'userId';
 
 const authService = {
-  login: async (credentials: LoginCredentials): Promise<User> => {
+  login: async (data: LoginData): Promise<User> => {
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/login', credentials, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await authApiClient.post('/login', data);
+      const user = response.data;
+      localStorage.setItem(tokenKey, user.token);
+      localStorage.setItem(userKey, JSON.stringify(user));
+      localStorage.setItem(userRoleKey, user.role);
+      localStorage.setItem(userIdKey, user.id);
       
-      console.log('Login successful response:', response.data);
-      const { token, username, role } = response.data;
-      
-      // Get user profile to fetch img_url
-      const userResponse = await axios.get('http://localhost:8080/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const img_url = userResponse.data.img_url || null;
-    
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ username, role, img_url }));
-    
-      return { username, role, img_url } as User;
+      return user;
     } catch (error: any) {
-      console.error('Login error details:', error);
-      if (error.response) {
-        console.error('Error response status:', error.response.status);
-        console.error('Error response data:', error.response.data);
-        throw new Error(typeof error.response.data === 'string' ? error.response.data : 'Authentication failed');
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
       }
-      throw new Error('Authentication failed. Please check your credentials and connectivity.');
-    }
-  },
- 
-  register: async (userData: RegisterData): Promise<User> => {
-    try {
-      // For register, we use the base axios since we don't have a token yet
-      const response = await axios.post('http://localhost:8080/api/auth/register', userData, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const { token, username, role } = response.data;
-
-      // Get user profile to fetch img_url
-      const userResponse = await axios.get('http://localhost:8080/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const img_url = userResponse.data.img_url || null;
-
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ username, role, img_url }));
-
-      return { username, role, img_url } as User;
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      if (error.response && error.response.data) {
-        throw new Error(typeof error.response.data === 'string' ? error.response.data : 'Registration failed');
-      }
-      throw new Error('Registration failed. Please try again.');
+      throw new Error('Login failed');
     }
   },
 
-  getCurrentUser: (): User | null => {
+  register: async (data: RegisterData, profileImage?: File): Promise<User> => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return null;
+      let response;
       
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return null;
+      if (profileImage) {
+        const formData = new FormData();
+        formData.append('username', data.username);
+        formData.append('password', data.password);
+        if (data.role) {
+          formData.append('role', data.role);
+        }
+        formData.append('profileImage', profileImage);
+        
+        response = await authApiClient.post('/register-with-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else {
+        response = await authApiClient.post('/register', data);
+      }
       
-      const user = JSON.parse(userStr);
-      if (!user.username || !user.role) return null;
+      const user = response.data;
+      localStorage.setItem(tokenKey, user.token);
+      localStorage.setItem(userKey, JSON.stringify(user));
+      localStorage.setItem(userRoleKey, user.role);
+      localStorage.setItem(userIdKey, user.id);
       
-      return user as User;
-    } catch (err) {
-      console.error('Error getting current user:', err);
-      return null;
+      return user;
+    } catch (error: any) {
+      console.error('Registration error:', error.response || error);
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Registration failed');
     }
   },
 
   logout: (): void => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem(tokenKey);
+    localStorage.removeItem(userKey);
+    localStorage.removeItem(userRoleKey);
+    localStorage.removeItem(userIdKey);
   },
 
-  getToken: (): string | null => {
-    return localStorage.getItem('token');
-  },
-  
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem(tokenKey);
+  },
+
+  getCurrentUser: (): User | null => {
+    const userStr = localStorage.getItem(userKey);
+    if (!userStr) {
+      return null;
+    }
+    
+    try {
+      return JSON.parse(userStr);
+    } catch (error) {
+      console.error('Error parsing user from localStorage:', error);
+      return null;
+    }
+  },
+
+  getUserProfile: async (): Promise<any> => {
+    try {
+      const response = await authApiClient.get('/profile');
+      return response.data;
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Failed to fetch user profile');
+    }
   }
+};
+
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem(tokenKey);
+};
+
+export const getUserId = (): string | null => {
+  return localStorage.getItem(userIdKey);
+};
+
+export const getUserRole = (): string | null => {
+  return localStorage.getItem(userRoleKey);
 };
 
 export default authService;

@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Date;
+
 @JsonIgnoreProperties({"slot", "lot"})
 @Getter
 @Setter
@@ -23,6 +24,7 @@ public class CosmeticProductEntity extends BaseProductEntity {
     public boolean isExpired() {
         return new Date().after(expirationDate);
     }
+
     @Override
     public Date getExpirationDate() {
         return expirationDate;

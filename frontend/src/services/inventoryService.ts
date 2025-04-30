@@ -5,7 +5,6 @@ const inventoryService = {
   getSectionInfo: async () => {
     try {
       const response = await apiClient.get('/warehouse/sections/info');
-      console.log("Fetched sections:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching section info:', error);
@@ -61,7 +60,6 @@ const inventoryService = {
   getPendingLots: async () => {
     try {
       const response = await apiClient.get('/lot/pending');
-      console.log('Pending lots:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching pending lots:', error);
@@ -72,7 +70,6 @@ const inventoryService = {
   getAcceptedLots: async () => {
     try {
       const response = await apiClient.get('/lot/accepted');
-      console.log('Accepted lots:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching accepted lots:', error);
@@ -103,7 +100,6 @@ const inventoryService = {
   getProductBySlot: async (slotId: string) => {
     try {
       const response = await apiClient.get(`/inventory/${slotId}/product`);
-      console.log('Product by slot:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching product by slot:', error);
@@ -130,7 +126,6 @@ const inventoryService = {
     }[];
   }) => {
     try {
-      console.log('Exporting products:', payload);
       const response = await apiClient.post('/inventory/export', payload);
       return response.data;
     } catch (error) {
@@ -147,7 +142,6 @@ const inventoryService = {
     }[];
   }) => {
     try {
-      console.log('Creating retrieve request:', payload);
       const response = await apiClient.post('/inventory/retrieve-request', payload);
       return response.data;
     } catch (error) {
@@ -187,7 +181,6 @@ const inventoryService = {
   getProductTypeDistribution: async () => {
     try {
       const response = await apiClient.get('/inventory/product-type-distribution');
-      console.log("Product type distribution:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching product type distribution:', error);
@@ -198,7 +191,6 @@ const inventoryService = {
   getInventoryAnalytics: async () => {
     try {
       const response = await apiClient.get('/inventory/analytics');
-      console.log("Inventory analytics:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching inventory analytics:', error);

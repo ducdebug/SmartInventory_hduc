@@ -1,6 +1,6 @@
 package com.ims.smartinventory.service.impl;
 
-import com.ims.smartinventory.entity.UserEntity;
+import com.ims.common.entity.UserEntity;
 import com.ims.smartinventory.repository.UserRepository;
 import com.ims.smartinventory.security.JwtUtil;
 import com.ims.smartinventory.service.UserService;
@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
 public class UserServiceImpl implements UserService {
 
     private static final String USER_NOT_FOUND = "User not found with username: ";
-    
+
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
 
@@ -41,15 +41,35 @@ public class UserServiceImpl implements UserService {
         if (profilePicture == null || profilePicture.isEmpty()) {
             throw new IllegalArgumentException("Profile picture is required");
         }
-        
+
+        System.out.println("Updating profile image");
+        System.out.println("Token: " + (token != null ? token.substring(0, Math.min(token.length(), 20)) + "..." : "null"));
+        System.out.println("File name: " + profilePicture.getOriginalFilename());
+        System.out.println("File size: " + profilePicture.getSize());
+        System.out.println("File content type: " + profilePicture.getContentType());
+
         String username = extractUsername(token);
+        System.out.println("Extracted username: " + username);
+
         UserEntity userEntity = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NoSuchElementException(USER_NOT_FOUND + username));
-                
-        String base64Image = ImageUtil.convertToBase64(profilePicture);
+
+        System.out.println("Found user: " + userEntity.getId());
+
+        String base64Image;
+        try {
+            base64Image = ImageUtil.convertToBase64(profilePicture);
+            System.out.println("Converted image to base64, length: " + base64Image.length());
+        } catch (Exception e) {
+            System.out.println("Error converting image to base64: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+
         userEntity.setImg_url(base64Image);
-        userRepository.save(userEntity);
-        
+        UserEntity savedEntity = userRepository.save(userEntity);
+        System.out.println("User entity saved with updated image");
+
         Map<String, String> responseBody = new HashMap<>();
         responseBody.put("message", "Profile image updated successfully");
         responseBody.put("img_url", base64Image);

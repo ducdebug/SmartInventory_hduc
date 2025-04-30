@@ -1,6 +1,6 @@
 package com.ims.smartinventory.controller;
 
-import com.ims.smartinventory.entity.UserEntity;
+import com.ims.common.entity.UserEntity;
 import com.ims.smartinventory.service.UserManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

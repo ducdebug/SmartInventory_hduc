@@ -20,7 +20,40 @@ public class DispatchDetailResponse {
     private Date createdAt;
     private String status;
     private List<DispatchItemResponse> items;
-    
+
+    public static DispatchDetailResponse fromEntity(DispatchEntity entity) {
+        List<DispatchItemResponse> itemResponses = entity.getItems().stream()
+                .map(item -> mapToItemResponse(item))
+                .collect(Collectors.toList());
+
+        return DispatchDetailResponse.builder()
+                .id(entity.getId())
+                .createdAt(entity.getCreatedAt())
+                .status(entity.getStatus().name())
+                .items(itemResponses)
+                .build();
+    }
+
+    private static DispatchItemResponse mapToItemResponse(DispatchItemEntity item) {
+        ProductDetailsResponse productDetails = null;
+
+        if (item.getProduct() != null) {
+            productDetails = ProductDetailsResponse.builder()
+                    .id(item.getProduct().getId())
+                    .name(item.getProduct().getName())
+                    .lotCode(item.getProduct().getLot() != null ? item.getProduct().getLot().getLotCode() : null)
+                    .expirationDate(item.getProduct().getExpirationDate())
+                    .build();
+        }
+
+        return DispatchItemResponse.builder()
+                .id(item.getId())
+                .productId(item.getProductId())
+                .quantity(item.getQuantity())
+                .product(productDetails)
+                .build();
+    }
+
     @Data
     @Builder
     @NoArgsConstructor
@@ -31,7 +64,7 @@ public class DispatchDetailResponse {
         private int quantity;
         private ProductDetailsResponse product;
     }
-    
+
     @Data
     @Builder
     @NoArgsConstructor
@@ -41,38 +74,5 @@ public class DispatchDetailResponse {
         private String name;
         private String lotCode;
         private Date expirationDate;
-    }
-    
-    public static DispatchDetailResponse fromEntity(DispatchEntity entity) {
-        List<DispatchItemResponse> itemResponses = entity.getItems().stream()
-                .map(item -> mapToItemResponse(item))
-                .collect(Collectors.toList());
-        
-        return DispatchDetailResponse.builder()
-                .id(entity.getId())
-                .createdAt(entity.getCreatedAt())
-                .status(entity.getStatus().name())
-                .items(itemResponses)
-                .build();
-    }
-    
-    private static DispatchItemResponse mapToItemResponse(DispatchItemEntity item) {
-        ProductDetailsResponse productDetails = null;
-        
-        if (item.getProduct() != null) {
-            productDetails = ProductDetailsResponse.builder()
-                    .id(item.getProduct().getId())
-                    .name(item.getProduct().getName())
-                    .lotCode(item.getProduct().getLot() != null ? item.getProduct().getLot().getLotCode() : null)
-                    .expirationDate(item.getProduct().getExpirationDate())
-                    .build();
-        }
-        
-        return DispatchItemResponse.builder()
-                .id(item.getId())
-                .productId(item.getProductId())
-                .quantity(item.getQuantity())
-                .product(productDetails)
-                .build();
     }
 }

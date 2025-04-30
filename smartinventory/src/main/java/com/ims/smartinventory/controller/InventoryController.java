@@ -1,13 +1,13 @@
 package com.ims.smartinventory.controller;
 
-import com.ims.smartinventory.config.UserRole;
+import com.ims.common.config.UserRole;
+import com.ims.common.entity.UserEntity;
 import com.ims.smartinventory.dto.Request.ProductBatchRequestDto;
 import com.ims.smartinventory.dto.Request.ProductExportRequestDto;
 import com.ims.smartinventory.dto.Request.ProductGroupResponseDto;
 import com.ims.smartinventory.dto.Request.SectionRequestDto;
 import com.ims.smartinventory.dto.Response.InventoryAnalyticsResponse;
 import com.ims.smartinventory.dto.Response.ProductResponse;
-import com.ims.smartinventory.entity.UserEntity;
 import com.ims.smartinventory.entity.storage.SectionEntity;
 import com.ims.smartinventory.entity.storage.SlotEntity;
 import com.ims.smartinventory.service.InventoryAnalyticsService;
@@ -33,13 +33,13 @@ public class InventoryController {
     }
 
     @PostMapping("/section")
-    public ResponseEntity<SectionEntity> createSection(@RequestBody SectionRequestDto sectionRequest,  @AuthenticationPrincipal UserEntity currentUser) {
+    public ResponseEntity<SectionEntity> createSection(@RequestBody SectionRequestDto sectionRequest, @AuthenticationPrincipal UserEntity currentUser) {
         SectionEntity newSection = sectionService.createSection(sectionRequest);
         return ResponseEntity.ok(newSection);
     }
 
     @PostMapping("/batch")
-    public ResponseEntity<List<SlotEntity>> storeBatch(@RequestBody ProductBatchRequestDto batchRequest,  @AuthenticationPrincipal UserEntity currentUser) {
+    public ResponseEntity<List<SlotEntity>> storeBatch(@RequestBody ProductBatchRequestDto batchRequest, @AuthenticationPrincipal UserEntity currentUser) {
         if (currentUser == null) {
             throw new IllegalStateException("User is null. Check authentication setup.");
         }
@@ -66,7 +66,7 @@ public class InventoryController {
         productService.exportGroupedProducts(request, currentUser);
         return ResponseEntity.ok().build();
     }
-    
+
     @PostMapping("/retrieve-request")
     public ResponseEntity<?> createRetrieveRequest(
             @RequestBody ProductExportRequestDto request,

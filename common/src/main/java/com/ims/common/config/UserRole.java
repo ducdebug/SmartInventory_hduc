@@ -1,4 +1,4 @@
-package com.auth.authService.config;
+package com.ims.common.config;
 
 public enum UserRole {
     ADMIN,

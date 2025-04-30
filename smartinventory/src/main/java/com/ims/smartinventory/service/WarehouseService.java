@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface WarehouseService {
     List<SectionInfoResponse> getCurrentWarehouseSections();
+
     List<SectionInfoResponse> getAllSection();
 }

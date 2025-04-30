@@ -1,7 +1,7 @@
 package com.ims.smartinventory.service.impl;
 
-import com.ims.smartinventory.config.UserRole;
-import com.ims.smartinventory.entity.UserEntity;
+import com.ims.common.config.UserRole;
+import com.ims.common.entity.UserEntity;
 import com.ims.smartinventory.repository.UserRepository;
 import com.ims.smartinventory.service.UserManagementService;
 import org.springframework.beans.factory.annotation.Autowired;

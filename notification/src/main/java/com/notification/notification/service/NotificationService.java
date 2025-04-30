@@ -21,26 +21,26 @@ public class NotificationService {
         this.webSocketService = webSocketService;
     }
 
-    @KafkaListener(topics = "notification-topic", groupId = "${spring.kafka.group-noti-id}", 
-                  containerFactory = "notiListenerContainerFactory")
+    @KafkaListener(topics = "notification-topic", groupId = "${spring.kafka.group-noti-id}",
+            containerFactory = "notiListenerContainerFactory")
     public void listenNotification(String message) {
         System.out.println("Received notification message: " + message);
-        
+
         String[] parts = message.split(":", 2);
         if (parts.length == 2) {
             String userId = parts[0];
             String messageContent = parts[1];
-            
+
             NotificationEntity notification = NotificationEntity.builder()
-                .toUserId(userId)
-                .message(messageContent)
-                .isRead(false)
-                .createdAt(new Date())
-                .build();
-                
+                    .toUserId(userId)
+                    .message(messageContent)
+                    .isRead(false)
+                    .createdAt(new Date())
+                    .build();
+
             notification = notificationRepository.save(notification);
             System.out.println("Notification saved for user: " + userId);
-            
+
             // Send via WebSocket
             if ("admin".equalsIgnoreCase(userId)) {
                 // Send to admin topic
@@ -53,22 +53,22 @@ public class NotificationService {
             System.out.println("Invalid message format: " + message);
         }
     }
-    
+
     public List<NotificationEntity> getNotificationsForUser(String userId) {
         return notificationRepository.findByToUserIdOrderByCreatedAtDesc(userId);
     }
-    
+
     public List<NotificationEntity> getUnreadNotificationsForUser(String userId) {
         return notificationRepository.findByToUserIdAndIsReadOrderByCreatedAtDesc(userId, false);
     }
-    
+
     public boolean markNotificationAsRead(Long notificationId) {
         return notificationRepository.findById(notificationId)
-            .map(notification -> {
-                notification.markAsRead();
-                notificationRepository.save(notification);
-                return true;
-            })
-            .orElse(false);
+                .map(notification -> {
+                    notification.markAsRead();
+                    notificationRepository.save(notification);
+                    return true;
+                })
+                .orElse(false);
     }
 }

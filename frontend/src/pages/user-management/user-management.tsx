@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
+import { API_BASE_URL } from '../../config';
+import { getAuthToken } from '../../services/authService';
 import './user-management.css';
 
 interface User {
@@ -30,8 +32,8 @@ const UserManagement: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8080/api/admin/users', {
+      const token = getAuthToken();
+      const response = await axios.get(`${API_BASE_URL}/admin/users`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -48,9 +50,9 @@ const UserManagement: React.FC = () => {
 
   const toggleBlockUser = async (userId: string, currentlyBlocked: boolean) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       await axios.put(
-        `http://localhost:8080/api/admin/users/${userId}/block`,
+        `${API_BASE_URL}/admin/users/${userId}/block`,
         { blocked: !currentlyBlocked },
         {
           headers: {
@@ -72,8 +74,8 @@ const UserManagement: React.FC = () => {
     }
     
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:8080/api/admin/users/${userId}`, {
+      const token = getAuthToken();
+      await axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -87,9 +89,9 @@ const UserManagement: React.FC = () => {
 
   const restoreUser = async (userId: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       await axios.put(
-        `http://localhost:8080/api/admin/users/${userId}/restore`,
+        `${API_BASE_URL}/admin/users/${userId}/restore`,
         {},
         {
           headers: {

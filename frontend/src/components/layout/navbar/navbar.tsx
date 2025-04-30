@@ -1,13 +1,15 @@
-// Navbar.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
+import { useProfileImage } from '../../../context/ProfileImageContext';
+import { getImageDisplayUrl } from '../../../services/userService';
 import BatchCreateModal from '../../batchcreatemodal/batchcreatemodal';
 import NotificationDropdown from '../../notification/NotificationDropdown';
 import './navbar.css';
 
 const Navbar: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
+  const { profileImageUrl } = useProfileImage();
   const location = useLocation();
   const navigate = useNavigate();
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
@@ -15,6 +17,14 @@ const Navbar: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
+
+  const currentDisplayImageUrl = React.useMemo(() => {
+    if (!isAuthenticated) return null;
+    return profileImageUrl || (user?.img_url ? user.img_url : null);
+  }, [profileImageUrl, user, isAuthenticated]);
+
+  useEffect(() => {
+  }, [user, profileImageUrl, isAuthenticated]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,7 +39,6 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Effect to handle click outside to close user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -42,15 +51,18 @@ const Navbar: React.FC = () => {
   }, []);
 
   if (['/login', '/register'].includes(location.pathname)) return null;
-  
+
   if (!isAuthenticated && location.pathname !== '/login' && location.pathname !== '/register') {
     return null;
   }
-  
-  const handleLogout = () => {
-    logout();
-    setIsUserMenuOpen(false);
-    navigate('/login');
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsUserMenuOpen(false);
+      navigate('/login');
+    } catch (error) {
+    }
   };
 
   return (
@@ -64,9 +76,9 @@ const Navbar: React.FC = () => {
             </svg>
             <span className="brand-text">Smart Inventory</span>
           </Link>
-          
-          <button 
-            className="menu-toggle" 
+
+          <button
+            className="menu-toggle"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-expanded={isMenuOpen}
             aria-label="Toggle navigation menu"
@@ -84,15 +96,14 @@ const Navbar: React.FC = () => {
             </svg>
             <span>Home</span>
           </Link>
-          
+
           <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 13V17M16 11V17M12 7V17M3 21H21C21.5523 21 22 20.5523 22 20V4C22 3.44772 21.5523 3 21 3H3C2.44772 3 2 3.44772 2 4V20C2 20.5523 2.44772 21 3 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span>Dashboard</span>
           </Link>
-          
-          {/* Admin: Sections instead of Inventory */}
+
           {user?.role === 'ADMIN' && (
             <Link to="/sections" className={location.pathname === '/sections' ? 'active' : ''}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -101,8 +112,7 @@ const Navbar: React.FC = () => {
               <span>Sections</span>
             </Link>
           )}
-          
-          {/* Buyer: History link */}
+
           {user?.role === 'BUYER' && (
             <Link to="/history" className={location.pathname === '/history' ? 'active' : ''}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -122,7 +132,7 @@ const Navbar: React.FC = () => {
               <span>Retrieve Product</span>
             </Link>
           )}
-          
+
           {user?.role === 'ADMIN' && (
             <>
              <Link to="/lot-history" className={location.pathname === '/lot-history' ? 'active' : ''}>
@@ -148,7 +158,7 @@ const Navbar: React.FC = () => {
                             </Link>
             </>
           )}
-          
+
           {user?.role === 'SUPPLIER' && (
             <button onClick={() => setIsBatchModalOpen(true)} className="new-batch-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -165,21 +175,21 @@ const Navbar: React.FC = () => {
               <div className="notifications">
                 <NotificationDropdown />
               </div>
-              
+
               <div className="user-profile" ref={userMenuRef}>
-                <div 
-                  className="user-profile-trigger" 
+                <div
+                  className="user-profile-trigger"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
                   <div className="avatar-container">
-                    {user?.img_url ? (
-                      <img 
-                        src={user.img_url.startsWith('data:') ? user.img_url : `data:image/jpeg;base64,${user.img_url}`}
-                        alt={user.username}
+                    {currentDisplayImageUrl && isAuthenticated ? (
+                      <img
+                        src={getImageDisplayUrl(currentDisplayImageUrl)}
+                        alt={user?.username || 'User'}
                         className="avatar-image"
                       />
                     ) : (
-                      <div className="avatar">{user?.username?.charAt(0).toUpperCase()}</div>
+                      <div className="avatar">{user?.username?.charAt(0)?.toUpperCase() || '?'}</div>
                     )}
                     <span className="user-status online"></span>
                   </div>
@@ -188,7 +198,7 @@ const Navbar: React.FC = () => {
                     <span className="role">{user?.role}</span>
                   </div>
                 </div>
-                
+
                 {isUserMenuOpen && (
                   <div className="user-menu">
                     <Link to="/profile" className="profile-btn" onClick={() => setIsUserMenuOpen(false)}>

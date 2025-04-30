@@ -1,6 +1,7 @@
 package com.ims.smartinventory.config;
 
-import com.ims.smartinventory.entity.UserEntity;
+import com.ims.common.config.UserRole;
+import com.ims.common.entity.UserEntity;
 import com.ims.smartinventory.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -21,7 +22,6 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Check if admin user exists, if not create one
         if (userRepository.findByUsername("admin").isEmpty()) {
             UserEntity adminUser = new UserEntity();
             adminUser.setUsername("admin");

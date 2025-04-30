@@ -6,7 +6,6 @@ import Loading from "./loading";
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
-  // Show loading state while authentication status is being determined
   if (isLoading) {
     return <Loading message="Verifying authentication..." />;
   }

@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
-
-// Create a shared axios instance with base URL
+import { getAuthToken } from '../services/authService';
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -11,15 +10,10 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('Request config:', {
-      url: config.url,
-      method: config.method,
-      headers: config.headers,
-    });
     return config;
   },
   (error) => Promise.reject(error)
@@ -27,11 +21,6 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
   (response) => {
-    console.log('Response success:', {
-      url: response.config.url,
-      status: response.status,
-      statusText: response.statusText
-    });
     return response;
   },
   (error) => {
@@ -47,8 +36,10 @@ apiClient.interceptors.response.use(
       if (error.response.status === 401) {
         console.warn('Authentication token expired or invalid');
         
-        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
         localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userId');
         
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';

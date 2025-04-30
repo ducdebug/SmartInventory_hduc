@@ -1,8 +1,8 @@
 package com.ims.smartinventory.controller;
 
-import com.ims.smartinventory.dto.Response.DispatchHistoryResponse;
+import com.ims.common.entity.UserEntity;
 import com.ims.smartinventory.dto.Response.DispatchDetailResponse;
-import com.ims.smartinventory.entity.UserEntity;
+import com.ims.smartinventory.dto.Response.DispatchHistoryResponse;
 import com.ims.smartinventory.service.DispatchService;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,12 +30,12 @@ public class DispatchController {
             System.out.println("DispatchController - No authenticated user found");
             return ResponseEntity.status(401).build();
         }
-        
+
         if (!"BUYER".equals(currentUser.getRole().name())) {
             System.out.println("DispatchController - User does not have BUYER role: " + currentUser.getRole().name());
             return ResponseEntity.status(403).build();
         }
-        
+
         List<DispatchHistoryResponse> dispatches = dispatchService.getBuyerDispatches(currentUser.getId());
         return ResponseEntity.ok(dispatches);
     }
@@ -48,9 +48,9 @@ public class DispatchController {
         if (currentUser == null) {
             return ResponseEntity.status(401).build();
         }
-        
+
         DispatchDetailResponse dispatch;
-        
+
         // If the user is an admin, use the admin-specific method
         if ("ADMIN".equals(currentUser.getRole().name())) {
             dispatch = dispatchService.getDispatchDetailsAdmin(dispatchId);
@@ -58,11 +58,11 @@ public class DispatchController {
             // For buyers or other roles, use the regular method
             dispatch = dispatchService.getDispatchDetails(dispatchId, currentUser.getId());
         }
-        
+
         if (dispatch == null) {
             return ResponseEntity.notFound().build();
         }
-        
+
         return ResponseEntity.ok(dispatch);
     }
 
@@ -73,11 +73,11 @@ public class DispatchController {
         if (currentUser == null) {
             return ResponseEntity.status(401).build();
         }
-        
+
         if (!"ADMIN".equals(currentUser.getRole().name())) {
             return ResponseEntity.status(403).build();
         }
-        
+
         List<DispatchHistoryResponse> dispatches = dispatchService.getPendingDispatches();
         return ResponseEntity.ok(dispatches);
     }
@@ -89,11 +89,11 @@ public class DispatchController {
         if (currentUser == null) {
             return ResponseEntity.status(401).build();
         }
-        
+
         if (!"ADMIN".equals(currentUser.getRole().name())) {
             return ResponseEntity.status(403).build();
         }
-        
+
         List<DispatchHistoryResponse> dispatches = dispatchService.getCompletedDispatches();
         return ResponseEntity.ok(dispatches);
     }
@@ -106,17 +106,17 @@ public class DispatchController {
         if (currentUser == null) {
             return ResponseEntity.status(401).build();
         }
-        
+
         if (!"ADMIN".equals(currentUser.getRole().name())) {
             return ResponseEntity.status(403).build();
         }
-        
+
         DispatchDetailResponse updatedDispatch = dispatchService.acceptDispatch(dispatchId);
-        
+
         if (updatedDispatch == null) {
             return ResponseEntity.notFound().build();
         }
-        
+
         return ResponseEntity.ok(updatedDispatch);
     }
 
@@ -129,20 +129,20 @@ public class DispatchController {
         if (currentUser == null) {
             return ResponseEntity.status(401).build();
         }
-        
+
         if (!"ADMIN".equals(currentUser.getRole().name())) {
             return ResponseEntity.status(403).build();
         }
-        
+
         DispatchDetailResponse updatedDispatch = dispatchService.rejectDispatch(dispatchId, rejectRequest.getReason());
-        
+
         if (updatedDispatch == null) {
             return ResponseEntity.notFound().build();
         }
-        
+
         return ResponseEntity.ok(updatedDispatch);
     }
-    
+
     @Setter
     @Getter
     static class RejectRequest {

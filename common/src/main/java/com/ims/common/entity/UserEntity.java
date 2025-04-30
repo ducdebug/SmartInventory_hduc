@@ -1,6 +1,6 @@
-package com.ims.smartinventory.entity;
+package com.ims.common.entity;
 
-import com.ims.smartinventory.config.UserRole;
+import com.ims.common.config.UserRole;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,14 +41,22 @@ public class UserEntity implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonExpired() { return true; }
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
     @Override
-    public boolean isCredentialsNonExpired() { return true; }
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
 
     @Override
-    public boolean isEnabled() { return enabled && !deleted; }
+    public boolean isEnabled() {
+        return enabled && !deleted;
+    }
 }

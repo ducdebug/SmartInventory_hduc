@@ -1,6 +1,6 @@
 package com.ims.smartinventory.repository;
 
-import com.ims.smartinventory.entity.UserEntity;
+import com.ims.common.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

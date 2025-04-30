@@ -1,6 +1,6 @@
 package com.ims.smartinventory.dto.Request;
 
-import com.ims.smartinventory.config.UserRole;
+import com.ims.common.config.UserRole;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;

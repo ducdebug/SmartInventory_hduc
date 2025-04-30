@@ -1,16 +1,15 @@
 package com.ims.smartinventory.service.impl;
 
+import com.ims.smartinventory.config.DispatchStatus;
 import com.ims.smartinventory.dto.Response.DispatchDetailResponse;
 import com.ims.smartinventory.dto.Response.DispatchHistoryResponse;
 import com.ims.smartinventory.entity.management.DispatchEntity;
-import com.ims.smartinventory.config.DispatchStatus;
 import com.ims.smartinventory.repository.DispatchRepository;
 import com.ims.smartinventory.service.DispatchService;
 import com.ims.smartinventory.service.NotificationProducerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,7 +43,7 @@ public class DispatchServiceImpl implements DispatchService {
 
         return DispatchDetailResponse.fromEntity(dispatch);
     }
-    
+
     @Override
     public DispatchDetailResponse getDispatchDetailsAdmin(String dispatchId) {
         DispatchEntity dispatch = dispatchRepository.findById(dispatchId)
@@ -56,7 +55,7 @@ public class DispatchServiceImpl implements DispatchService {
 
         return DispatchDetailResponse.fromEntity(dispatch);
     }
-    
+
     @Override
     public List<DispatchHistoryResponse> getPendingDispatches() {
         List<DispatchEntity> dispatches = dispatchRepository.findByStatusInOrderByCreatedAtDesc(
@@ -66,7 +65,7 @@ public class DispatchServiceImpl implements DispatchService {
                 .map(DispatchHistoryResponse::fromEntity)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public List<DispatchHistoryResponse> getCompletedDispatches() {
         List<DispatchEntity> dispatches = dispatchRepository.findByStatusInOrderByCreatedAtDesc(
@@ -76,68 +75,68 @@ public class DispatchServiceImpl implements DispatchService {
                 .map(DispatchHistoryResponse::fromEntity)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     @Transactional
     public DispatchDetailResponse acceptDispatch(String dispatchId) {
         DispatchEntity dispatch = dispatchRepository.findById(dispatchId).orElse(null);
-        
+
         if (dispatch == null || dispatch.getStatus() != DispatchStatus.PENDING) {
             return null;
         }
         dispatch.setStatus(DispatchStatus.ACCEPTED);
         dispatch = dispatchRepository.save(dispatch);
-        
+
         // Send notification to the buyer
 //        notificationProducerService.sendNotification(
 //                dispatch.getBuyerId(),
 //                "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
 //        );
-        
+
         return DispatchDetailResponse.fromEntity(dispatch);
     }
-    
+
     @Override
     @Transactional
     public DispatchDetailResponse completeDispatch(String dispatchId) {
         DispatchEntity dispatch = dispatchRepository.findById(dispatchId).orElse(null);
-        
+
         if (dispatch == null || dispatch.getStatus() != DispatchStatus.PENDING) {
             return null;
         }
-        
+
         dispatch.setStatus(DispatchStatus.ACCEPTED);
         dispatch = dispatchRepository.save(dispatch);
-        
+
         // Send notification to the buyer
         notificationProducerService.sendNotification(
                 dispatch.getBuyerId(),
                 "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
         );
-        
+
         return DispatchDetailResponse.fromEntity(dispatch);
     }
-    
+
     @Override
     @Transactional
     public DispatchDetailResponse rejectDispatch(String dispatchId, String reason) {
         DispatchEntity dispatch = dispatchRepository.findById(dispatchId).orElse(null);
-        
+
         if (dispatch == null || dispatch.getStatus() != DispatchStatus.PENDING) {
             return null;
         }
-        
+
         dispatch.setStatus(DispatchStatus.REJECTED);
         dispatch.setRejectionReason(reason);
         dispatch = dispatchRepository.save(dispatch);
-        
+
         // Send notification to the buyer
         notificationProducerService.sendNotification(
-                dispatch.getBuyerId(), 
-                "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been rejected. Reason: " + 
-                (reason != null && !reason.isEmpty() ? reason : "No reason provided")
+                dispatch.getBuyerId(),
+                "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been rejected. Reason: " +
+                        (reason != null && !reason.isEmpty() ? reason : "No reason provided")
         );
-        
+
         return DispatchDetailResponse.fromEntity(dispatch);
     }
 }

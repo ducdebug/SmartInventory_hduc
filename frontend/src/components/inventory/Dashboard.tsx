@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 import ProductTypeChart from './ProductTypeChart';
+import Magnet from '../advancedanimation/Magnet';
 import inventoryService from '../../services/inventoryService';
 
 interface SummaryStatistics {
@@ -35,9 +36,11 @@ const Dashboard: React.FC = () => {
   }, []);
 
   return (
+
     <div className="dashboard-container">
+    <Magnet padding={100} disabled={false} magnetStrength={100}>
       <h1>Inventory Dashboard</h1>
-      
+    </Magnet>
       {loading ? (
         <div className="loading-spinner">Loading dashboard data...</div>
       ) : error ? (

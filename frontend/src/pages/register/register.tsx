@@ -13,12 +13,16 @@ const Register: React.FC = () => {
     confirmPassword: '',
     role: 'BUYER' as UserRole 
   });
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
+    console.log('Register component - isAuthenticated changed to:', isAuthenticated);
     if (isAuthenticated) {
+      console.log('User is authenticated, redirecting to home page');
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
@@ -27,6 +31,20 @@ const Register: React.FC = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfileImage(file);
+      
+      // Create a preview URL for the selected image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -46,13 +64,22 @@ const Register: React.FC = () => {
     }
     
     try {
+      console.log('Attempting to register with data:', {
+        username: form.username,
+        role: form.role,
+        hasImage: !!profileImage
+      });
+      
       await register({
         username: form.username,
         password: form.password,
         role: form.role
-      });
+      }, profileImage || undefined);
+      
+      console.log('Registration successful, should redirect to home');
       // Navigation happens in useEffect when isAuthenticated changes
     } catch (err) {
+      console.error('Registration error in component:', err);
       setError(authError || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -122,6 +149,25 @@ const Register: React.FC = () => {
               <option value="SUPPLIER">Supplier</option>
               <option value="BUYER">Buyer</option>
             </select>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="profileImage">Profile Image</label>
+            <div className="profile-image-upload">
+              {imagePreview && (
+                <div className="image-preview">
+                  <img src={imagePreview} alt="Profile Preview" className="preview-image" />
+                </div>
+              )}
+              <input
+                id="profileImage"
+                name="profileImage"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="form-input file-input"
+              />
+            </div>
           </div>
 
           {error && (

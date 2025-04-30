@@ -5,8 +5,9 @@ import websocketService, {
   WebSocketCallback,
   IWebSocketService 
 } from '../services/websocket.service';
-import { getUserId, getUserRole } from '../services/auth.service';
+import { getUserId, getUserRole } from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
+import notificationService from '../services/notificationService';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -14,6 +15,7 @@ interface NotificationContextType {
   markAsRead: (id: number) => void;
   clearAll: () => void;
   isConnected: boolean;
+  refreshNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType>({
@@ -21,7 +23,8 @@ const NotificationContext = createContext<NotificationContextType>({
   unreadCount: 0,
   markAsRead: () => {},
   clearAll: () => {},
-  isConnected: false
+  isConnected: false,
+  refreshNotifications: async () => {}
 });
 
 export const useNotifications = () => useContext(NotificationContext);
@@ -33,6 +36,20 @@ export const NotificationProvider: React.FC<{children: React.ReactNode}> = ({ ch
 
   // Calculate unread count
   const unreadCount = notifications.filter(notification => !notification.isRead).length;
+
+  // Refresh notifications from server
+  const refreshNotifications = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      // Here you would normally fetch notifications from an API
+      // For now, we'll just use the websocket service's cached notifications
+      const fetchedNotifications = websocketService.getNotifications();
+      setNotifications(fetchedNotifications);
+    } catch (error) {
+      console.error('Failed to refresh notifications:', error);
+    }
+  }, [isAuthenticated]);
 
   // Handle new notification
   const handleNotification = useCallback((notification: Notification) => {
@@ -116,6 +133,13 @@ export const NotificationProvider: React.FC<{children: React.ReactNode}> = ({ ch
   const clearAll = useCallback(() => {
     setNotifications([]);
   }, []);
+
+  // Load initial notifications
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshNotifications();
+    }
+  }, [isAuthenticated, refreshNotifications]);
 
   // Connect to WebSocket when authenticated
   useEffect(() => {
@@ -208,7 +232,8 @@ export const NotificationProvider: React.FC<{children: React.ReactNode}> = ({ ch
       unreadCount, 
       markAsRead, 
       clearAll,
-      isConnected
+      isConnected,
+      refreshNotifications
     }}>
       {children}
     </NotificationContext.Provider>

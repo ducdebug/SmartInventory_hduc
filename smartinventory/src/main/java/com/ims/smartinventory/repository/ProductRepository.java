@@ -11,7 +11,10 @@ import java.util.Optional;
 @Repository
 public interface ProductRepository extends JpaRepository<BaseProductEntity, String> {
     List<BaseProductEntity> findByNameContaining(String name);
+
     List<BaseProductEntity> findByNameAndLot(String name, LotEntity lot);
+
     boolean existsById(String id);
+
     Optional<BaseProductEntity> findByName(String name);
 }

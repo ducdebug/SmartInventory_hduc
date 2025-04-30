@@ -35,7 +35,7 @@ public class VolumeCalculator {
         double length = 24.0; // cm
         double width = 17.0; // cm
         double height = 2.0; // cm
-        
+
         // Calculate volume in cubic centimeters
         return length * width * height / 1000.0; // Convert to liters
     }
@@ -45,7 +45,7 @@ public class VolumeCalculator {
         // Assume average density of 0.8 g/cm³
         double weight = food.getWeight();
         double density = 0.8;
-        
+
         // Convert weight (g) to volume (L)
         return weight / density / 1000.0;
     }
@@ -53,7 +53,7 @@ public class VolumeCalculator {
     private static double calculateClothingVolume(ClothingProductEntity clothing) {
         // Calculate based on size
         double baseVolume = 1.0;
-        
+
         switch (clothing.getSize()) {
             case XS -> baseVolume = 1.0;
             case S -> baseVolume = 1.5;
@@ -61,7 +61,7 @@ public class VolumeCalculator {
             case L -> baseVolume = 2.5;
             case XL -> baseVolume = 3.0;
         }
-        
+
         return baseVolume;
     }
 
@@ -71,7 +71,7 @@ public class VolumeCalculator {
 
     private static double calculateElectronicsVolume(ElectronicsProductEntity electronics) {
         String type = electronics.getType().toLowerCase();
-        
+
         if (type.contains("phone")) {
             return 0.2;
         } else if (type.contains("laptop")) {

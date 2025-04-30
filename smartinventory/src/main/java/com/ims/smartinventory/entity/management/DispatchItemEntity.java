@@ -5,6 +5,7 @@ import com.ims.smartinventory.entity.PriceEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.util.Date;
 
 @Getter
@@ -17,7 +18,7 @@ public class DispatchItemEntity {
     private String id;
 
     private String productName;
-    
+
     @Column(name = "product_ref_id")
     private String productId;
 

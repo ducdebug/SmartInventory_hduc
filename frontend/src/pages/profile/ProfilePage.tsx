@@ -19,9 +19,10 @@ import Spin from 'antd/lib/spin';
 import { UserOutlined, LockOutlined, SafetyOutlined, UploadOutlined, CameraOutlined } from '@ant-design/icons';
 
 // Import services and types
-import userService, { UserProfile, ChangePasswordData } from '../services/userService';
-import authService from '../services/authService';
+import userService, { UserProfile, ChangePasswordData, getImageDisplayUrl } from '../../services/userService';
+import authService from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
+import { useProfileImage } from '../../context/ProfileImageContext';
 import './ProfilePage.css';
 
 const ProfilePage: React.FC = () => {
@@ -35,15 +36,28 @@ const ProfilePage: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { updateProfileImage } = useProfileImage();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
         const userData = await userService.getProfile();
+        console.log('Profile data fetched:', userData);
+        
+        // Log the image URL if present
+        if (userData.img_url) {
+          console.log('Image URL found in profile:', 
+                      userData.img_url.substring(0, 20) + 
+                      (userData.img_url.length > 20 ? '...' : ''));
+        } else {
+          console.log('No image URL in profile');
+        }
+        
         setProfile(userData);
         setError(null);
       } catch (err: any) {
+        console.error('Error fetching profile:', err);
         setError(err.message || 'Failed to fetch profile data');
         if (err.message?.includes('401')) {
           message.error('Your session has expired. Please login again.');
@@ -58,7 +72,6 @@ const ProfilePage: React.FC = () => {
     fetchProfile();
   }, [navigate]);
 
-  // Handle password change form submission
   interface PasswordFormValues extends ChangePasswordData {
     confirmPassword: string;
   }
@@ -66,31 +79,41 @@ const ProfilePage: React.FC = () => {
   const handlePasswordChange = async (values: PasswordFormValues) => {
     try {
       setPasswordLoading(true);
-      // Only send currentPassword and newPassword to the API
+      console.log('Changing password...');
+      
       const { confirmPassword, ...passwordData } = values;
       await userService.changePassword(passwordData);
+      
       message.success('Password changed successfully');
       passwordForm.resetFields();
     } catch (err: any) {
-      message.error(err.message || 'Failed to change password');
+      console.error('Password change error:', err);
+      
+      let errorMessage = 'Failed to change password';
+      if (err.message) {
+        errorMessage = err.message;
+      } else if (err.response && err.response.data && err.response.data.message) {
+        errorMessage = err.response.data.message;
+      }
+      
+      message.error(errorMessage);
     } finally {
       setPasswordLoading(false);
     }
   };
   
-  // Handle file selection for profile image
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check file type
+    console.log('File selected:', file.name, 'type:', file.type, 'size:', file.size);
+    
     const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
       message.error('Please upload an image file (JPEG, PNG, GIF)');
       return;
     }
     
-    // Check file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       message.error('Image must be smaller than 2MB');
       return;
@@ -99,26 +122,34 @@ const ProfilePage: React.FC = () => {
     handleProfileImageUpdate(file);
   };
   
-  // Handle profile image update
   const handleProfileImageUpdate = async (file: File) => {
     try {
       setImageLoading(true);
+      console.log('Uploading profile image...', file.name, 'size:', file.size, 'type:', file.type);
+      
       const result = await userService.updateProfileImage(file);
-      setProfile(prev => prev ? { ...prev, img_url: result.img_url } : null);
+      console.log('Upload response:', result);
       
-      // Update the global auth context user object
-      // This is a workaround since we can't directly update the user in the auth context
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const updatedUser = JSON.parse(userStr);
-        if (updatedUser) {
-          // Force a reload to update the navbar with the new profile image
-          window.location.reload();
-        }
+      if (result && result.img_url) {
+        // Update the profile state with the new image URL
+        const newImgUrl = result.img_url;
+        console.log('Setting new image URL:', newImgUrl.substring(0, 30) + '...');
+        
+        // Update the profile state
+        setProfile((prev: UserProfile | null) => 
+          prev ? { ...prev, img_url: newImgUrl } : null
+        );
+
+        // Update the global context
+        updateProfileImage(newImgUrl);
+        
+        message.success('Profile image updated successfully');
+      } else {
+        console.error('Invalid response format - missing img_url');
+        throw new Error('Invalid response from server');
       }
-      
-      message.success('Profile image updated successfully');
     } catch (err: any) {
+      console.error('Profile image update error:', err);
       message.error(err.message || 'Failed to update profile image');
     } finally {
       setImageLoading(false);
@@ -135,10 +166,16 @@ const ProfilePage: React.FC = () => {
   // Preview image
   const handlePreview = () => {
     if (profile?.img_url) {
-      setPreviewImage(profile.img_url.startsWith('data:') 
-        ? profile.img_url 
-        : `data:image/jpeg;base64,${profile.img_url}`);
-      setPreviewVisible(true);
+      try {
+        // Use helper function to ensure proper image display format
+        const displayUrl = getImageDisplayUrl(profile.img_url);
+        console.log('Setting preview image URL');
+        setPreviewImage(displayUrl);
+        setPreviewVisible(true);
+      } catch (error) {
+        console.error('Error setting preview image:', error);
+        message.error('Failed to preview image');
+      }
     }
   };
 
@@ -173,8 +210,10 @@ const ProfilePage: React.FC = () => {
                       {profile.img_url ? (
                         <Avatar 
                           size={100} 
-                          src={profile.img_url.startsWith('data:') ? profile.img_url : `data:image/jpeg;base64,${profile.img_url}`} 
+                          src={getImageDisplayUrl(profile.img_url)} 
                           className="profile-avatar"
+                          alt={profile.username}
+                          icon={<UserOutlined />} // This will be used as fallback if image fails to load
                         />
                       ) : (
                         <Avatar size={100} icon={<UserOutlined />} className="profile-avatar" />

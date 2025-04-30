@@ -1,8 +1,7 @@
-import { getAuthToken } from './auth.service';
+import { getAuthToken } from './authService';
 import SockJS from 'sockjs-client';
 import { Client, IFrame, IMessage, StompSubscription } from '@stomp/stompjs';
 
-// Types for notification system
 export interface Notification {
   id: number;
   toUserId: string;
@@ -11,7 +10,6 @@ export interface Notification {
   createdAt: string;
 }
 
-// WebSocket events that components can subscribe to
 export enum WebSocketEvent {
   CONNECT = 'connect',
   DISCONNECT = 'disconnect',
@@ -22,7 +20,6 @@ export enum WebSocketEvent {
 
 export type WebSocketCallback = (data: any) => void;
 
-// Creating an interface that will be implemented by WebSocketService
 export interface IWebSocketService {
   connect(userId: string): Promise<boolean>;
   disconnect(): void;
@@ -48,7 +45,6 @@ class WebSocketService implements IWebSocketService {
   private notifications: Notification[] = [];
 
   constructor() {
-    // Initialize event listener maps
     Object.values(WebSocketEvent).forEach(event => {
       this.eventListeners.set(event as WebSocketEvent, []);
     });
@@ -61,10 +57,6 @@ class WebSocketService implements IWebSocketService {
     return WebSocketService.instance;
   }
 
-  /**
-   * Connect to the WebSocket server
-   * @param userId The ID of the user to connect as
-   */
   public connect(userId: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (this.connected && this.stompClient) {
@@ -74,43 +66,32 @@ class WebSocketService implements IWebSocketService {
       this.userId = userId;
       
       try {
-        // Get the authorization token
         const token = getAuthToken();
         const headers: { [key: string]: string } = {};
         
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
-        
-        // Create Stomp client
-        this.stompClient = new Client({
+                this.stompClient = new Client({
           webSocketFactory: () => new SockJS('/ws'),
           connectHeaders: headers,
           debug: (str) => {
-            // Disable debug logs in production
-            // console.log(str);
           },
           reconnectDelay: 5000,
           heartbeatIncoming: 4000,
           heartbeatOutgoing: 4000
         });
         
-        // Set up event handlers
         this.stompClient.onConnect = (frame: IFrame) => {
           this.connected = true;
           this.reconnectAttempts = 0;
           console.log('Connected to WebSocket');
           
-          // Subscribe to user-specific notifications
           this.subscribeToUserNotifications(userId);
-          
-          // If user is admin, subscribe to admin notifications as well
-          if (userId === 'admin' || localStorage.getItem('userRole') === 'ADMIN') {
+                    if (userId === 'admin' || localStorage.getItem('userRole') === 'ADMIN') {
             this.subscribeToAdminNotifications();
           }
-          
-          // Notify all listeners about the connection
-          this.notifyListeners(WebSocketEvent.CONNECT, frame);
+                    this.notifyListeners(WebSocketEvent.CONNECT, frame);
           resolve(true);
         };
         
@@ -136,7 +117,6 @@ class WebSocketService implements IWebSocketService {
           }
         };
         
-        // Activate the client (initiate connection)
         this.stompClient.activate();
         
       } catch (error) {
@@ -146,9 +126,6 @@ class WebSocketService implements IWebSocketService {
     });
   }
 
-  /**
-   * Attempt to reconnect to the WebSocket server
-   */
   private attemptReconnect(): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
@@ -158,21 +135,17 @@ class WebSocketService implements IWebSocketService {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       
-      // Use exponential backoff for reconnection attempts
       const backoffInterval = this.reconnectInterval * Math.pow(1.5, this.reconnectAttempts - 1);
       console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${backoffInterval/1000}s...`);
       
       this.reconnectTimeout = setTimeout(() => {
-        // Check if token has expired and refresh if needed
         const token = getAuthToken();
         if (!token) {
           console.warn('Authorization token not available for reconnection');
-          // Still attempt to connect but may fail due to auth
         }
         
         this.connect(this.userId).catch((error) => {
           console.warn('Reconnection attempt failed:', error);
-          // The error is already handled in connect method
         });
       }, backoffInterval);
     } else {
@@ -269,9 +242,6 @@ class WebSocketService implements IWebSocketService {
     }
   }
 
-  /**
-   * Subscribe to admin notifications
-   */
   private subscribeToAdminNotifications(): void {
     if (!this.connected || !this.stompClient) {
       console.error('Cannot subscribe: WebSocket not connected');
@@ -291,7 +261,6 @@ class WebSocketService implements IWebSocketService {
     }
     
     try {
-      // Subscribe to admin topic
       const subscription = this.stompClient.subscribe(
         '/topic/admin/notifications', 
         (message: IMessage) => {
@@ -316,7 +285,7 @@ class WebSocketService implements IWebSocketService {
             console.debug('Admin message content:', message?.body);
           }
         },
-        { ack: 'auto' } // Auto-acknowledge messages
+        { ack: 'auto' }
       );
       
       this.subscriptions.set('admin', subscription);
@@ -328,12 +297,7 @@ class WebSocketService implements IWebSocketService {
       });
     }
   }
-  
-  /**
-   * Validate notification structure
-   * @param notification The notification to validate
-   * @returns True if valid, false otherwise
-   */
+
   private isValidNotification(notification: any): boolean {
     return (
       notification &&
@@ -345,11 +309,6 @@ class WebSocketService implements IWebSocketService {
     );
   }
 
-  /**
-   * Mark a notification as read
-   * @param notificationId The ID of the notification to mark as read
-   * @returns Promise that resolves when the notification is marked as read
-   */
   public markNotificationAsRead(notificationId: number): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (!this.connected || !this.stompClient) {
@@ -366,14 +325,12 @@ class WebSocketService implements IWebSocketService {
       }
       
       try {
-        // Send request to mark notification as read
         this.stompClient.publish({
           destination: `/app/notifications/read/${notificationId}`,
           headers: {},
           body: JSON.stringify({ id: notificationId })
         });
         
-        // Update local notifications
         const index = this.notifications.findIndex(n => n.id === notificationId);
         if (index !== -1) {
           this.notifications[index].isRead = true;
@@ -387,38 +344,20 @@ class WebSocketService implements IWebSocketService {
     });
   }
 
-  /**
-   * Get all notifications
-   * @returns An array of all notifications
-   */
   public getNotifications(): Notification[] {
     return [...this.notifications];
   }
 
-  /**
-   * Get unread notifications
-   * @returns An array of unread notifications
-   */
   public getUnreadNotifications(): Notification[] {
     return this.notifications.filter(n => !n.isRead);
   }
 
-  /**
-   * Add an event listener
-   * @param event The event to listen for
-   * @param callback The callback to call when the event occurs
-   */
   public addEventListener(event: WebSocketEvent, callback: WebSocketCallback): void {
     const listeners = this.eventListeners.get(event) || [];
     listeners.push(callback);
     this.eventListeners.set(event, listeners);
   }
 
-  /**
-   * Remove an event listener
-   * @param event The event to remove the listener from
-   * @param callback The callback to remove
-   */
   public removeEventListener(event: WebSocketEvent, callback: WebSocketCallback): void {
     const listeners = this.eventListeners.get(event) || [];
     const index = listeners.indexOf(callback);
@@ -428,11 +367,6 @@ class WebSocketService implements IWebSocketService {
     }
   }
 
-  /**
-   * Notify all listeners about an event
-   * @param event The event that occurred
-   * @param data The data to pass to the listeners
-   */
   private notifyListeners(event: WebSocketEvent, data: any): void {
     const listeners = this.eventListeners.get(event) || [];
     listeners.forEach(callback => {
@@ -444,15 +378,10 @@ class WebSocketService implements IWebSocketService {
     });
   }
 
-  /**
-   * Check if the WebSocket is connected
-   * @returns True if connected, false otherwise
-   */
   public isConnected(): boolean {
     return this.connected;
   }
 }
 
-// Export a properly typed instance of the WebSocketService
 const websocketServiceInstance: IWebSocketService = WebSocketService.getInstance();
 export default websocketServiceInstance;

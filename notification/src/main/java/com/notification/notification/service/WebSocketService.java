@@ -21,7 +21,7 @@ public class WebSocketService {
     /**
      * Send notification to a specific user via WebSocket
      *
-     * @param userId      The user ID to send notification to
+     * @param userId       The user ID to send notification to
      * @param notification The notification entity
      */
     public void sendUserNotification(String userId, NotificationEntity notification) {

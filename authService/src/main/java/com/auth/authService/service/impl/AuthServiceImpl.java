@@ -1,22 +1,21 @@
-package com.ims.smartinventory.service.impl;
+package com.auth.authService.service.impl;
 
-import com.ims.smartinventory.config.UserRole;
-import com.ims.smartinventory.dto.Request.ChangePasswordRequest;
-import com.ims.smartinventory.dto.Request.LoginRequest;
-import com.ims.smartinventory.dto.Request.RegisterRequest;
-import com.ims.smartinventory.dto.Response.JwtResponse;
-import com.ims.smartinventory.entity.UserEntity;
-import com.ims.smartinventory.exception.AuthException;
-import com.ims.smartinventory.repository.UserRepository;
-import com.ims.smartinventory.security.JwtUtil;
-import com.ims.smartinventory.service.AuthService;
-import com.ims.smartinventory.util.ImageUtil;
+import com.auth.authService.dto.request.ChangePasswordRequest;
+import com.auth.authService.dto.request.LoginRequest;
+import com.auth.authService.dto.request.RegisterRequest;
+import com.auth.authService.dto.response.JwtResponse;
+import com.auth.authService.exception.AuthException;
+import com.auth.authService.repository.UserRepository;
+import com.auth.authService.security.JwtUtil;
+import com.auth.authService.service.AuthService;
+import com.auth.authService.util.ImageUtil;
+import com.ims.common.config.UserRole;
+import com.ims.common.entity.UserEntity;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
-        
+
         if (!user.isEnabled()) {
             if (user.isDeleted()) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "This account has been deleted");
@@ -49,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtUtil.generateToken(user);
 
-        return new JwtResponse(token, user.getUsername(), user.getRole());
+        return new JwtResponse(token, user.getId(), user.getUsername(), user.getRole(), user.getImg_url());
     }
 
     @Transactional
@@ -65,8 +64,7 @@ public class AuthServiceImpl implements AuthService {
         user.setRole(request.getRole() != null ? request.getRole() : UserRole.BUYER);
         user.setEnabled(true);
         user.setDeleted(false);
-        
-        // Handle profile image if provided
+
         try {
             if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
                 String base64Image = ImageUtil.convertToBase64(request.getProfileImage());
@@ -78,22 +76,20 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername(request.getUsername());
-        loginRequest.setPassword(request.getPassword());
-        return login(loginRequest);
+        String token = jwtUtil.generateToken(user);
+        return new JwtResponse(token, user.getId(), user.getUsername(), user.getRole(), user.getImg_url());
     }
-    
+
     @Transactional
     @Override
     public void changePassword(String userId, ChangePasswordRequest request) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        
+
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
         }
-        
+
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }

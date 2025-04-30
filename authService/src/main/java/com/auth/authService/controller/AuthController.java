@@ -1,32 +1,31 @@
-package com.ims.smartinventory.controller;
+package com.auth.authService.controller;
 
-import com.ims.smartinventory.config.UserRole;
-import com.ims.smartinventory.dto.Request.ChangePasswordRequest;
-import com.ims.smartinventory.dto.Request.LoginRequest;
-import com.ims.smartinventory.dto.Request.RegisterRequest;
-import com.ims.smartinventory.dto.Response.AuthErrorResponse;
-import com.ims.smartinventory.dto.Response.JwtResponse;
-import com.ims.smartinventory.entity.UserEntity;
-import com.ims.smartinventory.exception.AuthException;
-import com.ims.smartinventory.service.AuthService;
-import org.springframework.http.MediaType;
+import com.auth.authService.dto.request.ChangePasswordRequest;
+import com.auth.authService.dto.request.LoginRequest;
+import com.auth.authService.dto.request.RegisterRequest;
+import com.auth.authService.dto.response.AuthErrorResponse;
+import com.auth.authService.dto.response.JwtResponse;
+import com.auth.authService.exception.AuthException;
+import com.auth.authService.service.AuthService;
+import com.ims.common.config.UserRole;
+import com.ims.common.entity.UserEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
-public class UserController {
+public class AuthController {
     private final AuthService authService;
 
     @Autowired
-    public UserController(AuthService authService) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
     }
 
@@ -40,7 +39,7 @@ public class UserController {
                     .body(new AuthErrorResponse("Username already exists"));
         }
     }
-    
+
     @PostMapping(value = "/register-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> registerWithImage(
             @RequestParam("username") String username,
@@ -53,7 +52,7 @@ public class UserController {
             request.setPassword(password);
             request.setRole(role);
             request.setProfileImage(profileImage);
-            
+
             return ResponseEntity.ok(authService.register(request));
         } catch (AuthException e) {
             return ResponseEntity
@@ -72,7 +71,7 @@ public class UserController {
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserEntity currentUser) {
         return ResponseEntity.ok(currentUser);
     }
-    
+
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(
             @AuthenticationPrincipal UserEntity currentUser,

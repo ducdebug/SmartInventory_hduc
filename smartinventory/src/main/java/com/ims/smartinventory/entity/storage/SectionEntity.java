@@ -36,15 +36,14 @@ public class SectionEntity {
     private int y_slot;
     private int x;
     private int y;
+    @ManyToOne
+    @JoinColumn(name = "warehouse_id")
+    @JsonBackReference
+    private WarehouseEntity warehouse;
 
     public int getTotalSlots() {
         return (numShelves > 0 && shelves != null && !shelves.isEmpty())
                 ? numShelves * shelves.getFirst().getHeight() * 6
                 : 6 * y_slot;
     }
-
-    @ManyToOne
-    @JoinColumn(name = "warehouse_id")
-    @JsonBackReference
-    private WarehouseEntity warehouse;
 }

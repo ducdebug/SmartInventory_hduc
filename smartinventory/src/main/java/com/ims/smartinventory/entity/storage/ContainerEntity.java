@@ -1,12 +1,9 @@
 package com.ims.smartinventory.entity.storage;
 
 import com.ims.smartinventory.config.BoxSize;
-import com.ims.smartinventory.entity.BaseProductEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 @Getter
 @Setter
@@ -34,12 +31,13 @@ public class ContainerEntity {
 //    @OneToMany(mappedBy = "container", cascade = CascadeType.ALL)
 //    private List<BaseProductEntity> products;
 
-    public int getMaxQuantity(){
-        if(size == BoxSize.BIG) return 25;
-        if(size == BoxSize.MEDIUM) return 15;
-        if(size== BoxSize.SMALL) return 10;
+    public int getMaxQuantity() {
+        if (size == BoxSize.BIG) return 25;
+        if (size == BoxSize.MEDIUM) return 15;
+        if (size == BoxSize.SMALL) return 10;
         return 5;
     }
+
     public boolean hasAvailableCapacity(int quantityToAdd) {
         if (maxQuantity == null) {
             return true;

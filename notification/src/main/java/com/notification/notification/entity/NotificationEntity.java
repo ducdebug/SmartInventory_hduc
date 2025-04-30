@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
 import java.util.Date;
 
 @Getter
@@ -14,7 +15,7 @@ public class NotificationEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(nullable = false)
     private String toUserId;
 
@@ -26,7 +27,7 @@ public class NotificationEntity {
 
     @Column
     private Date createdAt;
-    
+
     @Builder
     public NotificationEntity(String toUserId, String message, Boolean isRead, Date createdAt) {
         this.toUserId = toUserId;
@@ -34,7 +35,7 @@ public class NotificationEntity {
         this.isRead = isRead;
         this.createdAt = createdAt;
     }
-    
+
     public void markAsRead() {
         this.isRead = true;
     }

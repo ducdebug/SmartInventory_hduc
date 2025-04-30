@@ -6,13 +6,11 @@ export interface User {
   img_url?: string;
 }
 
-// For login form
 export interface LoginCredentials {
   username: string;
   password: string;
 }
 
-// For register form
 export interface RegisterData {
   username: string;
   password: string;

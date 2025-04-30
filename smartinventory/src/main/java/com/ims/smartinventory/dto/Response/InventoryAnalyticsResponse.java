@@ -14,14 +14,14 @@ public class InventoryAnalyticsResponse {
     private List<StorageAllocationData> storageAllocation;
     private List<SectionUtilizationData> sectionUtilization;
     private SummaryStatistics summaryStats;
-    
+
     @Data
     @NoArgsConstructor
     public static class MonthlyVolumeData {
         private String month;
         private Map<String, Integer> volumeByCategory;
     }
-    
+
     @Data
     @NoArgsConstructor
     public static class ProductMovementData {
@@ -30,7 +30,7 @@ public class InventoryAnalyticsResponse {
         private int exports;
         private double ratio;
     }
-    
+
     @Data
     @NoArgsConstructor
     public static class StorageAllocationData {
@@ -38,7 +38,7 @@ public class InventoryAnalyticsResponse {
         private int value;
         private double percentage;
     }
-    
+
     @Data
     @NoArgsConstructor
     public static class SectionUtilizationData {
@@ -48,7 +48,7 @@ public class InventoryAnalyticsResponse {
         private int usedSlots;
         private double utilizationPercentage;
     }
-    
+
     @Data
     @NoArgsConstructor
     public static class SummaryStatistics {
