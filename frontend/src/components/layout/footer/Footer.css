@@ -22,15 +22,30 @@
   padding: 0 1rem;
 }
 
+.footer-logo {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.footer-logo img {
+  margin-right: 0.75rem;
+  filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+}
+
+.footer-logo .logo-white {
+  filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+}
+
 .footer-title {
   font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 1rem;
   color: #fff;
   background: linear-gradient(90deg, #3b82f6, #2563eb);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  margin: 0;
 }
 
 .footer-description {

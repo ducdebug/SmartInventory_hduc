@@ -14,10 +14,9 @@ public class ImageUtil {
         byte[] bytes = file.getBytes();
         String base64 = Base64.getEncoder().encodeToString(bytes);
 
-        // Include the file type in the base64 string for proper rendering in frontend
         String contentType = file.getContentType();
         if (contentType == null) {
-            contentType = "image/jpeg"; // Default to JPEG if content type is not available
+            contentType = "image/jpeg";
         }
 
         return "data:" + contentType + ";base64," + base64;

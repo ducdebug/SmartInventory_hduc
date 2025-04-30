@@ -15,10 +15,8 @@ import Avatar from 'antd/lib/avatar';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
 
-// Import Ant Design icons
 import { UserOutlined, LockOutlined, SafetyOutlined, UploadOutlined, CameraOutlined } from '@ant-design/icons';
 
-// Import services and types
 import userService, { UserProfile, ChangePasswordData, getImageDisplayUrl } from '../../services/userService';
 import authService from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
@@ -131,16 +129,11 @@ const ProfilePage: React.FC = () => {
       console.log('Upload response:', result);
       
       if (result && result.img_url) {
-        // Update the profile state with the new image URL
         const newImgUrl = result.img_url;
-        console.log('Setting new image URL:', newImgUrl.substring(0, 30) + '...');
-        
-        // Update the profile state
         setProfile((prev: UserProfile | null) => 
           prev ? { ...prev, img_url: newImgUrl } : null
         );
 
-        // Update the global context
         updateProfileImage(newImgUrl);
         
         message.success('Profile image updated successfully');
@@ -156,20 +149,16 @@ const ProfilePage: React.FC = () => {
     }
   };
   
-  // Trigger file input click
   const triggerFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
   
-  // Preview image
   const handlePreview = () => {
     if (profile?.img_url) {
       try {
-        // Use helper function to ensure proper image display format
         const displayUrl = getImageDisplayUrl(profile.img_url);
-        console.log('Setting preview image URL');
         setPreviewImage(displayUrl);
         setPreviewVisible(true);
       } catch (error) {
@@ -213,7 +202,7 @@ const ProfilePage: React.FC = () => {
                           src={getImageDisplayUrl(profile.img_url)} 
                           className="profile-avatar"
                           alt={profile.username}
-                          icon={<UserOutlined />} // This will be used as fallback if image fails to load
+                          icon={<UserOutlined />}
                         />
                       ) : (
                         <Avatar size={100} icon={<UserOutlined />} className="profile-avatar" />

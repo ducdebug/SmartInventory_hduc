@@ -8,7 +8,10 @@ const Footer: React.FC = () => {
     <footer className="footer">
       <div className="footer-container">
         <div className="footer-section">
-          <h3 className="footer-title">Smart Inventory</h3>
+          <div className="footer-logo">
+            <img src="/logo.png" alt="Smart Warehouse Logo" width="32" height="32" className="logo-white" />
+            <h3 className="footer-title">Smart Warehouse</h3>
+          </div>
           <p className="footer-description">
             Streamline your inventory management with our powerful and intuitive platform.
           </p>
@@ -35,7 +38,7 @@ const Footer: React.FC = () => {
       
       <div className="footer-bottom">
         <div className="copyright">
-          &copy; {currentYear} Smart Inventory Management System. All rights reserved.
+          &copy; {currentYear} Smart Warehouse Management System. All rights reserved.
         </div>
         <div className="footer-legal">
           <a href="#">Privacy Policy</a>

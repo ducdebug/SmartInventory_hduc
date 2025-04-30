@@ -3,9 +3,9 @@
 
 .navbar {
   width: 100%;
-  background-color: #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  padding: 0.75rem 1.25rem;
+  background-color: #1e293b;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 1.25rem;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -15,7 +15,7 @@
 
 .navbar-scrolled {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 0.5rem 1.25rem;
+  padding: 0.35rem 1.25rem;
 }
 
 .navbar-container {
@@ -38,18 +38,31 @@
   color: #111827;
   font-weight: 700;
   font-size: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.03);
 }
 
 .logo-icon {
   margin-right: 0.75rem;
   color: #3b82f6;
+  filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+}
+
+.logo-white {
+  filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
 }
 
 .brand-text {
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  background: linear-gradient(90deg, #3b82f6, #1e40af);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .menu-toggle {
@@ -122,7 +135,7 @@
   align-items: center;
   padding: 0.5rem 1rem;
   margin: 0 0.5rem;
-  color: #4b5563;
+  color: #e2e8f0;
   text-decoration: none;
   font-weight: 500;
   border-radius: 0.375rem;
@@ -131,13 +144,25 @@
 
 .navbar-links a:hover, 
 .navbar-links button:hover {
-  color: #2563eb;
-  background-color: #f3f4f6;
+  color: #3b82f6;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .navbar-links a.active {
-  color: #2563eb;
-  background-color: #eff6ff;
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.15);
+  position: relative;
+}
+
+.navbar-links a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #3b82f6;
+  border-radius: 2px 2px 0 0;
 }
 
 .navbar-links a svg, 
@@ -223,54 +248,59 @@
 .user-profile-trigger {
   display: flex;
   align-items: center;
-  padding: 0.25rem 0.5rem;
+  padding: 0.15rem;
   border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  background-color: transparent;
 }
 
 .user-profile-trigger:hover {
-  background-color: #f3f4f6;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .avatar-container {
   position: relative;
-  margin-right: 0.75rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .avatar {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.2rem;
+  height: 2.2rem;
   border-radius: 50%;
-  background-color: #2563eb;
+  background-color: #3b82f6;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
   font-size: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .avatar-image {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.2rem;
+  height: 2.2rem;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #e5e7eb;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .user-status {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 0.75rem;
-  height: 0.75rem;
+  bottom: 0px;
+  right: 0px;
+  width: 0.65rem;
+  height: 0.65rem;
   border-radius: 50%;
-  border: 2px solid white;
-}
-
-.user-status.online {
   background-color: #10b981;
+  box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+  border: 2px solid #1e293b;
+  z-index: 5;
 }
 
 .user-status.offline {
@@ -284,62 +314,66 @@
 
 .username {
   font-weight: 600;
-  color: #111827;
+  color: #ffffff;
   font-size: 0.875rem;
 }
 
 .role {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #94a3b8;
 }
 
 .user-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   right: 0;
-  margin-top: 0.5rem;
   background-color: white;
-  border-radius: 0.375rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   min-width: 12rem;
   z-index: 100;
   animation: fadeIn 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  padding: 0;
 }
 
 .profile-btn {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.25rem;
   width: 100%;
   border: none;
-  border-radius: 0.25rem;
-  background-color: #eff6ff;
-  color: #2563eb;
+  background-color: transparent;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s ease;
-  margin: 0 0 0.5rem 0;
+  transition: all 0.15s ease;
+  margin: 0;
   text-decoration: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 0.95rem;
 }
 
 .profile-btn:hover {
-  background-color: #dbeafe;
+  background-color: #f1f5f9;
 }
 
 .profile-btn:active {
-  background-color: #bfdbfe;
-  transform: translateY(1px);
+  background-color: #e2e8f0;
 }
 
 .profile-btn svg {
-  margin-right: 0.5rem;
+  margin-right: 0.75rem;
+}
+
+.profile-btn span {
+  color: #0f172a;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
@@ -350,29 +384,31 @@
 .logout-btn {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.25rem;
   width: 100%;
   border: none;
-  border-radius: 0.25rem;
-  background-color: #fee2e2;
-  color: #b91c1c;
+  background-color: #fff1f1;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   margin: 0;
+  font-size: 0.95rem;
 }
 
 .logout-btn:hover {
-  background-color: #fecaca;
+  background-color: #fee2e2;
 }
 
 .logout-btn:active {
-  background-color: #fca5a5;
-  transform: translateY(1px);
+  background-color: #fecaca;
 }
 
 .logout-btn svg {
-  margin-right: 0.5rem;
+  margin-right: 0.75rem;
+}
+
+.logout-btn span {
+  color: #dc2626;
 }
 
 .login-btn {
@@ -466,12 +502,22 @@
   }
   
   .avatar {
-    width: 2rem;
-    height: 2rem;
+    width: 1.8rem;
+    height: 1.8rem;
     font-size: 0.875rem;
   }
   
+  .avatar-image {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+  
+  .user-status {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+  
   .navbar {
-    padding: 0.5rem;
+    padding: 0.4rem;
   }
 }

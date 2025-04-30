@@ -51,7 +51,6 @@ public class UserManagementServiceImpl implements UserManagementService {
     public UserEntity deleteUser(String userId) {
         UserEntity user = getUserById(userId);
 
-        // Don't allow deleting ADMIN users
         if (user.getRole() == UserRole.ADMIN) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete admin users");
         }

@@ -70,11 +70,8 @@ const Navbar: React.FC = () => {
       <div className="navbar-container">
         <div className="navbar-left">
           <Link to="/" className="navbar-brand">
-            <svg className="logo-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
-            </svg>
-            <span className="brand-text">Smart Inventory</span>
+            <img src="/logo.png" alt="Smart Warehouse Logo" className="logo-icon logo-white" width="32" height="32" />
+            <span className="brand-text">Smart Warehouse</span>
           </Link>
 
           <button
@@ -180,6 +177,8 @@ const Navbar: React.FC = () => {
                 <div
                   className="user-profile-trigger"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  aria-expanded={isUserMenuOpen}
+                  aria-label="User menu"
                 >
                   <div className="avatar-container">
                     {currentDisplayImageUrl && isAuthenticated ? (
@@ -193,24 +192,21 @@ const Navbar: React.FC = () => {
                     )}
                     <span className="user-status online"></span>
                   </div>
-                  <div className="user-details">
-                    <span className="username">{user?.username}</span>
-                    <span className="role">{user?.role}</span>
-                  </div>
                 </div>
 
                 {isUserMenuOpen && (
                   <div className="user-menu">
                     <Link to="/profile" className="profile-btn" onClick={() => setIsUserMenuOpen(false)}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15.7 6.3C15.7 8.23 14.13 9.8 12.2 9.8C10.27 9.8 8.7 8.23 8.7 6.3C8.7 4.37 10.27 2.8 12.2 2.8C14.13 2.8 15.7 4.37 15.7 6.3Z" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12.2 12.8C8.7 12.8 5.7 15.35 5.2 18.8H19.2C18.7 15.3 15.7 12.8 12.2 12.8Z" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                       <span>Profile</span>
                     </Link>
                     <button className="logout-btn" onClick={handleLogout}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17 16L21 12M21 12L17 8M21 12H7M13 16V17C13 18.6569 11.6569 20 10 20H6C4.34315 20 3 18.6569 3 17V7C3 5.34315 4.34315 4 6 4H10C11.6569 4 13 5.34315 13 7V8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 4H18C19.1046 4 20 4.89543 20 6V18C20 19.1046 19.1046 20 18 20H15" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M10 16L14 12M14 12L10 8M14 12H4" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                       <span>Logout</span>
                     </button>

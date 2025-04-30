@@ -1,4 +1,5 @@
-import axios from 'axios';
+import authApiClient from '../utils/authApiClient';
+import apiClient from '../utils/apiClient';
 
 export interface UserProfile {
   id: string;
@@ -45,13 +46,7 @@ const userService = {
         throw new Error('Not authenticated');
       }
       
-      // Make direct API call to get profile
-      const response = await axios.get('http://localhost:8080/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
+      const response = await authApiClient.get('/user/profile');
       return response.data;
     } catch (error: any) {
       console.error('Failed to fetch profile:', error.response || error);
@@ -69,12 +64,7 @@ const userService = {
         throw new Error('Not authenticated');
       }
 
-      await axios.post('http://localhost:8081/auth/change-password', data, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await authApiClient.post('/auth/change-password', data);
     } catch (error: any) {
       console.error('Password change error:', error.response || error);
       if (error.response && error.response.data && error.response.data.message) {
@@ -94,21 +84,13 @@ const userService = {
       const formData = new FormData();
       formData.append('profileImage', image);
 
-      const response = await fetch('http://localhost:8080/api/user/profile/image', {
-        method: 'POST',
+      const response = await authApiClient.post('/user/profile/image', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
+          'Content-Type': 'multipart/form-data'
+        }
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server response:', response.status, errorText);
-        throw new Error(`Server returned ${response.status}: ${errorText}`);
-      }
-      
-      const data = await response.json();
+      const data = response.data;
       const userStr = localStorage.getItem('user');
       if (userStr) {
         try {
@@ -125,6 +107,9 @@ const userService = {
       return { img_url: data.img_url };
     } catch (error: any) {
       console.error('Profile image update error:', error);
+      if (error.response && error.response.data && error.response.data.error) {
+        throw new Error(error.response.data.error);
+      }
       throw new Error(error.message || 'Failed to update profile image');
     }
   },
@@ -136,12 +121,7 @@ const userService = {
         throw new Error('Not authenticated');
       }
       
-      const response = await axios.put('http://localhost:8081/auth/profile', data, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await authApiClient.put('/auth/profile', data);
       return response.data;
     } catch (error: any) {
       console.error('Failed to update profile:', error.response || error);
