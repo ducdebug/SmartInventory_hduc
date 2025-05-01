@@ -1,15 +1,19 @@
 package com.ims.smartinventory.service.impl;
 
 import com.ims.smartinventory.config.DispatchStatus;
+import com.ims.smartinventory.config.TransactionType;
 import com.ims.smartinventory.dto.Response.DispatchDetailResponse;
 import com.ims.smartinventory.dto.Response.DispatchHistoryResponse;
 import com.ims.smartinventory.entity.management.DispatchEntity;
+import com.ims.smartinventory.entity.management.InventoryTransactionEntity;
 import com.ims.smartinventory.repository.DispatchRepository;
+import com.ims.smartinventory.repository.InventoryTransactionRepository;
 import com.ims.smartinventory.service.DispatchService;
 import com.ims.smartinventory.service.NotificationProducerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,10 +22,12 @@ public class DispatchServiceImpl implements DispatchService {
 
     private final DispatchRepository dispatchRepository;
     private final NotificationProducerService notificationProducerService;
+    private final InventoryTransactionRepository inventoryTransactionRepository;
 
-    public DispatchServiceImpl(DispatchRepository dispatchRepository, NotificationProducerService notificationProducerService) {
+    public DispatchServiceImpl(DispatchRepository dispatchRepository, NotificationProducerService notificationProducerService, InventoryTransactionRepository inventoryTransactionRepository) {
         this.dispatchRepository = dispatchRepository;
         this.notificationProducerService = notificationProducerService;
+        this.inventoryTransactionRepository = inventoryTransactionRepository;
     }
 
     @Override
@@ -86,7 +92,12 @@ public class DispatchServiceImpl implements DispatchService {
         }
         dispatch.setStatus(DispatchStatus.ACCEPTED);
         dispatch = dispatchRepository.save(dispatch);
-
+        InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
+        inventoryTransaction.setType(TransactionType.EXPORT);
+        inventoryTransaction.setTimestamp(new Date());
+        inventoryTransaction.setRelated_dispatch_lot_id(dispatch.getId());
+        inventoryTransactionRepository.save(inventoryTransaction);
+        
         // Send notification to the buyer
 //        notificationProducerService.sendNotification(
 //                dispatch.getBuyerId(),
@@ -108,7 +119,6 @@ public class DispatchServiceImpl implements DispatchService {
         dispatch.setStatus(DispatchStatus.ACCEPTED);
         dispatch = dispatchRepository.save(dispatch);
 
-        // Send notification to the buyer
         notificationProducerService.sendNotification(
                 dispatch.getBuyerId(),
                 "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
@@ -130,7 +140,6 @@ public class DispatchServiceImpl implements DispatchService {
         dispatch.setRejectionReason(reason);
         dispatch = dispatchRepository.save(dispatch);
 
-        // Send notification to the buyer
         notificationProducerService.sendNotification(
                 dispatch.getBuyerId(),
                 "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been rejected. Reason: " +

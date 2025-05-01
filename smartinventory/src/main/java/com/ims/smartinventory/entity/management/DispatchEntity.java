@@ -53,11 +53,6 @@ public class DispatchEntity {
         }
     }
 
-    /**
-     * Get the buyer ID from the user entity
-     *
-     * @return the buyer ID
-     */
     public String getBuyerId() {
         return user != null ? user.getId() : null;
     }

@@ -1,9 +1,12 @@
 package com.ims.smartinventory.service.impl;
 
+import com.ims.smartinventory.config.TransactionType;
 import com.ims.smartinventory.dto.Response.LotDto;
 import com.ims.smartinventory.dto.Response.LotItemDto;
+import com.ims.smartinventory.entity.management.InventoryTransactionEntity;
 import com.ims.smartinventory.entity.management.LotEntity;
 import com.ims.smartinventory.entity.management.LotItemEntity;
+import com.ims.smartinventory.repository.InventoryTransactionRepository;
 import com.ims.smartinventory.repository.LotRepository;
 import com.ims.smartinventory.service.LotService;
 import org.springframework.stereotype.Service;
@@ -16,10 +19,12 @@ public class LotServiceImpl implements LotService {
 
     private final LotRepository lotRepository;
     private final ProductServiceImpl productService;
+    private final InventoryTransactionRepository inventoryTransactionRepository;
 
-    public LotServiceImpl(LotRepository lotRepository, ProductServiceImpl productService) {
+    public LotServiceImpl(LotRepository lotRepository, ProductServiceImpl productService, InventoryTransactionRepository inventoryTransactionRepository) {
         this.lotRepository = lotRepository;
         this.productService = productService;
+        this.inventoryTransactionRepository = inventoryTransactionRepository;
     }
 
     @Override
@@ -44,11 +49,15 @@ public class LotServiceImpl implements LotService {
     @Transactional
     public boolean acceptLot(String lotId) {
         Optional<LotEntity> lotOpt = lotRepository.findById(lotId);
-
+        InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
         if (lotOpt.isPresent()) {
             LotEntity lot = lotOpt.get();
             lot.setAccepted(true);
             lotRepository.save(lot);
+            inventoryTransaction.setType(TransactionType.IMPORT);
+            inventoryTransaction.setRelated_dispatch_lot_id(lot.getId());
+            inventoryTransaction.setTimestamp(new Date());
+            inventoryTransactionRepository.save(inventoryTransaction);
             return true;
         }
 
@@ -70,11 +79,11 @@ public class LotServiceImpl implements LotService {
     private List<LotDto> convertLotEntitiesToDtos(List<LotEntity> lots) {
         return lots.stream().map(lot -> {
             LotDto dto = new LotDto();
-            dto.setId(lot.getId()); // Add this field to LotDto
+            dto.setId(lot.getId());
             dto.setImportDate(lot.getImportDate().toString());
             dto.setStorageStrategy(lot.getStorageStrategy().name());
             dto.setUsername(lot.getUser().getUsername());
-            dto.setAccepted(lot.isAccepted()); // Add this field to LotDto
+            dto.setAccepted(lot.isAccepted());
 
             List<LotItemDto> groupedItems = new ArrayList<>();
             List<Map<String, Object>> groupedDetails = new ArrayList<>();

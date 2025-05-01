@@ -54,18 +54,11 @@ public class ProductServiceImpl implements ProductService {
         this.inventoryTransactionRepository = inventoryTransactionRepository;
         this.notificationProducerService = notificationProducerService;
     }
-//
-//    @Transactional
-//    @Override
-//    public void newBatch(ProductBatchRequestDto batchRequest, UserEntity currentUser){
-//
-//    }
 
     @Transactional
     @Override
     public List<SlotEntity> storeBatch(ProductBatchRequestDto batchRequest, UserEntity currentUser) {
         boolean onShelf = batchRequest.isOnShelf();
-        System.out.println(onShelf);
         int totalQuantity = batchRequest.getTotalQuantity();
 
         List<SectionEntity> sections = sectionRepository.findAllWithStorageConditions();
@@ -440,7 +433,7 @@ public class ProductServiceImpl implements ProductService {
     public void exportGroupedProducts(ProductExportRequestDto request, UserEntity currentUser) {
         DispatchEntity dispatch = new DispatchEntity();
         dispatch.setStatus(DispatchStatus.ACCEPTED);
-        dispatch.setCompletedAt(new Date()); // Using completedAt for export date
+        dispatch.setCompletedAt(new Date());
         dispatch.setUser(currentUser);
         dispatch = dispatchRepository.save(dispatch);
 
@@ -537,7 +530,6 @@ public class ProductServiceImpl implements ProductService {
         dispatch.setStatus(DispatchStatus.PENDING);
         dispatch = dispatchRepository.save(dispatch);
 
-        // Process each product in the retrieval request
         for (ProductExportRequestDto.ProductExportItem item : request.getProducts()) {
             int quantity = item.getQuantity();
 
@@ -548,7 +540,6 @@ public class ProductServiceImpl implements ProductService {
 
             String productName = reference != null ? reference.getName() : item.getName();
 
-            // Create a dispatch item
             DispatchItemEntity dispatchItem = new DispatchItemEntity();
             dispatchItem.setDispatch(dispatch);
             dispatchItem.setProductName(productName);
