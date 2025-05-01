@@ -31,7 +31,7 @@ const userIdKey = 'userId';
 const authService = {
   login: async (data: LoginData): Promise<User> => {
     try {
-      const response = await authApiClient.post('/login', data);
+      const response = await authApiClient.post('/auth/login', data);
       const user = response.data;
       localStorage.setItem(tokenKey, user.token);
       localStorage.setItem(userKey, JSON.stringify(user));
@@ -60,13 +60,13 @@ const authService = {
         }
         formData.append('profileImage', profileImage);
         
-        response = await authApiClient.post('/register-with-image', formData, {
+        response = await authApiClient.post('/auth/register-with-image', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
       } else {
-        response = await authApiClient.post('/register', data);
+        response = await authApiClient.post('/auth/register', data);
       }
       
       const user = response.data;
@@ -112,7 +112,7 @@ const authService = {
 
   getUserProfile: async (): Promise<any> => {
     try {
-      const response = await authApiClient.get('/profile');
+      const response = await authApiClient.get('/auth/profile');
       return response.data;
     } catch (error: any) {
       if (error.response && error.response.data && error.response.data.message) {

@@ -1,10 +1,10 @@
 package com.ims.smartinventory.service.impl;
 
+import com.ims.common.entity.WarehouseEntity;
+import com.ims.common.entity.storage.*;
 import com.ims.smartinventory.dto.Request.SectionRequestDto;
 import com.ims.smartinventory.dto.Response.ShelfInfo;
 import com.ims.smartinventory.dto.Response.SlotInfo;
-import com.ims.smartinventory.entity.WarehouseEntity;
-import com.ims.smartinventory.entity.storage.*;
 import com.ims.smartinventory.repository.SectionRepository;
 import com.ims.smartinventory.repository.WarehouseRepository;
 import com.ims.smartinventory.service.SectionService;

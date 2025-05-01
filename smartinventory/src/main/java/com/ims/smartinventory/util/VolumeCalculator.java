@@ -1,22 +1,13 @@
 package com.ims.smartinventory.util;
 
-import com.ims.smartinventory.entity.BaseProductEntity;
-import com.ims.smartinventory.entity.product.*;
+import com.ims.common.entity.BaseProductEntity;
+import com.ims.common.entity.product.*;
 
-/**
- * Utility class to calculate product volumes using logistic formulas
- */
 public class VolumeCalculator {
 
     private static final double MIN_VOLUME_THRESHOLD = 10.0; // Minimum volume threshold in cubic units
     private static final double DEFAULT_VOLUME = 1.0; // Default volume for unknown product types
 
-    /**
-     * Calculate the volume of a product based on its type and properties
-     *
-     * @param product The product to calculate volume for
-     * @return The calculated volume in cubic units
-     */
     public static double calculateProductVolume(BaseProductEntity product) {
         return switch (product) {
             case BookProductEntity book -> calculateBookVolume(book);

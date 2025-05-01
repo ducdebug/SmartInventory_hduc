@@ -1,7 +1,7 @@
 package com.ims.smartinventory.service.impl;
 
+import com.ims.common.entity.storage.SectionEntity;
 import com.ims.smartinventory.dto.Response.SectionInfoResponse;
-import com.ims.smartinventory.entity.storage.SectionEntity;
 import com.ims.smartinventory.repository.SectionRepository;
 import com.ims.smartinventory.repository.SlotSectionRepository;
 import com.ims.smartinventory.repository.SlotShelfRepository;

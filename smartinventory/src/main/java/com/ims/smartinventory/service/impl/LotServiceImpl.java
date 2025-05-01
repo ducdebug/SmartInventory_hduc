@@ -1,11 +1,11 @@
 package com.ims.smartinventory.service.impl;
 
-import com.ims.smartinventory.config.TransactionType;
+import com.ims.common.config.TransactionType;
+import com.ims.common.entity.management.InventoryTransactionEntity;
+import com.ims.common.entity.management.LotEntity;
+import com.ims.common.entity.management.LotItemEntity;
 import com.ims.smartinventory.dto.Response.LotDto;
 import com.ims.smartinventory.dto.Response.LotItemDto;
-import com.ims.smartinventory.entity.management.InventoryTransactionEntity;
-import com.ims.smartinventory.entity.management.LotEntity;
-import com.ims.smartinventory.entity.management.LotItemEntity;
 import com.ims.smartinventory.repository.InventoryTransactionRepository;
 import com.ims.smartinventory.repository.LotRepository;
 import com.ims.smartinventory.service.LotService;

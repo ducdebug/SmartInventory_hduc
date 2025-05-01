@@ -1,7 +1,7 @@
 package com.ims.smartinventory.dto.Response;
 
-import com.ims.smartinventory.entity.management.DispatchEntity;
-import com.ims.smartinventory.entity.management.DispatchItemEntity;
+import com.ims.common.entity.management.DispatchEntity;
+import com.ims.common.entity.management.DispatchItemEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

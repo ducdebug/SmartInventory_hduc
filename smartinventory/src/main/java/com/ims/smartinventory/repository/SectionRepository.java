@@ -1,7 +1,7 @@
 package com.ims.smartinventory.repository;
 
-import com.ims.smartinventory.entity.WarehouseEntity;
-import com.ims.smartinventory.entity.storage.SectionEntity;
+import com.ims.common.entity.WarehouseEntity;
+import com.ims.common.entity.storage.SectionEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

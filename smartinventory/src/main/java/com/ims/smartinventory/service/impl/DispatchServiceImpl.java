@@ -1,11 +1,11 @@
 package com.ims.smartinventory.service.impl;
 
-import com.ims.smartinventory.config.DispatchStatus;
-import com.ims.smartinventory.config.TransactionType;
+import com.ims.common.config.DispatchStatus;
+import com.ims.common.config.TransactionType;
+import com.ims.common.entity.management.DispatchEntity;
+import com.ims.common.entity.management.InventoryTransactionEntity;
 import com.ims.smartinventory.dto.Response.DispatchDetailResponse;
 import com.ims.smartinventory.dto.Response.DispatchHistoryResponse;
-import com.ims.smartinventory.entity.management.DispatchEntity;
-import com.ims.smartinventory.entity.management.InventoryTransactionEntity;
 import com.ims.smartinventory.repository.DispatchRepository;
 import com.ims.smartinventory.repository.InventoryTransactionRepository;
 import com.ims.smartinventory.service.DispatchService;
@@ -97,7 +97,7 @@ public class DispatchServiceImpl implements DispatchService {
         inventoryTransaction.setTimestamp(new Date());
         inventoryTransaction.setRelated_dispatch_lot_id(dispatch.getId());
         inventoryTransactionRepository.save(inventoryTransaction);
-        
+
         // Send notification to the buyer
 //        notificationProducerService.sendNotification(
 //                dispatch.getBuyerId(),

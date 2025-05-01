@@ -1,7 +1,7 @@
 package com.ims.smartinventory.repository;
 
-import com.ims.smartinventory.entity.BaseProductEntity;
-import com.ims.smartinventory.entity.management.LotEntity;
+import com.ims.common.entity.BaseProductEntity;
+import com.ims.common.entity.management.LotEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

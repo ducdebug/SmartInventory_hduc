@@ -40,13 +40,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        final String authorizationHeader = request.getHeader("Authorization");
-
+        // Skip authentication for OPTIONS requests
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
         }
-
+        
+        // Skip authentication for paths defined in shouldNotFilter
+        String path = request.getRequestURI();
+        String contextPath = "/api";
+        if (path.startsWith(contextPath)) {
+            path = path.substring(contextPath.length());
+        }
+        
+        boolean isPublicPath = false;
+        for (String publicPath : PUBLIC_PATHS) {
+            if (path.startsWith(publicPath)) {
+                isPublicPath = true;
+                break;
+            }
+        }
+        
+        if (isPublicPath) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
+        // For protected paths, check the authorization header
+        final String authorizationHeader = request.getHeader("Authorization");
         String userId = null;
         String jwt = null;
 

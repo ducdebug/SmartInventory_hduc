@@ -1,7 +1,7 @@
 package com.ims.smartinventory.service;
 
+import com.ims.common.entity.storage.SectionEntity;
 import com.ims.smartinventory.dto.Request.SectionRequestDto;
-import com.ims.smartinventory.entity.storage.SectionEntity;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package com.ims.smartinventory.dto.Request;
 
-import com.ims.smartinventory.config.StorageStrategy;
+import com.ims.common.config.StorageStrategy;
 import lombok.Getter;
 import lombok.Setter;
 

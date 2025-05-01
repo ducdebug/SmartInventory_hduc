@@ -1,7 +1,7 @@
 package com.ims.smartinventory.service.impl;
 
+import com.ims.common.entity.storage.ShelfEntity;
 import com.ims.smartinventory.dto.Response.SlotInfo;
-import com.ims.smartinventory.entity.storage.ShelfEntity;
 import com.ims.smartinventory.repository.ShelfRepository;
 import com.ims.smartinventory.service.ShelfService;
 import org.springframework.stereotype.Service;

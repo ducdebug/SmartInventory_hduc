@@ -1,7 +1,7 @@
 package com.ims.smartinventory.repository;
 
-import com.ims.smartinventory.config.DispatchStatus;
-import com.ims.smartinventory.entity.management.DispatchEntity;
+import com.ims.common.config.DispatchStatus;
+import com.ims.common.entity.management.DispatchEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

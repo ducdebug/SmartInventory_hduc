@@ -1,13 +1,13 @@
 package com.ims.smartinventory.service.impl;
 
-import com.ims.smartinventory.config.ProductType;
+import com.ims.common.config.ProductType;
+import com.ims.common.entity.BaseProductEntity;
+import com.ims.common.entity.management.DispatchEntity;
+import com.ims.common.entity.management.DispatchItemEntity;
+import com.ims.common.entity.management.LotEntity;
+import com.ims.common.entity.management.LotItemEntity;
+import com.ims.common.entity.storage.SectionEntity;
 import com.ims.smartinventory.dto.Response.InventoryAnalyticsResponse;
-import com.ims.smartinventory.entity.BaseProductEntity;
-import com.ims.smartinventory.entity.management.DispatchEntity;
-import com.ims.smartinventory.entity.management.DispatchItemEntity;
-import com.ims.smartinventory.entity.management.LotEntity;
-import com.ims.smartinventory.entity.management.LotItemEntity;
-import com.ims.smartinventory.entity.storage.SectionEntity;
 import com.ims.smartinventory.repository.*;
 import com.ims.smartinventory.service.InventoryAnalyticsService;
 import org.springframework.beans.factory.annotation.Autowired;

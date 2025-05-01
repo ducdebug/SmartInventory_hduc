@@ -1,6 +1,6 @@
 package com.ims.smartinventory.repository;
 
-import com.ims.smartinventory.entity.storage.SlotSection;
+import com.ims.common.entity.storage.SlotSection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
