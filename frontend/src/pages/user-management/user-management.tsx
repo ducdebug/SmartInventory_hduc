@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config';
 import { getAuthToken } from '../../services/authService';
+import { getImageDisplayUrl } from '../../services/userService';
 import './user-management.css';
 
 interface User {
@@ -11,13 +12,20 @@ interface User {
   role: string;
   enabled: boolean;
   deleted: boolean;
+  img_url?: string;
 }
 
 const UserManagement: React.FC = () => {
   const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Search and filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
 
   useEffect(() => {
     if (user?.role !== 'ADMIN') {
@@ -28,6 +36,11 @@ const UserManagement: React.FC = () => {
 
     fetchUsers();
   }, [user]);
+
+  useEffect(() => {
+    // Apply filters and search whenever they change
+    filterUsers();
+  }, [users, searchQuery, statusFilter, roleFilter]);
 
   const fetchUsers = async () => {
     try {
@@ -46,6 +59,36 @@ const UserManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterUsers = () => {
+    let result = [...users];
+    
+    // Apply search filter
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(user => 
+        user.username.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'active') {
+        result = result.filter(user => user.enabled && !user.deleted);
+      } else if (statusFilter === 'blocked') {
+        result = result.filter(user => !user.enabled && !user.deleted);
+      } else if (statusFilter === 'deleted') {
+        result = result.filter(user => user.deleted);
+      }
+    }
+    
+    // Apply role filter
+    if (roleFilter !== 'all') {
+      result = result.filter(user => user.role === roleFilter);
+    }
+    
+    setFilteredUsers(result);
   };
 
   const toggleBlockUser = async (userId: string, currentlyBlocked: boolean) => {
@@ -107,6 +150,21 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+  };
+
+  const handleRoleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRoleFilter(e.target.value);
+  };
+
+  // Get unique roles from users for the filter dropdown
+  const uniqueRoles = Array.from(new Set(users.map(user => user.role)));
+
   if (loading) {
     return <div className="user-management-container loading">Loading users...</div>;
   }
@@ -127,6 +185,53 @@ const UserManagement: React.FC = () => {
         </button>
       </div>
 
+      <div className="user-filters">
+        <div className="search-container">
+          <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <input 
+            type="text" 
+            placeholder="Search users..." 
+            className="search-input"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+        </div>
+        
+        <div className="filter-container">
+          <div className="filter-group">
+            <label htmlFor="status-filter">Status:</label>
+            <select 
+              id="status-filter" 
+              value={statusFilter} 
+              onChange={handleStatusFilterChange}
+              className="filter-select"
+            >
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="blocked">Blocked</option>
+              <option value="deleted">Deleted</option>
+            </select>
+          </div>
+          
+          <div className="filter-group">
+            <label htmlFor="role-filter">Role:</label>
+            <select 
+              id="role-filter" 
+              value={roleFilter} 
+              onChange={handleRoleFilterChange}
+              className="filter-select"
+            >
+              <option value="all">All</option>
+              {uniqueRoles.map(role => (
+                <option key={role} value={role}>{role}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div className="users-table-container">
         <table className="users-table">
           <thead>
@@ -138,14 +243,31 @@ const UserManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {users.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={4} className="no-users">No users found</td>
+                <td colSpan={4} className="no-users">
+                  {users.length === 0 ? 'No users found' : 'No users match your filters'}
+                </td>
               </tr>
             ) : (
-              users.map(user => (
+              filteredUsers.map(user => (
                 <tr key={user.id} className={user.deleted ? 'deleted-user' : ''}>
-                  <td>{user.username}</td>
+                  <td>
+                    <div className="user-info">
+                      <div className="user-avatar">
+                        {user.img_url ? (
+                          <img 
+                            src={getImageDisplayUrl(user.img_url)} 
+                            alt={user.username}
+                            className="avatar-image"
+                          />
+                        ) : (
+                          <div className="avatar">{user.username.charAt(0).toUpperCase()}</div>
+                        )}
+                      </div>
+                      <div className="user-management-username">{user.username}</div>
+                    </div>
+                  </td>
                   <td>{user.role}</td>
                   <td>
                     {user.deleted ? (

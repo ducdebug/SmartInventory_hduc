@@ -70,7 +70,7 @@ const Navbar: React.FC = () => {
       <div className="navbar-container">
         <div className="navbar-left">
           <Link to="/" className="navbar-brand">
-            <img src="/logo.png" alt="Smart Warehouse Logo" className="logo-icon logo-white" width="32" height="32" />
+            <img src="/logo.png" alt="Smart Warehouse Logo" className="logo-icon logo-white" width="28" height="28" />
             <span className="brand-text">Smart Warehouse</span>
           </Link>
 
@@ -88,14 +88,14 @@ const Navbar: React.FC = () => {
 
         <div className={`navbar-links ${isMenuOpen ? 'open' : ''}`}>
           <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9.55228 21 10 20.5523 10 20V16C10 15.4477 10.4477 15 11 15H13C13.5523 15 14 15.4477 14 16V20C14 20.5523 14.4477 21 15 21M9 21H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span>Home</span>
           </Link>
 
           <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 13V17M16 11V17M12 7V17M3 21H21C21.5523 21 22 20.5523 22 20V4C22 3.44772 21.5523 3 21 3H3C2.44772 3 2 3.44772 2 4V20C2 20.5523 2.44772 21 3 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span>Dashboard</span>
@@ -103,7 +103,7 @@ const Navbar: React.FC = () => {
 
           {user?.role === 'ADMIN' && (
             <Link to="/sections" className={location.pathname === '/sections' ? 'active' : ''}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 7L12 3L4 7M20 7V17L12 21M20 7L12 11M12 21L4 17V7M12 21V11M4 7L12 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span>Sections</span>
@@ -112,7 +112,7 @@ const Navbar: React.FC = () => {
 
           {user?.role === 'BUYER' && (
             <Link to="/history" className={location.pathname === '/history' ? 'active' : ''}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
                 <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -122,7 +122,7 @@ const Navbar: React.FC = () => {
 
           {user?.role === 'BUYER' && (
             <Link to="/retrieve" className={location.pathname === '/retrieve' ? 'active' : ''}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 19.1046 19 18V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M15 3L21 9M21 3L15 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -133,21 +133,21 @@ const Navbar: React.FC = () => {
           {user?.role === 'ADMIN' && (
             <>
              <Link to="/lot-history" className={location.pathname === '/lot-history' ? 'active' : ''}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
                             <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                           <span>Lot Management</span>
                         </Link>
               <Link to="/export-management" className={location.pathname === '/export-management' ? 'active' : ''}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M14 7V3M14 3H18M14 3L21 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
                 <span>Export Management</span>
               </Link>
                   <Link to="/user-management" className={location.pathname === '/user-management' ? 'active' : ''}>
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>

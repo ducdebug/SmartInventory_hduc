@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-// Import Ant Design components individually to avoid TypeScript errors
 import Button from 'antd/lib/button';
 import Card from 'antd/lib/card';
 import Form from 'antd/lib/form';
@@ -15,7 +14,15 @@ import Avatar from 'antd/lib/avatar';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
 
-import { UserOutlined, LockOutlined, SafetyOutlined, UploadOutlined, CameraOutlined } from '@ant-design/icons';
+import { 
+  UserOutlined, 
+  LockOutlined, 
+  SafetyOutlined, 
+  UploadOutlined, 
+  CameraOutlined, 
+  CheckCircleOutlined,
+  CloseCircleOutlined
+} from '@ant-design/icons';
 
 import userService, { UserProfile, ChangePasswordData, getImageDisplayUrl } from '../../services/userService';
 import authService from '../../services/authService';
@@ -172,21 +179,56 @@ const ProfilePage: React.FC = () => {
     <div className="profile-container">
       <Typography.Title level={2} className="profile-title">Your Profile</Typography.Title>
       
-      {error && <Alert type="error" message={error} style={{ marginBottom: '20px' }} />}
+      {error && (
+        <Alert 
+          type="error" 
+          message={error} 
+          style={{ marginBottom: '20px', animation: 'fadeIn 0.5s ease-out' }}
+          showIcon
+        />
+      )}
       
-      {/* Image Preview Modal */}
+      {/* Enhanced Image Preview Modal */}
       <Modal
         open={previewVisible}
-        title="Profile Picture"
-        footer={null}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <UserOutlined style={{ color: '#1890ff' }} />
+            <span>Profile Picture</span>
+          </div>
+        }
+        footer={[
+          <Button key="close" onClick={() => setPreviewVisible(false)}>
+            Close
+          </Button>
+        ]}
         onCancel={() => setPreviewVisible(false)}
+        centered
+        width={500}
       >
-        <img alt="Profile" style={{ width: '100%' }} src={previewImage} />
+        <div style={{ 
+          overflow: 'hidden', 
+          borderRadius: '12px', 
+          border: '1px solid #f0f0f0',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+        }}>
+          <img alt="Profile" style={{ width: '100%', display: 'block' }} src={previewImage} />
+        </div>
       </Modal>
       
-      <Row gutter={24}>
+      <Row gutter={32} style={{ marginTop: '12px' }}>
         <Col xs={24} md={12}>
-          <Card title="User Information" loading={loading} className="profile-card responsive-card">
+          <Card 
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <UserOutlined style={{ color: '#1890ff' }} />
+                <span>User Information</span>
+              </div>
+            } 
+            loading={loading} 
+            className="profile-card responsive-card"
+            bordered={false}
+          >
             {profile && (
               <>
                 <div className="profile-image-container">
@@ -198,14 +240,19 @@ const ProfilePage: React.FC = () => {
                     <div className="avatar-container" onClick={profile.img_url ? handlePreview : triggerFileInput}>
                       {profile.img_url ? (
                         <Avatar 
-                          size={100} 
+                          size={120} 
                           src={getImageDisplayUrl(profile.img_url)} 
                           className="profile-avatar"
                           alt={profile.username}
                           icon={<UserOutlined />}
                         />
                       ) : (
-                        <Avatar size={100} icon={<UserOutlined />} className="profile-avatar" />
+                        <Avatar 
+                          size={120} 
+                          icon={<UserOutlined />} 
+                          className="profile-avatar" 
+                          style={{ backgroundColor: '#1890ff' }} 
+                        />
                       )}
                       <div className="avatar-upload-overlay">
                         <CameraOutlined />
@@ -218,6 +265,7 @@ const ProfilePage: React.FC = () => {
                     onChange={handleFileSelect}
                     ref={fileInputRef}
                     style={{ display: 'none' }}
+                    aria-label="Upload profile picture"
                   />
                   <Button 
                     icon={<UploadOutlined />} 
@@ -225,7 +273,7 @@ const ProfilePage: React.FC = () => {
                     className="upload-button"
                     disabled={imageLoading}
                   >
-                    {profile.img_url ? 'Change Profile Picture' : 'Upload Profile Picture'}
+                    {profile.img_url ? 'Change Picture' : 'Upload Picture'}
                   </Button>
                 </div>
                 
@@ -235,11 +283,19 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div className="info-row">
                   <span className="info-label">Role:</span>
-                  <span className="info-value">{profile.role}</span>
+                  <span className="role-badge">{profile.role}</span>
                 </div>
                 <div className="info-row">
                   <span className="info-label">Status:</span>
-                  <span className="info-value">{profile.enabled ? 'Active' : 'Disabled'}</span>
+                  {profile.enabled ? (
+                    <span className="status-active">
+                      <CheckCircleOutlined /> Active
+                    </span>
+                  ) : (
+                    <span className="status-inactive">
+                      <CloseCircleOutlined /> Disabled
+                    </span>
+                  )}
                 </div>
               </>
             )}
@@ -247,7 +303,16 @@ const ProfilePage: React.FC = () => {
         </Col>
         
         <Col xs={24} md={12}>
-          <Card title="Change Password" className="profile-card responsive-card">
+          <Card 
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <LockOutlined style={{ color: '#1890ff' }} />
+                <span>Change Password</span>
+              </div>
+            } 
+            className="profile-card responsive-card"
+            bordered={false}
+          >
             <Form
               form={passwordForm}
               layout="vertical"
@@ -259,7 +324,7 @@ const ProfilePage: React.FC = () => {
                 label="Current Password"
                 rules={[{ required: true, message: 'Please enter your current password' }]}
               >
-                <Input.Password prefix={<LockOutlined />} placeholder="Current Password" />
+                <Input.Password prefix={<LockOutlined />} placeholder="Enter current password" />
               </Form.Item>
               
               <Form.Item
@@ -270,7 +335,7 @@ const ProfilePage: React.FC = () => {
                   { min: 6, message: 'Password must be at least 6 characters' }
                 ]}
               >
-                <Input.Password prefix={<SafetyOutlined />} placeholder="New Password" />
+                <Input.Password prefix={<SafetyOutlined />} placeholder="Enter new password" />
               </Form.Item>
               
               <Form.Item
@@ -289,15 +354,20 @@ const ProfilePage: React.FC = () => {
                   }),
                 ]}
               >
-                <Input.Password prefix={<SafetyOutlined />} placeholder="Confirm New Password" />
+                <Input.Password prefix={<SafetyOutlined />} placeholder="Confirm new password" />
               </Form.Item>
               
               <Form.Item className="form-actions">
-                <Button type="primary" htmlType="submit" loading={passwordLoading} size="large">
-                  Change Password
+                <Button 
+                  type="primary" 
+                  htmlType="submit" 
+                  loading={passwordLoading} 
+                  size="large"
+                >
+                  {passwordLoading ? 'Changing Password...' : 'Change Password'}
                 </Button>
                 <div className="form-hint">
-                  Make sure your new password is secure and contains at least 6 characters.
+                  Make sure your new password is secure and contains a mix of letters, numbers, and special characters.
                 </div>
               </Form.Item>
             </Form>
