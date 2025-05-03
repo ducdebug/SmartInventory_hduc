@@ -17,14 +17,6 @@ public class ProductBatchRequestDto {
     private StorageStrategy storageStrategy;
     private List<StorageConditionDto> storageConditions;
     private List<Map<String, Object>> productDetails;
-    private boolean onShelf;
-
-    public int getTotalQuantity() {
-        return productDetails == null ? 0 :
-                productDetails.stream()
-                        .mapToInt(p -> ((Number) p.getOrDefault("quantity", 1)).intValue())
-                        .sum();
-    }
 
     @Getter
     @Setter

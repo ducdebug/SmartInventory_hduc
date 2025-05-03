@@ -39,12 +39,11 @@ public class InventoryController {
     }
 
     @PostMapping("/batch")
-    public ResponseEntity<List<SlotEntity>> storeBatch(@RequestBody ProductBatchRequestDto batchRequest, @AuthenticationPrincipal UserEntity currentUser) {
+    public ResponseEntity<?> storeBatch(@RequestBody ProductBatchRequestDto batchRequest, @AuthenticationPrincipal UserEntity currentUser) {
         if (currentUser == null) {
             throw new IllegalStateException("User is null. Check authentication setup.");
         }
-        List<SlotEntity> allocatedSlots = productService.storeBatch(batchRequest, currentUser);
-
+        productService.storeBatch(batchRequest, currentUser);
         return ResponseEntity.ok().build();
     }
 

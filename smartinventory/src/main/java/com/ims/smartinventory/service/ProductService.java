@@ -1,7 +1,6 @@
 package com.ims.smartinventory.service;
 
 import com.ims.common.entity.UserEntity;
-import com.ims.common.entity.storage.SlotEntity;
 import com.ims.smartinventory.dto.Request.ProductBatchRequestDto;
 import com.ims.smartinventory.dto.Request.ProductExportRequestDto;
 import com.ims.smartinventory.dto.Request.ProductGroupResponseDto;
@@ -11,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface ProductService {
-    public List<SlotEntity> storeBatch(ProductBatchRequestDto batchRequest, UserEntity currentUser);
+    public void storeBatch(ProductBatchRequestDto batchRequest, UserEntity currentUser);
 
     List<ProductGroupResponseDto> getGroupedProducts();
 
@@ -23,5 +22,5 @@ public interface ProductService {
     @Transactional
     String createRetrieveRequest(ProductExportRequestDto request, UserEntity currentUser);
 
-    boolean checkProductVolumeAndNotify(List<String> productIds);
+    void checkProductVolumeAndNotify(List<String> productIds);
 }

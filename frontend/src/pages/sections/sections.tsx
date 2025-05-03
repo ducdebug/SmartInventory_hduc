@@ -291,7 +291,7 @@ const SectionsPage: React.FC = () => {
                       value={cond.unit}
                       onChange={e => handleInputChange(e, idx, 'unit')}
                       aria-label={`Unit ${idx + 1}`}
-                      disabled // Disable manual unit input
+                      disabled
                     />
                     <button
                       type="button"

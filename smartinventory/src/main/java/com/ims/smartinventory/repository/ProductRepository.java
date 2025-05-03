@@ -17,4 +17,6 @@ public interface ProductRepository extends JpaRepository<BaseProductEntity, Stri
     boolean existsById(String id);
 
     Optional<BaseProductEntity> findByName(String name);
+
+    List<BaseProductEntity> findByLotIdAndSlotShelfIsNullAndSlotSectionIsNull(String lotId);
 }

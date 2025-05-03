@@ -6,11 +6,15 @@ import com.ims.common.entity.PriceEntity;
 import com.ims.common.entity.UserEntity;
 import com.ims.common.entity.management.*;
 import com.ims.common.entity.product.*;
-import com.ims.common.entity.storage.*;
+import com.ims.common.entity.storage.SectionEntity;
+import com.ims.common.entity.storage.SlotSection;
+import com.ims.common.entity.storage.SlotShelf;
+import com.ims.common.entity.storage.StorageConditionEntity;
 import com.ims.smartinventory.dto.Request.ProductBatchRequestDto;
 import com.ims.smartinventory.dto.Request.ProductExportRequestDto;
 import com.ims.smartinventory.dto.Request.ProductGroupResponseDto;
 import com.ims.smartinventory.dto.Response.ProductResponse;
+import com.ims.smartinventory.exception.NoSuitableSectionException;
 import com.ims.smartinventory.exception.StorageException;
 import com.ims.smartinventory.repository.*;
 import com.ims.smartinventory.service.ProductService;
@@ -57,29 +61,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Transactional
     @Override
-    public List<SlotEntity> storeBatch(ProductBatchRequestDto batchRequest, UserEntity currentUser) {
-        boolean onShelf = batchRequest.isOnShelf();
-        int totalQuantity = batchRequest.getTotalQuantity();
-
-        List<SectionEntity> sections = sectionRepository.findAllWithStorageConditions();
-
-        SectionEntity suitableSection = sections.stream()
-                .filter(section -> (section.getNumShelves() != 0) == onShelf)
-                .filter(section -> {
-                    int totalSlots = section.getTotalSlots();
-                    int usedSlots = onShelf
-                            ? slotShelfRepository.countUsedBySectionId(section.getId())
-                            : slotSectionRepository.countUsedBySectionId(section.getId());
-                    return totalSlots - usedSlots >= totalQuantity;
-                })
-                .filter(section -> isSuitableForConditions(section, batchRequest.getStorageConditions()))
-                .findFirst()
-                .orElse(null);
-
-        if (suitableSection == null) {
-            throw new StorageException("No suitable section found for: " + batchRequest.getProductType());
-        }
-
+    public void storeBatch(ProductBatchRequestDto batchRequest, UserEntity currentUser) {
         LotEntity lot = new LotEntity();
         lot.setImportDate(new Date());
         lot.setUser(currentUser);
@@ -88,10 +70,28 @@ public class ProductServiceImpl implements ProductService {
         lot = lotRepository.save(lot);
 
         List<Map<String, Object>> productDetails = batchRequest.getProductDetails();
-        List<SlotEntity> allocatedSlots = new ArrayList<>();
 
         for (Map<String, Object> productData : productDetails) {
+            boolean onShelf = (boolean) productData.getOrDefault("onShelf", false);
             int quantity = ((Number) productData.getOrDefault("quantity", 1)).intValue();
+            List<SectionEntity> sections = sectionRepository.findAllWithStorageConditions();
+
+            SectionEntity suitableSection = sections.stream()
+                    .filter(section -> (section.getNumShelves() != 0) == onShelf)
+                    .filter(section -> {
+                        int totalSlots = section.getTotalSlots();
+                        int usedSlots = onShelf
+                                ? slotShelfRepository.countUsedBySectionId(section.getId())
+                                : slotSectionRepository.countUsedBySectionId(section.getId());
+                        return totalSlots - usedSlots >= quantity;
+                    })
+                    .filter(section -> isSuitableForConditions(section, batchRequest.getStorageConditions()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (suitableSection == null) {
+                throw new NoSuitableSectionException("No suitable section found for storage conditions. Please contact administrator to create appropriate sections.");
+            }
 
             PriceEntity price = new PriceEntity();
             price.setValue(((Number) productData.getOrDefault("price", 0)).doubleValue());
@@ -100,7 +100,7 @@ public class ProductServiceImpl implements ProductService {
             price = priceRepository.save(price);
 
             for (int i = 0; i < quantity; i++) {
-                BaseProductEntity product = createProduct(batchRequest, productData);
+                BaseProductEntity product = createProduct(batchRequest, productData, onShelf, suitableSection);
                 product.setLot(lot);
                 product = productRepository.save(product);
 
@@ -112,56 +112,8 @@ public class ProductServiceImpl implements ProductService {
                 lotItem.setQuantity(1);
                 lotItem.setImportDate(new Date());
                 lotItemRepository.save(lotItem);
-
-                SlotEntity slot = onShelf
-                        ? allocateSlotInShelf(suitableSection, product)
-                        : allocateSlotInSection(suitableSection, product);
-
-                allocatedSlots.add(slot);
             }
         }
-        return allocatedSlots;
-    }
-
-    private SlotEntity allocateSlotInShelf(SectionEntity section, BaseProductEntity product) {
-        List<SlotShelf> availableSlots = slotShelfRepository.findAll().stream()
-                .filter(SlotEntity::isAvailable)
-                .filter(slot -> slot.getShelf().getSection().equals(section) && slot.getProduct() == null)
-                .sorted(
-                        Comparator.comparing((SlotShelf s) -> s.getShelf().getId())
-                                .thenComparingInt(SlotShelf::getX)
-                                .thenComparingInt(SlotShelf::getY)
-                )
-                .toList();
-
-        if (availableSlots.isEmpty()) {
-            throw new StorageException("No available slot in shelf for section: " + section.getName());
-        }
-
-        SlotShelf selectedSlot = availableSlots.getFirst();
-        selectedSlot.setOccupied(true);
-        selectedSlot.setProduct(product);
-        product.setSlotShelf(selectedSlot);
-
-        slotShelfRepository.save(selectedSlot);
-        productRepository.save(product);
-        return selectedSlot;
-    }
-
-    private SlotEntity allocateSlotInSection(SectionEntity section, BaseProductEntity product) {
-        List<SlotSection> availableSlots = slotSectionRepository.findAll().stream()
-                .filter(SlotEntity::isAvailable)
-                .filter(slot -> slot.getSection().equals(section) && slot.getProduct() == null)
-                .sorted(Comparator.comparingInt(SlotSection::getXPosition).thenComparingInt(SlotSection::getYPosition))
-                .toList();
-        SlotSection selectedSlot = availableSlots.getFirst();
-        selectedSlot.setOccupied(true);
-        selectedSlot.setProduct(product);
-        product.setSlotSection(selectedSlot);
-
-        slotSectionRepository.save(selectedSlot);
-        productRepository.save(product);
-        return selectedSlot;
     }
 
     @Override
@@ -276,7 +228,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @SuppressWarnings("unchecked")
-    private BaseProductEntity createProduct(ProductBatchRequestDto batchRequest, Map<String, Object> productData) {
+    private BaseProductEntity createProduct(ProductBatchRequestDto batchRequest, Map<String, Object> productData, boolean onShelf, SectionEntity sectionEntity) {
         BaseProductEntity product = switch (batchRequest.getProductType()) {
             case BOOKS -> {
                 BookProductEntity book = new BookProductEntity();
@@ -340,6 +292,8 @@ public class ProductServiceImpl implements ProductService {
         };
 
         product.setName((String) productData.getOrDefault("name", "Unknown Product"));
+        product.setOnShelf(onShelf);
+        product.setSection(sectionEntity);
         PriceEntity price = new PriceEntity();
         price.setValue(((Number) productData.getOrDefault("price", 0)).doubleValue());
         price.setCurrency((String) productData.getOrDefault("currency", "VND"));
@@ -571,7 +525,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public boolean checkProductVolumeAndNotify(List<String> exportedProductIds) {
+    public void checkProductVolumeAndNotify(List<String> exportedProductIds) {
         List<BaseProductEntity> remainingProducts = productRepository.findAll().stream()
                 .filter(p -> p.getDispatch() == null)
                 .toList();
@@ -608,9 +562,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
             notificationProducerService.sendNotification("admin", messageBuilder.toString());
-            return true;
         }
 
-        return false;
     }
 }

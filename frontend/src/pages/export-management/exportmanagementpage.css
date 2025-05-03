@@ -36,18 +36,7 @@
   border-bottom: 2px solid #1a73e8;
 }
 
-.tab-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  background-color: #f44336;
-  color: white;
-  font-size: 0.75rem;
-  border-radius: 50%;
-  margin-left: 0.5rem;
-}
+/* Tab now displays count directly within the button text */
 
 .dispatches-container {
   display: grid;

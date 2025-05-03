@@ -92,17 +92,35 @@ public class DispatchServiceImpl implements DispatchService {
         }
         dispatch.setStatus(DispatchStatus.ACCEPTED);
         dispatch = dispatchRepository.save(dispatch);
+
+        final DispatchEntity finalDispatch = dispatch;
+
+        dispatch.getItems().forEach(item -> {
+            if (item.getProduct() != null) {
+                item.getProduct().setDispatch(finalDispatch);
+                if (item.getProduct().getSlotShelf() != null) {
+                    item.getProduct().getSlotShelf().setOccupied(false);
+                    item.getProduct().getSlotShelf().setProduct(null);
+                    item.getProduct().setSlotShelf(null);
+                } else if (item.getProduct().getSlotSection() != null) {
+                    item.getProduct().getSlotSection().setOccupied(false);
+                    item.getProduct().getSlotSection().setProduct(null);
+                    item.getProduct().setSlotSection(null);
+                }
+            }
+        });
+
         InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
         inventoryTransaction.setType(TransactionType.EXPORT);
         inventoryTransaction.setTimestamp(new Date());
         inventoryTransaction.setRelated_dispatch_lot_id(dispatch.getId());
         inventoryTransactionRepository.save(inventoryTransaction);
 
-        // Send notification to the buyer
-//        notificationProducerService.sendNotification(
-//                dispatch.getBuyerId(),
-//                "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
-//        );
+        // Send notification to the buyer (commented out for now)
+        // notificationProducerService.sendNotification(
+        //     dispatch.getBuyerId(),
+        //     "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
+        // );
 
         return DispatchDetailResponse.fromEntity(dispatch);
     }
@@ -116,8 +134,31 @@ public class DispatchServiceImpl implements DispatchService {
             return null;
         }
 
+        // Update dispatch status
         dispatch.setStatus(DispatchStatus.ACCEPTED);
         dispatch = dispatchRepository.save(dispatch);
+
+        // Create a final copy of dispatch to use in lambda
+        final DispatchEntity finalDispatch = dispatch;
+
+        // Update products associated with this dispatch's items to have this dispatch entity
+        dispatch.getItems().forEach(item -> {
+            if (item.getProduct() != null) {
+                item.getProduct().setDispatch(finalDispatch);
+                // If the product has a slot, free it
+                if (item.getProduct().getSlotShelf() != null) {
+                    item.getProduct().getSlotShelf().setOccupied(false);
+                    item.getProduct().getSlotShelf().setProduct(null);
+                    item.getProduct().setSlotShelf(null);
+                } else if (item.getProduct().getSlotSection() != null) {
+                    item.getProduct().getSlotSection().setOccupied(false);
+                    item.getProduct().getSlotSection().setProduct(null);
+                    item.getProduct().setSlotSection(null);
+                }
+            }
+        });
+
+        // Note: Transaction record is already created in acceptDispatch, so not needed here
 
         notificationProducerService.sendNotification(
                 dispatch.getBuyerId(),

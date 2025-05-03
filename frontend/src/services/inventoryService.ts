@@ -35,13 +35,17 @@ const inventoryService = {
   storeBatch: async (batchData: {
     productType: ProductType;
     storageStrategy: StorageStrategy;
+    storageConditions: Record<string, any>[];
     productDetails: Record<string, any>[];
   }) => {
     try {
       const response = await apiClient.post('/inventory/batch', batchData);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error storing batch:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
       throw error;
     }
   },

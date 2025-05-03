@@ -352,7 +352,6 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .sections-header {
     flex-direction: column;

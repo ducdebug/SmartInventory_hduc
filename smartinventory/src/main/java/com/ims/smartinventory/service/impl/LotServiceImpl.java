@@ -1,13 +1,18 @@
 package com.ims.smartinventory.service.impl;
 
 import com.ims.common.config.TransactionType;
+import com.ims.common.entity.BaseProductEntity;
 import com.ims.common.entity.management.InventoryTransactionEntity;
 import com.ims.common.entity.management.LotEntity;
 import com.ims.common.entity.management.LotItemEntity;
+import com.ims.common.entity.storage.SectionEntity;
+import com.ims.common.entity.storage.SlotEntity;
+import com.ims.common.entity.storage.SlotSection;
+import com.ims.common.entity.storage.SlotShelf;
 import com.ims.smartinventory.dto.Response.LotDto;
 import com.ims.smartinventory.dto.Response.LotItemDto;
-import com.ims.smartinventory.repository.InventoryTransactionRepository;
-import com.ims.smartinventory.repository.LotRepository;
+import com.ims.smartinventory.exception.StorageException;
+import com.ims.smartinventory.repository.*;
 import com.ims.smartinventory.service.LotService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +23,25 @@ import java.util.*;
 public class LotServiceImpl implements LotService {
 
     private final LotRepository lotRepository;
+    private final SlotSectionRepository slotSectionRepository;
+    private final SlotShelfRepository slotShelfRepository;
     private final ProductServiceImpl productService;
     private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final ProductRepository productRepository;
+    private final SectionRepository sectionRepository;
 
-    public LotServiceImpl(LotRepository lotRepository, ProductServiceImpl productService, InventoryTransactionRepository inventoryTransactionRepository) {
+    public LotServiceImpl(LotRepository lotRepository, SlotSectionRepository slotSectionRepository, SlotShelfRepository slotShelfRepository,
+                          ProductServiceImpl productService,
+                          InventoryTransactionRepository inventoryTransactionRepository,
+                          ProductRepository productRepository,
+                          SectionRepository sectionRepository) {
         this.lotRepository = lotRepository;
+        this.slotSectionRepository = slotSectionRepository;
+        this.slotShelfRepository = slotShelfRepository;
         this.productService = productService;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
+        this.productRepository = productRepository;
+        this.sectionRepository = sectionRepository;
     }
 
     @Override
@@ -49,19 +66,81 @@ public class LotServiceImpl implements LotService {
     @Transactional
     public boolean acceptLot(String lotId) {
         Optional<LotEntity> lotOpt = lotRepository.findById(lotId);
-        InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
+
         if (lotOpt.isPresent()) {
             LotEntity lot = lotOpt.get();
+
+            if (lot.isAccepted()) {
+                return true;
+            }
+
+            List<BaseProductEntity> products = productRepository.findByLotIdAndSlotShelfIsNullAndSlotSectionIsNull(lot.getId());
+
+            for (BaseProductEntity product : products) {
+                SectionEntity sectionEntity = product.getSection();
+                boolean onShelf = product.isOnShelf();
+
+                if (onShelf) {
+                    allocateSlotInShelf(sectionEntity, product);
+                } else {
+                    allocateSlotInSection(sectionEntity, product);
+                }
+            }
+
             lot.setAccepted(true);
             lotRepository.save(lot);
+
+            InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
             inventoryTransaction.setType(TransactionType.IMPORT);
             inventoryTransaction.setRelated_dispatch_lot_id(lot.getId());
             inventoryTransaction.setTimestamp(new Date());
             inventoryTransactionRepository.save(inventoryTransaction);
+
             return true;
         }
 
         return false;
+    }
+
+    private SlotEntity allocateSlotInShelf(SectionEntity section, BaseProductEntity product) {
+        List<SlotShelf> availableSlots = slotShelfRepository.findAll().stream()
+                .filter(SlotEntity::isAvailable)
+                .filter(slot -> slot.getShelf().getSection().equals(section) && slot.getProduct() == null)
+                .sorted(
+                        Comparator.comparing((SlotShelf s) -> s.getShelf().getId())
+                                .thenComparingInt(SlotShelf::getX)
+                                .thenComparingInt(SlotShelf::getY)
+                )
+                .toList();
+
+        if (availableSlots.isEmpty()) {
+            throw new StorageException("No available slot in shelf for section: " + section.getName());
+        }
+
+        SlotShelf selectedSlot = availableSlots.getFirst();
+        selectedSlot.setOccupied(true);
+        selectedSlot.setProduct(product);
+        product.setSlotShelf(selectedSlot);
+
+        slotShelfRepository.save(selectedSlot);
+        productRepository.save(product);
+        return selectedSlot;
+    }
+
+    private SlotEntity allocateSlotInSection(SectionEntity section, BaseProductEntity product) {
+        List<SlotSection> availableSlots = slotSectionRepository.findAll().stream()
+                .filter(SlotEntity::isAvailable)
+                .filter(slot -> slot.getSection().equals(section) && slot.getProduct() == null)
+                .sorted(Comparator.comparingInt(SlotSection::getXPosition).thenComparingInt(SlotSection::getYPosition))
+                .toList();
+        SlotSection selectedSlot = availableSlots.getFirst();
+        selectedSlot.setOccupied(true);
+        selectedSlot.setProduct(product);
+        product.setSlotSection(selectedSlot);
+
+        slotSectionRepository.save(selectedSlot);
+        productRepository.save(product);
+        return selectedSlot;
     }
 
     @Override

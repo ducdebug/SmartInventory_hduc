@@ -3,6 +3,7 @@ package com.ims.common.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.ims.common.entity.management.DispatchEntity;
 import com.ims.common.entity.management.LotEntity;
+import com.ims.common.entity.storage.SectionEntity;
 import com.ims.common.entity.storage.SlotSection;
 import com.ims.common.entity.storage.SlotShelf;
 import jakarta.persistence.*;
@@ -45,6 +46,11 @@ public abstract class BaseProductEntity {
     @JoinColumn(name = "slot_section_id", referencedColumnName = "id", nullable = true)
     private SlotSection slotSection;
 
+    private boolean onShelf;
+
+    @ManyToOne
+    @JoinColumn(name = "section_id")
+    private SectionEntity section;
 
     public abstract boolean isExpired();
 

@@ -53,17 +53,13 @@ const ExportManagementPage: React.FC = () => {
     }
   };
 
-  // Complete functionality has been removed
-
   const handleRejectDispatch = async () => {
     if (!rejectDispatchId) return;
     
     try {
       await dispatchService.rejectDispatch(rejectDispatchId, rejectionReason);
-      // Close the rejection modal
       setRejectDispatchId(null);
       setRejectionReason('');
-      // Refresh the data
       fetchDispatchData();
       alert('Dispatch rejected successfully!');
     } catch (err) {
@@ -75,11 +71,9 @@ const ExportManagementPage: React.FC = () => {
   const handleViewDetails = async (dispatch: Dispatch) => {
     try {
       console.log("Fetching details for dispatch:", dispatch.id);
-      // Fetch the full details to ensure we have all data
       const detailedDispatch = await dispatchService.getDispatchDetails(dispatch.id);
       console.log("Detailed dispatch data:", detailedDispatch);
       
-      // Check if we have items in the dispatch
       if (!detailedDispatch.items || detailedDispatch.items.length === 0) {
         console.warn("No items found in the dispatch details!");
       }
@@ -121,14 +115,13 @@ const ExportManagementPage: React.FC = () => {
           className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
           onClick={() => setActiveTab('pending')}
         >
-          Pending Requests
-          {pendingDispatches.length > 0 && <span className="tab-badge">{pendingDispatches.length}</span>}
+          Pending Requests ({pendingDispatches.length})
         </button>
         <button 
           className={`tab ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
-          Accepted/Rejected
+          Accepted/Rejected ({completedDispatches.length})
         </button>
       </div>
       
@@ -190,7 +183,6 @@ const ExportManagementPage: React.FC = () => {
                           </button>
                         </>
                       )}
-                      {/* Complete button has been removed */}
                     </div>
                   </div>
                   
@@ -333,15 +325,12 @@ const ExportManagementPage: React.FC = () => {
                     </button>
                   </>
                 )}
-                {/* Complete button has been removed */}
               </div>
             </div>
           </div>
         </div>
       )}
-      
-      {/* Rejection Modal */}
-      {rejectDispatchId && (
+  {rejectDispatchId && (
         <div className="rejection-modal">
           <div className="modal-content">
             <div className="modal-header">

@@ -99,12 +99,11 @@ const LotHistoryPage: React.FC = () => {
   const handleAcceptLot = async (lotId: string) => {
     try {
       await inventoryService.acceptLot(lotId);
-      // Refresh lots after acceptance
       const pendingData = await inventoryService.getPendingLots();
       const acceptedData = await inventoryService.getAcceptedLots();
       setPendingLots(pendingData);
       setAcceptedLots(acceptedData);
-      setSelectedLot(null); // Close modal
+      setSelectedLot(null);
     } catch (err) {
       console.error(err);
       alert('Failed to accept lot');

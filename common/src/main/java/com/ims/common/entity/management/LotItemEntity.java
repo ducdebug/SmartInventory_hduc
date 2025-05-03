@@ -19,7 +19,7 @@ public class LotItemEntity {
 
     private String productName;
 
-    @ManyToOne(optional = true)
+    @ManyToOne
     @JoinColumn(name = "product_id")
     private BaseProductEntity product;
 
@@ -28,7 +28,7 @@ public class LotItemEntity {
     private LotEntity lot;
 
     @ManyToOne
-    @JoinColumn(name = "price_id", nullable = true)
+    @JoinColumn(name = "price_id")
     private PriceEntity price;
 
     private int quantity;
