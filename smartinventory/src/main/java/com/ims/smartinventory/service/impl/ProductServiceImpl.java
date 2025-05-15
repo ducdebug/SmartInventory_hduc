@@ -4,21 +4,24 @@ import com.ims.common.config.*;
 import com.ims.common.entity.BaseProductEntity;
 import com.ims.common.entity.PriceEntity;
 import com.ims.common.entity.UserEntity;
-import com.ims.common.entity.management.*;
+import com.ims.common.entity.management.DispatchEntity;
+import com.ims.common.entity.management.DispatchItemEntity;
+import com.ims.common.entity.management.LotEntity;
+import com.ims.common.entity.management.LotItemEntity;
 import com.ims.common.entity.product.*;
 import com.ims.common.entity.storage.SectionEntity;
-import com.ims.common.entity.storage.SlotSection;
 import com.ims.common.entity.storage.SlotShelf;
 import com.ims.common.entity.storage.StorageConditionEntity;
 import com.ims.smartinventory.dto.Request.ProductBatchRequestDto;
 import com.ims.smartinventory.dto.Request.ProductExportRequestDto;
 import com.ims.smartinventory.dto.Request.ProductGroupResponseDto;
+import com.ims.smartinventory.dto.Request.UpdateSecondaryPriceRequest;
 import com.ims.smartinventory.dto.Response.ProductResponse;
+import com.ims.smartinventory.dto.Response.ProductsByLotResponse;
 import com.ims.smartinventory.exception.NoSuitableSectionException;
 import com.ims.smartinventory.exception.StorageException;
 import com.ims.smartinventory.repository.*;
 import com.ims.smartinventory.service.ProductService;
-import com.ims.smartinventory.util.VolumeCalculator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -299,7 +302,7 @@ public class ProductServiceImpl implements ProductService {
         price.setCurrency((String) productData.getOrDefault("currency", "VND"));
         price.setTransactionType(TransactionType.IMPORT);
         price = priceRepository.save(price);
-        product.setPrice(price);
+        product.setPrimaryPrice(price);
         return product;
     }
 
@@ -382,86 +385,6 @@ public class ProductServiceImpl implements ProductService {
         return response;
     }
 
-    @Transactional
-    @Override
-    public void exportGroupedProducts(ProductExportRequestDto request, UserEntity currentUser) {
-        DispatchEntity dispatch = new DispatchEntity();
-        dispatch.setStatus(DispatchStatus.ACCEPTED);
-        dispatch.setCompletedAt(new Date());
-        dispatch.setUser(currentUser);
-        dispatch = dispatchRepository.save(dispatch);
-
-        List<String> exportedProductIds = new ArrayList<>();
-
-        for (ProductExportRequestDto.ProductExportItem item : request.getProducts()) {
-            int quantity = item.getQuantity();
-            String productId = item.getProductId();
-
-            BaseProductEntity reference = productRepository.findById(productId)
-                    .orElseThrow(() -> new StorageException("Reference product not found: " + productId));
-
-            StorageStrategy strategy = reference.getLot().getStorageStrategy();
-            List<BaseProductEntity> candidates = new ArrayList<>(productRepository.findAll().stream()
-                    .filter(p -> p.getDispatch() == null)
-                    .filter(p -> matchesDetail(p, extractDetail(reference)))
-                    .limit(quantity)
-                    .toList());
-
-            if (candidates.size() < quantity) {
-                throw new StorageException("Not enough products to export for: " + reference.getName());
-            }
-            switch (strategy) {
-                case FIFO -> candidates.sort(Comparator.comparing(p -> p.getLot().getImportDate()));
-                case LIFO ->
-                        candidates.sort(Comparator.comparing((BaseProductEntity p) -> p.getLot().getImportDate()).reversed());
-                case FEFO -> candidates.sort(Comparator.comparing(BaseProductEntity::getExpirationDate));
-                case RANDOM -> Collections.shuffle(candidates);
-            }
-            for (BaseProductEntity product : candidates) {
-                exportedProductIds.add(product.getId());
-
-                product.setDispatch(dispatch);
-                if (product.getSlotShelf() != null) {
-                    SlotShelf shelf = product.getSlotShelf();
-                    product.setSlotShelf(null);
-                    shelf.setOccupied(false);
-                    slotShelfRepository.save(shelf);
-                } else if (product.getSlotSection() != null) {
-                    SlotSection section = product.getSlotSection();
-                    product.setSlotSection(null);
-                    section.setOccupied(false);
-                    slotSectionRepository.save(section);
-                }
-                productRepository.save(product);
-
-                DispatchItemEntity dispatchItem = new DispatchItemEntity();
-                dispatchItem.setDispatch(dispatch);
-                dispatchItem.setProduct(product);
-                dispatchItem.setProductName(product.getName());
-                dispatchItem.setQuantity(1);
-                dispatchItem.setExportDate(new Date());
-
-                if (product.getPrice() != null) {
-                    PriceEntity exportPrice = new PriceEntity();
-                    exportPrice.setTransactionType(TransactionType.EXPORT);
-                    exportPrice.setValue(product.getPrice().getValue());
-                    exportPrice.setCurrency(product.getPrice().getCurrency());
-                    exportPrice = priceRepository.save(exportPrice);
-                    dispatchItem.setPrice(exportPrice);
-                }
-
-                dispatchItemRepository.save(dispatchItem);
-                InventoryTransactionEntity tx = new InventoryTransactionEntity();
-                tx.setType(TransactionType.EXPORT);
-                tx.setTimestamp(new Date());
-                tx.setRelated_dispatch_lot_id(dispatch.getId());
-                inventoryTransactionRepository.save(tx);
-            }
-        }
-
-        checkProductVolumeAndNotify(exportedProductIds);
-    }
-
     boolean matchesDetail(BaseProductEntity product, Map<String, Object> detail) {
         Map<String, Object> actual = extractDetail(product);
         if (actual.size() != detail.size()) return false;
@@ -487,31 +410,38 @@ public class ProductServiceImpl implements ProductService {
         for (ProductExportRequestDto.ProductExportItem item : request.getProducts()) {
             int quantity = item.getQuantity();
 
-            BaseProductEntity reference = null;
-            if (item.getProductId() != null) {
-                reference = productRepository.findById(item.getProductId()).orElse(null);
+            BaseProductEntity reference = productRepository.findById(item.getProductId()).orElseThrow();
+            StorageStrategy strategy = reference.getLot().getStorageStrategy();
+            List<BaseProductEntity> candidates = new ArrayList<>(productRepository.findAll().stream()
+                    .filter(p -> p.getDispatch() == null)
+                    .filter(p -> matchesDetail(p, extractDetail(reference)))
+                    .limit(quantity)
+                    .toList());
+
+            if (candidates.size() < quantity) {
+                throw new StorageException("Not enough products to export for: " + reference.getName());
+            }
+            switch (strategy) {
+                case FIFO -> candidates.sort(Comparator.comparing(p -> p.getLot().getImportDate()));
+                case LIFO ->
+                        candidates.sort(Comparator.comparing((BaseProductEntity p) -> p.getLot().getImportDate()).reversed());
+                case FEFO -> candidates.sort(Comparator.comparing(BaseProductEntity::getExpirationDate));
+                case RANDOM -> Collections.shuffle(candidates);
             }
 
-            String productName = reference != null ? reference.getName() : item.getName();
-
+            String productName = reference.getName();
             DispatchItemEntity dispatchItem = new DispatchItemEntity();
             dispatchItem.setDispatch(dispatch);
             dispatchItem.setProductName(productName);
             dispatchItem.setQuantity(quantity);
             dispatchItem.setExportDate(new Date());
+            dispatchItem.setProductId(reference.getId());
 
-            if (reference != null) {
-                dispatchItem.setProductId(reference.getId());
-            }
-
-            if (reference != null && reference.getPrice() != null) {
-                PriceEntity exportPrice = new PriceEntity();
-                exportPrice.setTransactionType(TransactionType.EXPORT);
-                exportPrice.setValue(reference.getPrice().getValue());
-                exportPrice.setCurrency(reference.getPrice().getCurrency());
-                exportPrice = priceRepository.save(exportPrice);
-                dispatchItem.setPrice(exportPrice);
-            }
+            PriceEntity exportPrice = new PriceEntity();
+            exportPrice.setTransactionType(TransactionType.EXPORT);
+            exportPrice.setCurrency(reference.getSecondaryPrice().getCurrency());
+            exportPrice = priceRepository.save(exportPrice);
+            dispatchItem.setPrice(exportPrice);
 
             dispatchItemRepository.save(dispatchItem);
         }
@@ -524,45 +454,110 @@ public class ProductServiceImpl implements ProductService {
         return dispatch.getId();
     }
 
+    public void setSecondaryPriceForLot() {
+        // Deprecated
+    }
+
     @Override
-    public void checkProductVolumeAndNotify(List<String> exportedProductIds) {
-        List<BaseProductEntity> remainingProducts = productRepository.findAll().stream()
-                .filter(p -> p.getDispatch() == null)
-                .toList();
+    public List<ProductsByLotResponse> getAllProductsByLot() {
+        List<LotEntity> allLots = lotRepository.findAll();
+        return allLots.stream().map(lot -> {
+            List<BaseProductEntity> products = productRepository.findByLotId(lot.getId());
 
-        Map<String, List<BaseProductEntity>> productsByType = new HashMap<>();
+            // Group and format the products for response
+            ProductsByLotResponse response = new ProductsByLotResponse();
+            response.setLotId(lot.getId());
+            response.setLotCode(lot.getLotCode());
+            response.setImportDate(lot.getImportDate());
+            response.setImportedByUser(lot.getUser() != null ? lot.getUser().getUsername() : "Unknown");
 
-        for (BaseProductEntity product : remainingProducts) {
-            String type = product.getClass().getSimpleName();
-            productsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(product);
+            List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(product -> {
+                ProductsByLotResponse.ProductInLot productItem = new ProductsByLotResponse.ProductInLot();
+                productItem.setProductId(product.getId());
+                productItem.setProductName(product.getName());
+                productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
+
+                if (product.getPrimaryPrice() != null) {
+                    ProductsByLotResponse.PriceDTO primaryPriceDTO = new ProductsByLotResponse.PriceDTO(
+                            product.getPrimaryPrice().getId(),
+                            product.getPrimaryPrice().getValue(),
+                            product.getPrimaryPrice().getCurrency()
+                    );
+                    productItem.setPrimaryPrice(primaryPriceDTO);
+                }
+
+                if (product.getSecondaryPrice() != null) {
+                    ProductsByLotResponse.PriceDTO secondaryPriceDTO = new ProductsByLotResponse.PriceDTO(
+                            product.getSecondaryPrice().getId(),
+                            product.getSecondaryPrice().getValue(),
+                            product.getSecondaryPrice().getCurrency()
+                    );
+                    productItem.setSecondaryPrice(secondaryPriceDTO);
+                }
+
+                productItem.setDetails(extractDetail(product));
+
+                return productItem;
+            }).toList();
+
+            response.setProducts(productList);
+            return response;
+        }).toList();
+    }
+
+    @Override
+    @Transactional
+    public void updateSecondaryPrices(UpdateSecondaryPriceRequest request) {
+        // Check if we have individual product prices or a bulk update
+        if (request.getProductPrices() == null || request.getProductPrices().isEmpty()) {
+            // If no individual prices and no bulk price, throw an error
+            if (request.getBulkPrice() == null) {
+                throw new IllegalArgumentException("Either product prices or bulk price must be provided");
+            }
+            
+            // No products specified means no update needed
+            return;
         }
-        Map<String, Double> volumeByType = new HashMap<>();
-        double totalRemainingVolume = 0.0;
 
-        for (Map.Entry<String, List<BaseProductEntity>> entry : productsByType.entrySet()) {
-            String type = entry.getKey();
-            double typeVolume = entry.getValue().stream()
-                    .mapToDouble(VolumeCalculator::calculateProductVolume)
-                    .sum();
+        // Handle individual product price updates
+        for (UpdateSecondaryPriceRequest.ProductPrice productPrice : request.getProductPrices()) {
+            BaseProductEntity product = productRepository.findById(productPrice.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Product not found: " + productPrice.getProductId()));
 
-            volumeByType.put(type, typeVolume);
-            totalRemainingVolume += typeVolume;
-        }
-
-        if (VolumeCalculator.isVolumeBelowThreshold(totalRemainingVolume)) {
-            StringBuilder messageBuilder = new StringBuilder();
-            messageBuilder.append("WARNING: Low inventory volume detected after export. ");
-            messageBuilder.append("Total remaining volume: ").append(String.format("%.2f", totalRemainingVolume)).append(" units. ");
-            messageBuilder.append("Breakdown by product type: ");
-
-            for (Map.Entry<String, Double> entry : volumeByType.entrySet()) {
-                String type = entry.getKey().replace("ProductEntity", "");
-                double volume = entry.getValue();
-                messageBuilder.append(type).append(": ").append(String.format("%.2f", volume)).append(" units, ");
+            PriceEntity secondaryPrice;
+            if (product.getSecondaryPrice() == null) {
+                secondaryPrice = new PriceEntity();
+                secondaryPrice.setTransactionType(TransactionType.EXPORT);
+            } else {
+                secondaryPrice = product.getSecondaryPrice();
             }
 
-            notificationProducerService.sendNotification("admin", messageBuilder.toString());
-        }
+            // If this is a bulk update with individual products selected
+            if (request.getBulkPrice() != null) {
+                secondaryPrice.setValue(request.getBulkPrice());
+                secondaryPrice.setCurrency(request.getCurrency());
+            } else if (request.getBulkMarkupPercentage() != null) {
+                // Handle bulk markup percentage
+                if (product.getPrimaryPrice() != null) {
+                    double primaryValue = product.getPrimaryPrice().getValue();
+                    double markup = 1 + (request.getBulkMarkupPercentage() / 100.0);
+                    secondaryPrice.setValue(primaryValue * markup);
+                    secondaryPrice.setCurrency(product.getPrimaryPrice().getCurrency());
+                } else {
+                    // If no primary price, use the provided price
+                    secondaryPrice.setValue(productPrice.getPrice());
+                    secondaryPrice.setCurrency(productPrice.getCurrency());
+                }
+            } else {
+                // Individual price update
+                secondaryPrice.setValue(productPrice.getPrice());
+                secondaryPrice.setCurrency(productPrice.getCurrency());
+            }
+            
+            secondaryPrice = priceRepository.save(secondaryPrice);
 
+            product.setSecondaryPrice(secondaryPrice);
+            productRepository.save(product);
+        }
     }
 }

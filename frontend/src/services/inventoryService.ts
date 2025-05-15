@@ -121,23 +121,36 @@ const inventoryService = {
       throw error;
     }
   },
-  
-  exportProducts: async (payload: {
-    products: {
-      quantity: number;
-      name: string;
-      detail: Record<string, any>;
-    }[];
-  }) => {
+
+  getProductsByLot: async () => {
     try {
-      const response = await apiClient.post('/inventory/export', payload);
+      const response = await apiClient.get('/inventory/admin/products');
       return response.data;
     } catch (error) {
-      console.error('Error exporting products:', error);
+      console.error('Error fetching products by lot:', error);
       throw error;
     }
   },
-  
+
+  updateSecondaryPrices: async (data: { 
+    productPrices: Array<{
+      productId: string;
+      price: number;
+      currency: string;
+    }>,
+    bulkPrice?: number,
+    currency?: string,
+    bulkMarkupPercentage?: number
+  }) => {
+    try {
+      const response = await apiClient.post('/inventory/admin/products/prices', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating secondary prices:', error);
+      throw error;
+    }
+  },
+
   createRetrieveRequest: async (payload: {
     products: {
       quantity: number;

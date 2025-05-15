@@ -3,13 +3,14 @@ package com.ims.smartinventory.controller;
 import com.ims.common.config.UserRole;
 import com.ims.common.entity.UserEntity;
 import com.ims.common.entity.storage.SectionEntity;
-import com.ims.common.entity.storage.SlotEntity;
 import com.ims.smartinventory.dto.Request.ProductBatchRequestDto;
 import com.ims.smartinventory.dto.Request.ProductExportRequestDto;
 import com.ims.smartinventory.dto.Request.ProductGroupResponseDto;
 import com.ims.smartinventory.dto.Request.SectionRequestDto;
+import com.ims.smartinventory.dto.Request.UpdateSecondaryPriceRequest;
 import com.ims.smartinventory.dto.Response.InventoryAnalyticsResponse;
 import com.ims.smartinventory.dto.Response.ProductResponse;
+import com.ims.smartinventory.dto.Response.ProductsByLotResponse;
 import com.ims.smartinventory.service.InventoryAnalyticsService;
 import com.ims.smartinventory.service.ProductService;
 import com.ims.smartinventory.service.SectionService;
@@ -58,14 +59,6 @@ public class InventoryController {
         return response != null ? ResponseEntity.ok(response) : ResponseEntity.notFound().build();
     }
 
-    @PostMapping("/export")
-    public ResponseEntity<?> exportGroupedProducts(
-            @RequestBody ProductExportRequestDto request,
-            @AuthenticationPrincipal UserEntity currentUser) {
-        productService.exportGroupedProducts(request, currentUser);
-        return ResponseEntity.ok().build();
-    }
-
     @PostMapping("/retrieve-request")
     public ResponseEntity<?> createRetrieveRequest(
             @RequestBody ProductExportRequestDto request,
@@ -90,4 +83,25 @@ public class InventoryController {
         return ResponseEntity.ok(analytics);
     }
 
+    @GetMapping("/admin/products")
+    public ResponseEntity<List<ProductsByLotResponse>> getProductsByLot(@AuthenticationPrincipal UserEntity currentUser) {
+        if (currentUser == null || !UserRole.ADMIN.equals(currentUser.getRole())) {
+            return ResponseEntity.status(403).body(null);
+        }
+        
+        List<ProductsByLotResponse> products = productService.getAllProductsByLot();
+        return ResponseEntity.ok(products);
+    }
+    
+    @PostMapping("/admin/products/prices")
+    public ResponseEntity<?> updateSecondaryPrices(
+            @RequestBody UpdateSecondaryPriceRequest request,
+            @AuthenticationPrincipal UserEntity currentUser) {
+        if (currentUser == null || !UserRole.ADMIN.equals(currentUser.getRole())) {
+            return ResponseEntity.status(403).body("Only admins can update secondary prices");
+        }
+        
+        productService.updateSecondaryPrices(request);
+        return ResponseEntity.ok().build();
+    }
 }

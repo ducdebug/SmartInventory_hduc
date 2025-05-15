@@ -22,6 +22,9 @@ public class PriceEntity {
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
 
-    @OneToMany(mappedBy = "price", cascade = CascadeType.ALL)
-    private List<BaseProductEntity> products;
+    @OneToMany(mappedBy = "primaryPrice", cascade = CascadeType.ALL)
+    private List<BaseProductEntity> primaryProducts;
+    
+    @OneToMany(mappedBy = "secondaryPrice", cascade = CascadeType.ALL)
+    private List<BaseProductEntity> secondaryProducts;
 }

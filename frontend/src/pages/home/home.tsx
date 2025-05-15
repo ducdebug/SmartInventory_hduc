@@ -12,7 +12,6 @@ import Button from 'antd/lib/button';
 import Spin from 'antd/lib/spin';
 import Alert from 'antd/lib/alert';
 
-// Icons
 import { 
   AppstoreOutlined, 
   ShoppingOutlined, 

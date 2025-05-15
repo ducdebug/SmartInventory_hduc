@@ -33,17 +33,21 @@ public abstract class BaseProductEntity {
     private LotEntity lot;
 
     @ManyToOne
-    @JoinColumn(name = "price_id")
-    private PriceEntity price;
+    @JoinColumn(name = "primary_price_id")
+    private PriceEntity primaryPrice;
+
+    @ManyToOne
+    @JoinColumn(name = "secondary_price_id")
+    private PriceEntity secondaryPrice;
 
     @OneToOne
     @JsonBackReference
-    @JoinColumn(name = "slot_shelf_id", referencedColumnName = "id", nullable = true)
+    @JoinColumn(name = "slot_shelf_id", referencedColumnName = "id")
     private SlotShelf slotShelf;
 
     @OneToOne
     @JsonBackReference
-    @JoinColumn(name = "slot_section_id", referencedColumnName = "id", nullable = true)
+    @JoinColumn(name = "slot_section_id", referencedColumnName = "id")
     private SlotSection slotSection;
 
     private boolean onShelf;

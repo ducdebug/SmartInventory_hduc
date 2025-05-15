@@ -29,7 +29,6 @@ public class SectionEntity {
     private List<StorageConditionEntity> storageConditions;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "section", orphanRemoval = true)
-    @Column(nullable = true)
     private List<SlotSection> slotSections;
 
     private int numShelves;

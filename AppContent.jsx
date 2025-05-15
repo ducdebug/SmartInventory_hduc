@@ -1,12 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/home/home';
 import SectionsPage from './pages/sections/sections';
 import SectionDetail from './pages/sectiondetail/sectiondetail';
 import ShelfDetail from './pages/shelfdetail/shelfdetail';
 import Login from './pages/login/login';
 import Register from './pages/register/register';
-import { AuthProvider } from './hooks/useAuth'; 
-import { ProfileImageProvider } from './context/ProfileImageContext';
 import Navbar from './components/layout/navbar/navbar';
 import Footer from './components/layout/footer/Footer';
 import PrivateRoute from "./components/privateroute";
@@ -23,7 +22,7 @@ import AdminInventoryPage from './pages/inventory/AdminInventoryPage';
 
 function AppContent() {
   const location = useLocation();
-  const hideFooter = location.pathname === "/login" || location.pathname === "/register";
+  const hideFooter = ['/login', '/register'].includes(location.pathname);
   
   return (
     <div className="app-container">
@@ -119,16 +118,4 @@ function AppContent() {
   );
 }
 
-function App() {
-  return (
-    <ProfileImageProvider>
-      <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </AuthProvider>
-    </ProfileImageProvider>
-  );
-}
-
-export default App;
+export default AppContent;

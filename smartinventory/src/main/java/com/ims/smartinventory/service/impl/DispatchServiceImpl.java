@@ -2,19 +2,21 @@ package com.ims.smartinventory.service.impl;
 
 import com.ims.common.config.DispatchStatus;
 import com.ims.common.config.TransactionType;
+import com.ims.common.entity.BaseProductEntity;
 import com.ims.common.entity.management.DispatchEntity;
 import com.ims.common.entity.management.InventoryTransactionEntity;
 import com.ims.smartinventory.dto.Response.DispatchDetailResponse;
 import com.ims.smartinventory.dto.Response.DispatchHistoryResponse;
 import com.ims.smartinventory.repository.DispatchRepository;
 import com.ims.smartinventory.repository.InventoryTransactionRepository;
+import com.ims.smartinventory.repository.ProductRepository;
 import com.ims.smartinventory.service.DispatchService;
 import com.ims.smartinventory.service.NotificationProducerService;
+import com.ims.smartinventory.util.VolumeCalculator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,11 +25,13 @@ public class DispatchServiceImpl implements DispatchService {
     private final DispatchRepository dispatchRepository;
     private final NotificationProducerService notificationProducerService;
     private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final ProductRepository productRepository;
 
-    public DispatchServiceImpl(DispatchRepository dispatchRepository, NotificationProducerService notificationProducerService, InventoryTransactionRepository inventoryTransactionRepository) {
+    public DispatchServiceImpl(DispatchRepository dispatchRepository, NotificationProducerService notificationProducerService, InventoryTransactionRepository inventoryTransactionRepository, ProductRepository productRepository) {
         this.dispatchRepository = dispatchRepository;
         this.notificationProducerService = notificationProducerService;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -94,9 +98,10 @@ public class DispatchServiceImpl implements DispatchService {
         dispatch = dispatchRepository.save(dispatch);
 
         final DispatchEntity finalDispatch = dispatch;
-
+        List<String> exportedProductIds = new ArrayList<>();
         dispatch.getItems().forEach(item -> {
             if (item.getProduct() != null) {
+                exportedProductIds.add(item.getProduct().getId());
                 item.getProduct().setDispatch(finalDispatch);
                 if (item.getProduct().getSlotShelf() != null) {
                     item.getProduct().getSlotShelf().setOccupied(false);
@@ -115,6 +120,7 @@ public class DispatchServiceImpl implements DispatchService {
         inventoryTransaction.setTimestamp(new Date());
         inventoryTransaction.setRelated_dispatch_lot_id(dispatch.getId());
         inventoryTransactionRepository.save(inventoryTransaction);
+        checkProductVolumeAndNotify(exportedProductIds);
 
         // Send notification to the buyer (commented out for now)
         // notificationProducerService.sendNotification(
@@ -125,47 +131,45 @@ public class DispatchServiceImpl implements DispatchService {
         return DispatchDetailResponse.fromEntity(dispatch);
     }
 
-    @Override
-    @Transactional
-    public DispatchDetailResponse completeDispatch(String dispatchId) {
-        DispatchEntity dispatch = dispatchRepository.findById(dispatchId).orElse(null);
+    public void checkProductVolumeAndNotify(List<String> exportedProductIds) {
+        List<BaseProductEntity> remainingProducts = productRepository.findAll().stream()
+                .filter(p -> p.getDispatch() == null)
+                .toList();
 
-        if (dispatch == null || dispatch.getStatus() != DispatchStatus.PENDING) {
-            return null;
+        Map<String, List<BaseProductEntity>> productsByType = new HashMap<>();
+
+        for (BaseProductEntity product : remainingProducts) {
+            String type = product.getClass().getSimpleName();
+            productsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(product);
+        }
+        Map<String, Double> volumeByType = new HashMap<>();
+        double totalRemainingVolume = 0.0;
+
+        for (Map.Entry<String, List<BaseProductEntity>> entry : productsByType.entrySet()) {
+            String type = entry.getKey();
+            double typeVolume = entry.getValue().stream()
+                    .mapToDouble(VolumeCalculator::calculateProductVolume)
+                    .sum();
+
+            volumeByType.put(type, typeVolume);
+            totalRemainingVolume += typeVolume;
         }
 
-        // Update dispatch status
-        dispatch.setStatus(DispatchStatus.ACCEPTED);
-        dispatch = dispatchRepository.save(dispatch);
+        if (VolumeCalculator.isVolumeBelowThreshold(totalRemainingVolume)) {
+            StringBuilder messageBuilder = new StringBuilder();
+            messageBuilder.append("WARNING: Low inventory volume detected after export. ");
+            messageBuilder.append("Total remaining volume: ").append(String.format("%.2f", totalRemainingVolume)).append(" units. ");
+            messageBuilder.append("Breakdown by product type: ");
 
-        // Create a final copy of dispatch to use in lambda
-        final DispatchEntity finalDispatch = dispatch;
-
-        // Update products associated with this dispatch's items to have this dispatch entity
-        dispatch.getItems().forEach(item -> {
-            if (item.getProduct() != null) {
-                item.getProduct().setDispatch(finalDispatch);
-                // If the product has a slot, free it
-                if (item.getProduct().getSlotShelf() != null) {
-                    item.getProduct().getSlotShelf().setOccupied(false);
-                    item.getProduct().getSlotShelf().setProduct(null);
-                    item.getProduct().setSlotShelf(null);
-                } else if (item.getProduct().getSlotSection() != null) {
-                    item.getProduct().getSlotSection().setOccupied(false);
-                    item.getProduct().getSlotSection().setProduct(null);
-                    item.getProduct().setSlotSection(null);
-                }
+            for (Map.Entry<String, Double> entry : volumeByType.entrySet()) {
+                String type = entry.getKey().replace("ProductEntity", "");
+                double volume = entry.getValue();
+                messageBuilder.append(type).append(": ").append(String.format("%.2f", volume)).append(" units, ");
             }
-        });
 
-        // Note: Transaction record is already created in acceptDispatch, so not needed here
+            notificationProducerService.sendNotification("admin", messageBuilder.toString());
+        }
 
-        notificationProducerService.sendNotification(
-                dispatch.getBuyerId(),
-                "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
-        );
-
-        return DispatchDetailResponse.fromEntity(dispatch);
     }
 
     @Override

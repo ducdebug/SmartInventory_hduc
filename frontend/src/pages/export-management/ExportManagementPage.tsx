@@ -44,7 +44,6 @@ const ExportManagementPage: React.FC = () => {
   const handleAcceptDispatch = async (dispatchId: string) => {
     try {
       await dispatchService.acceptDispatch(dispatchId);
-      // Refresh the data
       fetchDispatchData();
       alert('Dispatch accepted successfully!');
     } catch (err) {

@@ -20,7 +20,5 @@ public interface DispatchService {
 
     DispatchDetailResponse acceptDispatch(String dispatchId);
 
-    DispatchDetailResponse completeDispatch(String dispatchId);
-
     DispatchDetailResponse rejectDispatch(String dispatchId, String reason);
 }

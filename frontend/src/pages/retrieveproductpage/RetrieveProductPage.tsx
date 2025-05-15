@@ -76,7 +76,6 @@ const RetrieveProductPage: React.FC = () => {
         setRequestId(result);
       }
       
-      // Reset form by clearing quantities
       const resetSummaries = summaries.map(summary => ({
         ...summary,
         exportQuantity: undefined
@@ -87,7 +86,6 @@ const RetrieveProductPage: React.FC = () => {
     } catch (err: any) {
       console.error('Retrieve request error:', err);
       
-      // Handle different error types
       if (err.response && err.response.status === 403) {
         setError('You do not have permission to create retrieve requests. Please check your account role.');
       } else if (err.message) {
@@ -102,7 +100,6 @@ const RetrieveProductPage: React.FC = () => {
     }
   };
 
-  // Handler to reset success state to create a new request
   const handleResetForm = () => {
     setSubmitSuccess(false);
     setRequestId(null);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../../context/NotificationContext';
-import { Table, Button, Card, message, Typography, Empty, Spin } from 'antd';
+import { Table, Button, Card, message, Typography, Empty } from 'antd';
 import { CheckOutlined, BellOutlined } from '@ant-design/icons';
 import notificationService from '../../services/notificationService';
 import './NotificationsPage.css';
@@ -22,7 +22,6 @@ const NotificationsPage: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   useEffect(() => {
-    // Component is mounted, refresh notifications from server
     refreshNotifications();
   }, [refreshNotifications]);
 
@@ -137,7 +136,7 @@ const NotificationsPage: React.FC = () => {
       setSelectedRowKeys(selectedRowKeys);
     },
     getCheckboxProps: (record: TableRecord) => ({
-      disabled: record.isRead, // Already read notifications cannot be selected
+      disabled: record.isRead, 
       name: record.id.toString(),
     }),
   };

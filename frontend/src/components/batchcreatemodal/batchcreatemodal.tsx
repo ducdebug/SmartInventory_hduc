@@ -53,7 +53,7 @@ const BatchCreateModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const handleAddProduct = () => {
     setProducts([...products, {
       quantity: 1,
-      onShelf: true, // Default to true
+      onShelf: true, 
       details: {
         name: '',
         price: 0,
