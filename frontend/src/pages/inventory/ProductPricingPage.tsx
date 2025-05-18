@@ -3,7 +3,6 @@ import {
   Table,
   Card,
   Button,
-  Input,
   message,
   Collapse,
   Typography,
@@ -16,8 +15,6 @@ import {
   InputNumber,
   Select,
   Checkbox,
-  Row,
-  Col
 } from 'antd';
 import { EditOutlined, SaveOutlined, WarningOutlined } from '@ant-design/icons';
 import inventoryService from '../../services/inventoryService';
@@ -64,7 +61,6 @@ const ProductPricingPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [lots, setLots] = useState<ProductLot[]>([]);
   const [editableProducts, setEditableProducts] = useState<Record<string, EditableProduct[]>>({});
-  const [selectedLot, setSelectedLot] = useState<string | null>(null);
   const [savingLotId, setSavingLotId] = useState<string | null>(null);
   const [selectAll, setSelectAll] = useState<Record<string, boolean>>({});
 
@@ -512,7 +508,6 @@ const ProductPricingPage: React.FC = () => {
       ) : (
         <Collapse 
           accordion 
-          onChange={(key: string | string[]) => setSelectedLot(typeof key === 'string' ? key : null)}
           style={{ marginTop: '20px' }}
         >
           {lots.map((lot) => (

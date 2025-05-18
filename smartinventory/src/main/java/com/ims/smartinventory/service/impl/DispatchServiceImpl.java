@@ -3,13 +3,15 @@ package com.ims.smartinventory.service.impl;
 import com.ims.common.config.DispatchStatus;
 import com.ims.common.config.TransactionType;
 import com.ims.common.entity.BaseProductEntity;
+import com.ims.common.entity.PriceEntity;
 import com.ims.common.entity.management.DispatchEntity;
+import com.ims.common.entity.management.DispatchItemEntity;
 import com.ims.common.entity.management.InventoryTransactionEntity;
+import com.ims.common.entity.storage.SlotSection;
+import com.ims.common.entity.storage.SlotShelf;
 import com.ims.smartinventory.dto.Response.DispatchDetailResponse;
 import com.ims.smartinventory.dto.Response.DispatchHistoryResponse;
-import com.ims.smartinventory.repository.DispatchRepository;
-import com.ims.smartinventory.repository.InventoryTransactionRepository;
-import com.ims.smartinventory.repository.ProductRepository;
+import com.ims.smartinventory.repository.*;
 import com.ims.smartinventory.service.DispatchService;
 import com.ims.smartinventory.service.NotificationProducerService;
 import com.ims.smartinventory.util.VolumeCalculator;
@@ -26,12 +28,16 @@ public class DispatchServiceImpl implements DispatchService {
     private final NotificationProducerService notificationProducerService;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final ProductRepository productRepository;
+    private final SlotSectionRepository slotSectionRepository;
+    private final SlotShelfRepository slotShelfRepository;
 
-    public DispatchServiceImpl(DispatchRepository dispatchRepository, NotificationProducerService notificationProducerService, InventoryTransactionRepository inventoryTransactionRepository, ProductRepository productRepository) {
+    public DispatchServiceImpl(DispatchRepository dispatchRepository, NotificationProducerService notificationProducerService, InventoryTransactionRepository inventoryTransactionRepository, ProductRepository productRepository, SlotSectionRepository slotSectionRepository, SlotShelfRepository slotShelfRepository) {
         this.dispatchRepository = dispatchRepository;
         this.notificationProducerService = notificationProducerService;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
         this.productRepository = productRepository;
+        this.slotSectionRepository = slotSectionRepository;
+        this.slotShelfRepository = slotShelfRepository;
     }
 
     @Override
@@ -51,7 +57,7 @@ public class DispatchServiceImpl implements DispatchService {
             return null;
         }
 
-        return DispatchDetailResponse.fromEntity(dispatch);
+        return addPricingInfoToDispatchResponse(dispatch);
     }
 
     @Override
@@ -63,7 +69,82 @@ public class DispatchServiceImpl implements DispatchService {
             return null;
         }
 
-        return DispatchDetailResponse.fromEntity(dispatch);
+        return addPricingInfoToDispatchResponse(dispatch);
+    }
+
+    private DispatchDetailResponse addPricingInfoToDispatchResponse(DispatchEntity dispatch) {
+        DispatchDetailResponse response = DispatchDetailResponse.fromEntity(dispatch);
+
+        double totalValue = 0;
+        String currency = "VND";
+
+        for (int i = 0; i < response.getItems().size(); i++) {
+            DispatchDetailResponse.DispatchItemResponse itemResponse = response.getItems().get(i);
+            DispatchItemEntity itemEntity = dispatch.getItems().get(i);
+
+            double itemSubtotal = 0;
+
+            if (itemEntity.getProducts() != null && !itemEntity.getProducts().isEmpty()) {
+                BaseProductEntity firstProduct = itemEntity.getProducts().get(0);
+                PriceEntity price = getProductPrice(firstProduct);
+                if (price != null) {
+                    currency = price.getCurrency();
+
+                    double unitPrice = price.getValue();
+                    DispatchDetailResponse.PriceDTO unitPriceDTO = DispatchDetailResponse.PriceDTO.builder()
+                            .value(unitPrice)
+                            .currency(currency)
+                            .build();
+
+                    if (itemResponse.getProduct() != null) {
+                        itemResponse.getProduct().setUnitPrice(unitPriceDTO);
+                    }
+                    itemSubtotal = unitPrice * itemEntity.getQuantity();
+                }
+            } else if (itemEntity.getProductId() != null) {
+                BaseProductEntity product = productRepository.findById(itemEntity.getProductId()).orElse(null);
+                if (product != null) {
+                    PriceEntity price = getProductPrice(product);
+                    if (price != null) {
+                        currency = price.getCurrency();
+                        double unitPrice = price.getValue();
+                        DispatchDetailResponse.PriceDTO unitPriceDTO = DispatchDetailResponse.PriceDTO.builder()
+                                .value(unitPrice)
+                                .currency(currency)
+                                .build();
+                        if (itemResponse.getProduct() != null) {
+                            itemResponse.getProduct().setUnitPrice(unitPriceDTO);
+                        }
+                        itemSubtotal = unitPrice * itemEntity.getQuantity();
+                    }
+                }
+            }
+            DispatchDetailResponse.PriceDTO subtotalDTO = DispatchDetailResponse.PriceDTO.builder()
+                    .value(itemSubtotal)
+                    .currency(currency)
+                    .build();
+
+            itemResponse.setSubtotal(subtotalDTO);
+            totalValue += itemSubtotal;
+        }
+
+        DispatchDetailResponse.PriceDTO totalPrice = DispatchDetailResponse.PriceDTO.builder()
+                .value(totalValue)
+                .currency(currency)
+                .build();
+
+        response.setTotalPrice(totalPrice);
+
+        return response;
+    }
+
+    private PriceEntity getProductPrice(BaseProductEntity product) {
+        if (product.getSecondaryPrice() != null) {
+            return product.getSecondaryPrice();
+        } else if (product.getPrimaryPrice() != null) {
+            return product.getPrimaryPrice();
+        }
+        return null;
     }
 
     @Override
@@ -94,33 +175,58 @@ public class DispatchServiceImpl implements DispatchService {
         if (dispatch == null || dispatch.getStatus() != DispatchStatus.PENDING) {
             return null;
         }
+
         dispatch.setStatus(DispatchStatus.ACCEPTED);
         dispatch = dispatchRepository.save(dispatch);
 
-        final DispatchEntity finalDispatch = dispatch;
-        List<String> exportedProductIds = new ArrayList<>();
-        dispatch.getItems().forEach(item -> {
-            if (item.getProduct() != null) {
-                exportedProductIds.add(item.getProduct().getId());
-                item.getProduct().setDispatch(finalDispatch);
-                if (item.getProduct().getSlotShelf() != null) {
-                    item.getProduct().getSlotShelf().setOccupied(false);
-                    item.getProduct().getSlotShelf().setProduct(null);
-                    item.getProduct().setSlotShelf(null);
-                } else if (item.getProduct().getSlotSection() != null) {
-                    item.getProduct().getSlotSection().setOccupied(false);
-                    item.getProduct().getSlotSection().setProduct(null);
-                    item.getProduct().setSlotSection(null);
+        List<SlotShelf> slotShelvesToUpdate = new ArrayList<>();
+        List<SlotSection> slotSectionsToUpdate = new ArrayList<>();
+        List<BaseProductEntity> productsToUpdate = new ArrayList<>();
+
+        for (DispatchItemEntity item : dispatch.getItems()) {
+            if (item.getProducts() != null) {
+                for (BaseProductEntity product : item.getProducts()) {
+                    product.setDispatch(dispatch);
+
+                    if (product.getSlotShelf() != null) {
+                        SlotShelf slotShelf = product.getSlotShelf();
+                        slotShelf.setOccupied(false);
+                        slotShelf.setProduct(null);
+                        slotShelvesToUpdate.add(slotShelf);
+                        product.setSlotShelf(null);
+                    }
+
+                    if (product.getSlotSection() != null) {
+                        SlotSection slotSection = product.getSlotSection();
+                        slotSection.setOccupied(false);
+                        slotSection.setProduct(null);
+                        slotSectionsToUpdate.add(slotSection);
+                        product.setSlotSection(null);
+                    }
+
+                    productsToUpdate.add(product);
                 }
             }
-        });
+        }
+
+        if (!productsToUpdate.isEmpty()) {
+            productRepository.saveAll(productsToUpdate);
+        }
+
+        if (!slotShelvesToUpdate.isEmpty()) {
+            slotShelfRepository.saveAll(slotShelvesToUpdate);
+        }
+
+        if (!slotSectionsToUpdate.isEmpty()) {
+            slotSectionRepository.saveAll(slotSectionsToUpdate);
+        }
 
         InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
         inventoryTransaction.setType(TransactionType.EXPORT);
         inventoryTransaction.setTimestamp(new Date());
         inventoryTransaction.setRelated_dispatch_lot_id(dispatch.getId());
         inventoryTransactionRepository.save(inventoryTransaction);
-        checkProductVolumeAndNotify(exportedProductIds);
+//        checkProductVolumeAndNotify(exportedProductIds);
 
         // Send notification to the buyer (commented out for now)
         // notificationProducerService.sendNotification(
@@ -128,7 +234,7 @@ public class DispatchServiceImpl implements DispatchService {
         //     "Your dispatch request #" + dispatch.getId().substring(0, 8) + " has been accepted."
         // );
 
-        return DispatchDetailResponse.fromEntity(dispatch);
+        return addPricingInfoToDispatchResponse(dispatch);
     }
 
     public void checkProductVolumeAndNotify(List<String> exportedProductIds) {
@@ -191,6 +297,6 @@ public class DispatchServiceImpl implements DispatchService {
                         (reason != null && !reason.isEmpty() ? reason : "No reason provided")
         );
 
-        return DispatchDetailResponse.fromEntity(dispatch);
+        return addPricingInfoToDispatchResponse(dispatch);
     }
 }

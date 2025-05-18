@@ -101,6 +101,13 @@ const Navbar: React.FC = () => {
             <span>Dashboard</span>
           </Link>
 
+          <Link to="/messaging" className={location.pathname === '/messaging' ? 'active' : ''}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 12H8.01M12 12H12.01M16 12H16.01M21 12C21 16.418 16.97 20 12 20C10.5286 20 9.14629 19.7004 7.94309 19.1699C7.61383 19.0498 7.45008 18.9896 7.31062 18.9669C7.17118 18.9442 7.04834 18.9496 6.81583 18.9605C6.58332 18.9713 6.39145 19.0134 6.00771 19.0977L3 19.7747C2.69623 19.8356 2.54434 19.866 2.42045 19.8157C2.31213 19.7716 2.22838 19.6878 2.18428 19.5795C2.13396 19.4556 2.1644 19.3037 2.22527 19.0002L2.90238 16.0343C2.98668 15.6514 3.02883 15.4599 3.03966 15.2283C3.0504 15.0006 3.0276 14.8786 2.97463 14.7405C2.9217 14.6024 2.83156 14.4402 2.65128 14.116C2.23289 13.3525 2 12.5037 2 11.609C2 7.55001 6.02944 4.27001 11 4.02001" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Messages</span>
+          </Link>
+
           {user?.role === 'ADMIN' && (
             <Link to="/sections" className={location.pathname === '/sections' ? 'active' : ''}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -1,5 +1,6 @@
 package com.ims.smartinventory.dto.Response;
 
+import com.ims.common.entity.BaseProductEntity;
 import com.ims.common.entity.management.DispatchEntity;
 import com.ims.common.entity.management.DispatchItemEntity;
 import lombok.AllArgsConstructor;
@@ -20,10 +21,11 @@ public class DispatchDetailResponse {
     private Date createdAt;
     private String status;
     private List<DispatchItemResponse> items;
+    private PriceDTO totalPrice;
 
     public static DispatchDetailResponse fromEntity(DispatchEntity entity) {
         List<DispatchItemResponse> itemResponses = entity.getItems().stream()
-                .map(item -> mapToItemResponse(item))
+                .map(DispatchDetailResponse::mapToItemResponse)
                 .collect(Collectors.toList());
 
         return DispatchDetailResponse.builder()
@@ -37,7 +39,17 @@ public class DispatchDetailResponse {
     private static DispatchItemResponse mapToItemResponse(DispatchItemEntity item) {
         ProductDetailsResponse productDetails = null;
 
-        if (item.getProduct() != null) {
+        if (item.getProducts() != null && !item.getProducts().isEmpty()) {
+            BaseProductEntity representativeProduct = item.getProducts().get(0);
+            productDetails = ProductDetailsResponse.builder()
+                    .id(representativeProduct.getId())
+                    .name(representativeProduct.getName())
+                    .lotCode(representativeProduct.getLot() != null ? representativeProduct.getLot().getLotCode() : null)
+                    .expirationDate(representativeProduct.getExpirationDate())
+                    .build();
+        }
+        // Fallback to the single product reference for backward compatibility
+        else if (item.getProduct() != null) {
             productDetails = ProductDetailsResponse.builder()
                     .id(item.getProduct().getId())
                     .name(item.getProduct().getName())
@@ -63,6 +75,7 @@ public class DispatchDetailResponse {
         private String productId;
         private int quantity;
         private ProductDetailsResponse product;
+        private PriceDTO subtotal;
     }
 
     @Data
@@ -74,5 +87,15 @@ public class DispatchDetailResponse {
         private String name;
         private String lotCode;
         private Date expirationDate;
+        private PriceDTO unitPrice;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PriceDTO {
+        private double value;
+        private String currency;
     }
 }

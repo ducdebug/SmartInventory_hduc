@@ -102,7 +102,7 @@ public class LotServiceImpl implements LotService {
         return false;
     }
 
-    private SlotEntity allocateSlotInShelf(SectionEntity section, BaseProductEntity product) {
+    private void allocateSlotInShelf(SectionEntity section, BaseProductEntity product) {
         List<SlotShelf> availableSlots = slotShelfRepository.findAll().stream()
                 .filter(SlotEntity::isAvailable)
                 .filter(slot -> slot.getShelf().getSection().equals(section) && slot.getProduct() == null)
@@ -124,10 +124,9 @@ public class LotServiceImpl implements LotService {
 
         slotShelfRepository.save(selectedSlot);
         productRepository.save(product);
-        return selectedSlot;
     }
 
-    private SlotEntity allocateSlotInSection(SectionEntity section, BaseProductEntity product) {
+    private void allocateSlotInSection(SectionEntity section, BaseProductEntity product) {
         List<SlotSection> availableSlots = slotSectionRepository.findAll().stream()
                 .filter(SlotEntity::isAvailable)
                 .filter(slot -> slot.getSection().equals(section) && slot.getProduct() == null)
@@ -140,7 +139,6 @@ public class LotServiceImpl implements LotService {
 
         slotSectionRepository.save(selectedSlot);
         productRepository.save(product);
-        return selectedSlot;
     }
 
     @Override

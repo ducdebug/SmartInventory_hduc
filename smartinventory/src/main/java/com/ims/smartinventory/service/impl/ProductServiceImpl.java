@@ -134,6 +134,14 @@ public class ProductServiceImpl implements ProductService {
                 newDto.setProductType(product.getClass().getSimpleName().replace("ProductEntity", "").toUpperCase());
                 newDto.setName(product.getName());
                 newDto.setDetail(extractDetail(product));
+                if (product.getPrimaryPrice() != null) {
+                    newDto.getDetail().put("primaryPrice", product.getPrimaryPrice().getValue());
+                    newDto.getDetail().put("primaryCurrency", product.getPrimaryPrice().getCurrency());
+                }
+                if (product.getSecondaryPrice() != null) {
+                    newDto.getDetail().put("secondaryPrice", product.getSecondaryPrice().getValue());
+                    newDto.getDetail().put("secondaryCurrency", product.getSecondaryPrice().getCurrency());
+                }
                 newDto.setCount(0);
                 return newDto;
             });
@@ -415,12 +423,13 @@ public class ProductServiceImpl implements ProductService {
             List<BaseProductEntity> candidates = new ArrayList<>(productRepository.findAll().stream()
                     .filter(p -> p.getDispatch() == null)
                     .filter(p -> matchesDetail(p, extractDetail(reference)))
-                    .limit(quantity)
                     .toList());
 
             if (candidates.size() < quantity) {
                 throw new StorageException("Not enough products to export for: " + reference.getName());
             }
+
+            // Sort candidates based on storage strategy
             switch (strategy) {
                 case FIFO -> candidates.sort(Comparator.comparing(p -> p.getLot().getImportDate()));
                 case LIFO ->
@@ -429,6 +438,8 @@ public class ProductServiceImpl implements ProductService {
                 case RANDOM -> Collections.shuffle(candidates);
             }
 
+            List<BaseProductEntity> selectedProducts = candidates.subList(0, quantity);
+
             String productName = reference.getName();
             DispatchItemEntity dispatchItem = new DispatchItemEntity();
             dispatchItem.setDispatch(dispatch);
@@ -436,6 +447,7 @@ public class ProductServiceImpl implements ProductService {
             dispatchItem.setQuantity(quantity);
             dispatchItem.setExportDate(new Date());
             dispatchItem.setProductId(reference.getId());
+            dispatchItem.setProducts(selectedProducts);
 
             PriceEntity exportPrice = new PriceEntity();
             exportPrice.setTransactionType(TransactionType.EXPORT);
@@ -454,17 +466,12 @@ public class ProductServiceImpl implements ProductService {
         return dispatch.getId();
     }
 
-    public void setSecondaryPriceForLot() {
-        // Deprecated
-    }
-
     @Override
     public List<ProductsByLotResponse> getAllProductsByLot() {
         List<LotEntity> allLots = lotRepository.findAll();
         return allLots.stream().map(lot -> {
             List<BaseProductEntity> products = productRepository.findByLotId(lot.getId());
 
-            // Group and format the products for response
             ProductsByLotResponse response = new ProductsByLotResponse();
             response.setLotId(lot.getId());
             response.setLotCode(lot.getLotCode());
@@ -508,18 +515,12 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void updateSecondaryPrices(UpdateSecondaryPriceRequest request) {
-        // Check if we have individual product prices or a bulk update
         if (request.getProductPrices() == null || request.getProductPrices().isEmpty()) {
-            // If no individual prices and no bulk price, throw an error
             if (request.getBulkPrice() == null) {
                 throw new IllegalArgumentException("Either product prices or bulk price must be provided");
             }
-            
-            // No products specified means no update needed
             return;
         }
-
-        // Handle individual product price updates
         for (UpdateSecondaryPriceRequest.ProductPrice productPrice : request.getProductPrices()) {
             BaseProductEntity product = productRepository.findById(productPrice.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found: " + productPrice.getProductId()));
@@ -532,28 +533,24 @@ public class ProductServiceImpl implements ProductService {
                 secondaryPrice = product.getSecondaryPrice();
             }
 
-            // If this is a bulk update with individual products selected
             if (request.getBulkPrice() != null) {
                 secondaryPrice.setValue(request.getBulkPrice());
                 secondaryPrice.setCurrency(request.getCurrency());
             } else if (request.getBulkMarkupPercentage() != null) {
-                // Handle bulk markup percentage
                 if (product.getPrimaryPrice() != null) {
                     double primaryValue = product.getPrimaryPrice().getValue();
                     double markup = 1 + (request.getBulkMarkupPercentage() / 100.0);
                     secondaryPrice.setValue(primaryValue * markup);
                     secondaryPrice.setCurrency(product.getPrimaryPrice().getCurrency());
                 } else {
-                    // If no primary price, use the provided price
                     secondaryPrice.setValue(productPrice.getPrice());
                     secondaryPrice.setCurrency(productPrice.getCurrency());
                 }
             } else {
-                // Individual price update
                 secondaryPrice.setValue(productPrice.getPrice());
                 secondaryPrice.setCurrency(productPrice.getCurrency());
             }
-            
+
             secondaryPrice = priceRepository.save(secondaryPrice);
 
             product.setSecondaryPrice(secondaryPrice);

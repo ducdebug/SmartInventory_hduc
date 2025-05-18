@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import inventoryService from '../../services/inventoryService';
 import { useAuth } from '../../hooks/useAuth';
 import './retrieveproductpage.css';
+import { Modal, notification, Alert } from 'antd';
 
 interface ProductSummary {
   productId: string;
@@ -61,43 +62,70 @@ const RetrieveProductPage: React.FC = () => {
       }));
 
     if (productsToRetrieve.length === 0) {
-      alert('No products selected for retrieval.');
+      notification.warning({
+        message: 'Warning',
+        description: 'No products selected for retrieval.',
+        placement: 'topRight',
+      });
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      setError(null);
-      
-      const result = await inventoryService.createRetrieveRequest({ products: productsToRetrieve });
-      
-      setSubmitSuccess(true);
-      if (result && typeof result === 'string') {
-        setRequestId(result);
+    const totalPrice = productsToRetrieve.reduce((sum, product) => {
+      const price = product.detail.secondaryPrice;
+      if (!price) {
+        notification.error({
+          message: 'Error',
+          description: 'Request admin to set the price for all selected products.',
+          placement: 'topRight',
+        });
+        return sum;
       }
-      
-      const resetSummaries = summaries.map(summary => ({
-        ...summary,
-        exportQuantity: undefined
-      }));
-      
-      setSummaries(resetSummaries);
-      
-    } catch (err: any) {
-      console.error('Retrieve request error:', err);
-      
-      if (err.response && err.response.status === 403) {
-        setError('You do not have permission to create retrieve requests. Please check your account role.');
-      } else if (err.message) {
-        setError(`Failed to submit retrieval request: ${err.message}`);
-      } else {
-        setError('Failed to submit retrieval request. Please try again later.');
+      return sum + (price * product.quantity);
+    }, 0);
+
+    if (totalPrice === 0) return;
+
+    Modal.confirm({
+      title: 'Confirm Retrieval Request',
+      content: (
+        <div>
+          <p>Total Price: {totalPrice.toLocaleString()} {productsToRetrieve[0].detail.secondaryCurrency}</p>
+          <ul>
+            {productsToRetrieve.map(product => (
+              <li key={product.productId}>{product.name} - Quantity: {product.quantity}</li>
+            ))}
+          </ul>
+        </div>
+      ),
+      onOk: async () => {
+        try {
+          setIsSubmitting(true);
+          setError(null);
+          const result = await inventoryService.createRetrieveRequest({ products: productsToRetrieve });
+          setSubmitSuccess(true);
+          if (result && typeof result === 'string') {
+            setRequestId(result);
+          }
+          const resetSummaries = summaries.map(summary => ({
+            ...summary,
+            exportQuantity: undefined
+          }));
+          setSummaries(resetSummaries);
+        } catch (err: any) {
+          console.error('Retrieve request error:', err);
+          if (err.response && err.response.status === 403) {
+            setError('You do not have permission to create retrieve requests. Please check your account role.');
+          } else if (err.message) {
+            setError(`Failed to submit retrieval request: ${err.message}`);
+          } else {
+            setError('Failed to submit retrieval request. Please try again later.');
+          }
+          setSubmitSuccess(false);
+        } finally {
+          setIsSubmitting(false);
+        }
       }
-      
-      setSubmitSuccess(false);
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
   const handleResetForm = () => {
@@ -115,7 +143,13 @@ const RetrieveProductPage: React.FC = () => {
   if (error) {
     return <div className="retrieve-container">
       <h2 className="retrieve-title">Request Product Retrieval</h2>
-      <div className="error-message" role="alert">{error}</div>
+      <Alert
+        message="Error"
+        description={error}
+        type="error"
+        showIcon
+        style={{ marginBottom: '20px' }}
+      />
       <button 
         onClick={() => setError(null)} 
         className="try-again-btn"
@@ -129,17 +163,19 @@ const RetrieveProductPage: React.FC = () => {
     return (
       <div className="retrieve-container">
         <h2 className="retrieve-title">Retrieval Request Submitted</h2>
-        <div className="success-message">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="#4CAF50" />
-            <path d="M8 12L11 15L16 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <div>
-            <p>Your product retrieval request has been submitted successfully!</p>
-            <p className="request-id">Request ID: {requestId || 'Generated'}</p>
-            <p>An administrator will review your request soon. You'll be notified when it's processed.</p>
-          </div>
-        </div>
+        <Alert
+          message="Success"
+          description={
+            <div>
+              <p>Your product retrieval request has been submitted successfully!</p>
+              <p className="request-id">Request ID: {requestId || 'Generated'}</p>
+              <p>An administrator will review your request soon. You'll be notified when it's processed.</p>
+            </div>
+          }
+          type="success"
+          showIcon
+          style={{ marginBottom: '20px' }}
+        />
         <button 
           onClick={handleResetForm} 
           className="new-request-btn"
@@ -154,7 +190,13 @@ const RetrieveProductPage: React.FC = () => {
     return (
       <div className="retrieve-container">
         <h2 className="retrieve-title">Request Product Retrieval</h2>
-        <p className="no-products">No products available to retrieve.</p>
+        <Alert
+          message="No Products"
+          description="No products available to retrieve."
+          type="info"
+          showIcon
+          style={{ marginBottom: '20px' }}
+        />
       </div>
     );
   }
@@ -163,14 +205,13 @@ const RetrieveProductPage: React.FC = () => {
     <div className="retrieve-container">
       <h2 className="retrieve-title">Request Product Retrieval</h2>
       
-      <div className="info-banner">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-          <path d="M12 8V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <circle cx="12" cy="16" r="1" fill="currentColor" />
-        </svg>
-        <span>Your retrieval request will be reviewed by an administrator before being processed.</span>
-      </div>
+      <Alert
+        message="Information"
+        description="Your retrieval request will be reviewed by an administrator before being processed."
+        type="info"
+        showIcon
+        style={{ marginBottom: '20px' }}
+      />
       
       {summaries.map((entry, idx) => (
         <div key={entry.productId} className="product-card">
@@ -181,11 +222,27 @@ const RetrieveProductPage: React.FC = () => {
             </p>
           </div>
           <div className="product-detail">
-            {Object.entries(entry.detail).map(([key, value]) => (
-              <p key={key}>
-                <strong>{key.replace(/_/g, ' ')}:</strong> {String(value)}
+            {Object.entries(entry.detail).map(([key, value]) => {
+              if (key === 'primaryPrice' || key === 'secondaryPrice' || 
+                  key === 'primaryCurrency' || key === 'secondaryCurrency') {
+                return null;
+              }
+              return (
+                <p key={key}>
+                  <strong>{key.replace(/_/g, ' ')}:</strong> {String(value)}
+                </p>
+              );
+            })}
+            
+            {entry.detail.secondaryPrice ? (
+              <p className="product-price">
+                <strong>Price:</strong> {entry.detail.secondaryPrice} {entry.detail.secondaryCurrency}
               </p>
-            ))}
+            ) : (
+              <p className="product-price">
+                <strong>Price:</strong> Not set
+              </p>
+            )}
           </div>
           <div className="export-input">
             <label className="export-label">

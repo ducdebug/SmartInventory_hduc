@@ -1,19 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Button from 'antd/lib/button';
-import Card from 'antd/lib/card';
-import Form from 'antd/lib/form';
-import Input from 'antd/lib/input';
-import Row from 'antd/lib/row';
-import Col from 'antd/lib/col';
-import Divider from 'antd/lib/divider';
-import message from 'antd/lib/message';
-import Alert from 'antd/lib/alert';
-import Typography from 'antd/lib/typography';
-import Upload from 'antd/lib/upload';
-import Avatar from 'antd/lib/avatar';
-import Modal from 'antd/lib/modal';
-import Spin from 'antd/lib/spin';
-
+import { Button, Card, Form, Input, Row, Col, Divider, message, Alert, Typography, Upload, Avatar, Modal, Spin } from 'antd';
 import { 
   UserOutlined, 
   LockOutlined, 

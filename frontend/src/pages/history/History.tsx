@@ -30,7 +30,6 @@ const History: React.FC = () => {
 
   const handleDispatchSelect = async (dispatch: Dispatch) => {
     try {
-      // Fetch the full details to ensure we have all data
       const detailedDispatch = await dispatchService.getDispatchDetails(dispatch.id);
       setSelectedDispatch(detailedDispatch);
     } catch (err) {
@@ -115,8 +114,11 @@ const History: React.FC = () => {
                   <div className="dispatch-date">
                     Created: {formatDate(dispatch.createdAt)}
                   </div>
-                  <div className="dispatch-summary">
-                    {dispatch.totalItems} {dispatch.totalItems === 1 ? 'item' : 'items'}
+                <div className="dispatch-summary">
+                    {dispatch.totalItems || 0} {(dispatch.totalItems || 0) === 1 ? 'item' : 'items'}
+                  </div>
+                  <div className="dispatch-price">
+                    Total: {dispatch.totalPrice ? `${dispatch.totalPrice.value.toLocaleString()} ${dispatch.totalPrice.currency}` : '0 VND'}
                   </div>
                 </div>
               </div>
@@ -137,7 +139,11 @@ const History: React.FC = () => {
                   <strong>Status:</strong> 
                   <span className={`status-badge ${getStatusBadgeClass(selectedDispatch.status)}`}>
                     {selectedDispatch.status}
-                  </span>
+                  </span> 
+                </div>
+                <div className="total-price">
+                  <strong>Total Price:</strong> 
+                  <span>{selectedDispatch.totalPrice ? `${selectedDispatch.totalPrice.value.toLocaleString()} ${selectedDispatch.totalPrice.currency}` : '0 VND'}</span>
                 </div>
               </div>
               
@@ -148,6 +154,8 @@ const History: React.FC = () => {
                     <tr>
                       <th>Product</th>
                       <th>Quantity</th>
+                      <th>Unit Price</th>
+                      <th>Subtotal</th>
                       <th>Lot</th>
                       <th>Expiration</th>
                     </tr>
@@ -155,21 +163,79 @@ const History: React.FC = () => {
                   <tbody>
                     {!selectedDispatch.items || selectedDispatch.items.length === 0 ? (
                       <tr>
-                        <td colSpan={4} style={{ textAlign: 'center' }}>No items found in this dispatch</td>
+                        <td colSpan={6} style={{ textAlign: 'center' }}>No items found in this dispatch</td>
                       </tr>
                     ) : (
-                      selectedDispatch.items.map(item => (
-                        <tr key={item.id}>
-                          <td>{item.product?.name || 'N/A'}</td>
-                          <td>{item.quantity}</td>
-                          <td>{item.product?.lotCode || 'N/A'}</td>
-                          <td>
-                            {item.product?.expirationDate 
-                              ? formatDate(item.product.expirationDate)
-                              : 'N/A'}
-                          </td>
-                        </tr>
-                      ))
+                      selectedDispatch.items.map(item => {
+                        if (item.subtotal) {
+                          return (
+                            <tr key={item.id}>
+                              <td>{item.product?.name || 'N/A'}</td>
+                              <td>{item.quantity}</td>
+                              <td>
+                                {item.product?.unitPrice 
+                                  ? `${item.product.unitPrice.value.toLocaleString()} ${item.product.unitPrice.currency}`
+                                  : 'N/A'}
+                              </td>
+                              <td>
+                                {`${item.subtotal.value.toLocaleString()} ${item.subtotal.currency}`}
+                              </td>
+                              <td>{item.product?.lotCode || 'N/A'}</td>
+                              <td>
+                                {item.product?.expirationDate 
+                                  ? formatDate(item.product.expirationDate)
+                                  : 'N/A'}
+                              </td>
+                            </tr>
+                          );
+                        } else {
+                          // Fallback to client-side calculation if subtotal not provided by server
+                          // First check for product's unitPrice which should be populated by the backend
+                          let unitPrice = item.product?.unitPrice;
+                          
+                          // If unitPrice not set by the backend, try to find it in other fields as fallback
+                          if (!unitPrice) {
+                            if (item.product?.baseProduct?.secondaryPrice) {
+                              unitPrice = item.product.baseProduct.secondaryPrice;
+                            } else if (item.product?.secondaryPrice) {
+                              unitPrice = item.product.secondaryPrice;
+                            } else if (item.product?.primaryPrice) {
+                              unitPrice = item.product.primaryPrice;
+                            }
+                          }
+                          
+                          // Calculate subtotal based on unitPrice and quantity
+                          const subtotal = unitPrice 
+                            ? { 
+                                value: parseFloat((unitPrice.value * item.quantity).toFixed(2)),
+                                currency: unitPrice.currency
+                              } 
+                            : null;
+                            
+                          return (
+                            <tr key={item.id}>
+                              <td>{item.product?.name || 'N/A'}</td>
+                              <td>{item.quantity}</td>
+                              <td>
+                                {unitPrice 
+                                  ? `${unitPrice.value.toLocaleString()} ${unitPrice.currency}`
+                                  : 'N/A'}
+                              </td>
+                              <td>
+                                {subtotal 
+                                  ? `${subtotal.value.toLocaleString()} ${subtotal.currency}`
+                                  : 'N/A'}
+                              </td>
+                              <td>{item.product?.lotCode || 'N/A'}</td>
+                              <td>
+                                {item.product?.expirationDate 
+                                  ? formatDate(item.product.expirationDate)
+                                  : 'N/A'}
+                              </td>
+                            </tr>
+                          );
+                        }
+                      })
                     )}
                   </tbody>
                 </table>

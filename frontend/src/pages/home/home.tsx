@@ -4,14 +4,7 @@ import { Link } from 'react-router-dom';
 import './home.css';
 import ProductTypeChart from '../../components/inventory/ProductTypeChart';
 import inventoryService from '../../services/inventoryService';
-import Card from 'antd/lib/card';
-import Row from 'antd/lib/row';
-import Col from 'antd/lib/col';
-import Statistic from 'antd/lib/statistic';
-import Button from 'antd/lib/button';
-import Spin from 'antd/lib/spin';
-import Alert from 'antd/lib/alert';
-
+import { Card, Row, Col, Statistic, Button, Spin, Alert } from 'antd';
 import { 
   AppstoreOutlined, 
   ShoppingOutlined, 

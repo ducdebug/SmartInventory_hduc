@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -25,6 +27,10 @@ public class DispatchItemEntity {
     @ManyToOne(optional = true)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private BaseProductEntity product;
+    
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dispatch_item_id")
+    private List<BaseProductEntity> products = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "dispatch_id", nullable = false)

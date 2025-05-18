@@ -7,6 +7,25 @@ export interface DispatchProduct {
   quantity?: number;
   lotCode?: string;
   expirationDate?: string;
+  primaryPrice?: {
+    value: number;
+    currency: string;
+  };
+  secondaryPrice?: {
+    value: number;
+    currency: string;
+  };
+  unitPrice?: {
+    value: number;
+    currency: string;
+  };
+  baseProduct?: {
+    id?: string;
+    secondaryPrice?: {
+      value: number;
+      currency: string;
+    };
+  };
 }
 
 export interface DispatchItem {
@@ -14,6 +33,10 @@ export interface DispatchItem {
   productId: string;
   quantity: number;
   product?: DispatchProduct;
+  subtotal?: {
+    value: number;
+    currency: string;
+  };
 }
 
 export interface Dispatch {
@@ -22,17 +45,68 @@ export interface Dispatch {
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   items?: DispatchItem[];
   totalItems?: number;
+  totalPrice?: {
+    value: number;
+    currency: string;
+  };
 }
 
 const dispatchService = {
   getBuyerDispatches: async (): Promise<Dispatch[]> => {
     try {
       const response = await apiClient.get('/api/dispatches/buyer');
+      console.log('Raw buyer dispatches from API:', response.data);
 
-      return response.data.map((item: any) => ({
-        ...item,
-        status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
-      }));
+      return response.data.map((item: any) => {
+        let dispatch = {
+          ...item,
+          status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
+        };
+        
+        // If totalPrice is missing or zero, use the server-calculated one if available
+        if (!dispatch.totalPrice || dispatch.totalPrice.value === 0) {
+          let totalValue = 0;
+          let currency = 'VND';
+          
+          // If we have items with products, try to calculate the total price
+          if (dispatch.items && Array.isArray(dispatch.items)) {
+            dispatch.items.forEach((dispatchItem: any) => {
+              // If the item has a subtotal already, use it
+              if (dispatchItem.subtotal) {
+                totalValue += dispatchItem.subtotal.value;
+                currency = dispatchItem.subtotal.currency;
+              }
+              // Otherwise calculate from product price
+              else if (dispatchItem.product) {
+                let price = null;
+                
+                // Check different price sources
+                if (dispatchItem.product.unitPrice) {
+                  price = dispatchItem.product.unitPrice;
+                } else if (dispatchItem.product.baseProduct && dispatchItem.product.baseProduct.secondaryPrice) {
+                  price = dispatchItem.product.baseProduct.secondaryPrice;
+                } else if (dispatchItem.product.secondaryPrice) {
+                  price = dispatchItem.product.secondaryPrice;
+                } else if (dispatchItem.product.primaryPrice) {
+                  price = dispatchItem.product.primaryPrice;
+                }
+                
+                if (price) {
+                  totalValue += price.value * dispatchItem.quantity;
+                  currency = price.currency;
+                }
+              }
+            });
+          }
+          
+          dispatch.totalPrice = {
+            value: parseFloat(totalValue.toFixed(2)),
+            currency: currency
+          };
+        }
+        
+        return dispatch;
+      });
     } catch (error) {
       console.error('Error in getBuyerDispatches:', error);
       throw handleAxiosError(error, 'Failed to fetch dispatch history');
@@ -42,21 +116,49 @@ const dispatchService = {
   getDispatchDetails: async (dispatchId: string): Promise<Dispatch> => {
     try {
       const response = await apiClient.get(`/api/dispatches/${dispatchId}`);
+      console.log('Raw dispatch data from API:', response.data);
       let processedData = {...response.data};
-            if (processedData.items && Array.isArray(processedData.items)) {
-                processedData.items = processedData.items.map((item: any) => {
+      let totalPrice = 0;
+      let currency = 'VND'; // Default currency
+      
+      if (processedData.items && Array.isArray(processedData.items)) {
+        processedData.items = processedData.items.map((item: any) => {
           const productIdShort = item.productId ? item.productId.substring(0, 8) : 'unknown';
-                    if (!item.product) {
+          
+          // Keep the original subtotal if it exists
+          const originalSubtotal = item.subtotal;
+          
+          if (!item.product) {
             console.warn(`Item ${item.id} is missing product data, creating placeholder`);
-            return {
+            const enhancedItem = {
               ...item,
               product: {
                 id: item.productId || 'unknown',
                 name: `Product #${productIdShort}`,
                 lotCode: `LOT-${productIdShort}`,
-                expirationDate: new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString()
+                expirationDate: new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString(),
+                // Add default pricing to ensure no N/A values
+                primaryPrice: {
+                  value: 0,
+                  currency: 'VND'
+                }
               }
             };
+            
+            // Return the item with its original subtotal if it had one
+            if (originalSubtotal) {
+              enhancedItem.subtotal = originalSubtotal;
+              
+              // Also add the unit price to the product if we can derive it
+              if (enhancedItem.product && enhancedItem.quantity > 0) {
+                enhancedItem.product.unitPrice = {
+                  value: originalSubtotal.value / enhancedItem.quantity,
+                  currency: originalSubtotal.currency
+                };
+              }
+            }
+            
+            return enhancedItem;
           } else {
             const enhancedProduct = {
               ...item.product,
@@ -64,13 +166,87 @@ const dispatchService = {
               expirationDate: item.product.expirationDate || new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString()
             };
             
-            return {
+            // If the product already has a unitPrice from the backend, use it
+            if (!enhancedProduct.unitPrice) {
+              // Get price from baseProduct if it exists, or fallback to product's price
+              let productPrice = null;
+              
+              // First try to get secondary price from baseProduct
+              if (item.product.baseProduct && item.product.baseProduct.secondaryPrice) {
+                productPrice = item.product.baseProduct.secondaryPrice;
+                console.log(`Using baseProduct secondary price for ${item.product.name}: ${productPrice.value} ${productPrice.currency}`);
+              } 
+              // Then try product's secondary price
+              else if (enhancedProduct.secondaryPrice && enhancedProduct.secondaryPrice.value) {
+                productPrice = enhancedProduct.secondaryPrice;
+                console.log(`Using product secondary price for ${item.product.name}: ${productPrice.value} ${productPrice.currency}`);
+              } 
+              // Finally fallback to primary price
+              else if (enhancedProduct.primaryPrice && enhancedProduct.primaryPrice.value) {
+                productPrice = enhancedProduct.primaryPrice;
+                console.log(`Using product primary price for ${item.product.name}: ${productPrice.value} ${productPrice.currency}`);
+              }
+              
+              // If we found a price, use it as the unitPrice
+              if (productPrice) {
+                enhancedProduct.unitPrice = productPrice;
+              } else {
+                console.warn(`No price found for product ${enhancedProduct.name}`);
+                
+                // Add a default price to prevent N/A values
+                enhancedProduct.unitPrice = {
+                  value: 0,
+                  currency: 'VND'
+                };
+              }
+            }
+            
+            const enhancedItem = {
               ...item,
               product: enhancedProduct
             };
+            
+            // Keep the original subtotal if provided by backend
+            if (originalSubtotal) {
+              enhancedItem.subtotal = originalSubtotal;
+            } 
+            // Otherwise calculate it based on unitPrice
+            else if (enhancedProduct.unitPrice) {
+              enhancedItem.subtotal = {
+                value: parseFloat((enhancedProduct.unitPrice.value * item.quantity).toFixed(2)),
+                currency: enhancedProduct.unitPrice.currency
+              };
+            }
+            
+            return enhancedItem;
           }
         });
+      }
+      
+      // Use backend-provided totalPrice if available, otherwise calculate it
+      if (!processedData.totalPrice) {
+        // Calculate totalPrice from item subtotals
+        let calculatedTotal = 0;
+        let currency = 'VND';
         
+        if (processedData.items && Array.isArray(processedData.items)) {
+          processedData.items.forEach((item: any) => {
+            if (item.subtotal) {
+              calculatedTotal += item.subtotal.value;
+              currency = item.subtotal.currency;
+            }
+          });
+        }
+        
+        processedData.totalPrice = {
+          value: parseFloat(calculatedTotal.toFixed(2)),
+          currency: currency
+        };
+      }
+      
+      // Ensure totalItems is set correctly
+      if (!processedData.totalItems && processedData.items) {
+        processedData.totalItems = processedData.items.length;
       }
       
       return {

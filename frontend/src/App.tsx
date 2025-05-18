@@ -20,6 +20,7 @@ import History from './pages/history/History';
 import ProfilePage from './pages/profile/ProfilePage';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import AdminInventoryPage from './pages/inventory/AdminInventoryPage';
+import MessagingPage from './pages/messaging';
 
 function AppContent() {
   const location = useLocation();
@@ -109,6 +110,12 @@ function AppContent() {
             <AdminRoute>
               <AdminInventoryPage />
             </AdminRoute>
+          } />
+          
+          <Route path='/messaging' element={
+            <PrivateRoute>
+              <MessagingPage />
+            </PrivateRoute>
           } />
           
           <Route path="*" element={<Navigate to="/" replace />} />
