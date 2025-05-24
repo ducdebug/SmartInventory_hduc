@@ -10,14 +10,14 @@ const { Title } = Typography;
 interface TableRecord {
   id: number;
   key: number;
-  message: string;
+  content: string;
   isRead: boolean;
   createdAt: string;
   [key: string]: any;
 }
 
 const NotificationsPage: React.FC = () => {
-  const { notifications, refreshNotifications } = useNotifications();
+  const { notifications, refreshNotifications, markAllAsRead } = useNotifications();
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
@@ -40,7 +40,6 @@ const NotificationsPage: React.FC = () => {
       refreshNotifications();
       setSelectedRowKeys([]);
     } catch (error) {
-      console.error('Error marking notifications as read:', error);
       message.error('Failed to mark notifications as read');
     } finally {
       setLoading(false);
@@ -55,12 +54,10 @@ const NotificationsPage: React.FC = () => {
 
     setLoading(true);
     try {
-      await notificationService.markAllAsRead();
+      await markAllAsRead();
       message.success('All notifications marked as read');
-      refreshNotifications();
       setSelectedRowKeys([]);
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
       message.error('Failed to mark all notifications as read');
     } finally {
       setLoading(false);
@@ -75,8 +72,8 @@ const NotificationsPage: React.FC = () => {
   const columns = [
     {
       title: 'Message',
-      dataIndex: 'message',
-      key: 'message',
+      dataIndex: 'content',
+      key: 'content',
       render: (text: string) => <div className="notification-message">{text}</div>
     },
     {
@@ -123,7 +120,6 @@ const NotificationsPage: React.FC = () => {
       message.success('Notification marked as read');
       refreshNotifications();
     } catch (error) {
-      console.error('Error marking notification as read:', error);
       message.error('Failed to mark notification as read');
     } finally {
       setLoading(false);

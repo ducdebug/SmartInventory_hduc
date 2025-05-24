@@ -63,42 +63,33 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
     public InventoryAnalyticsResponse.MonthlyVolumeData[] getVolumeOverTime(int months) {
         List<InventoryAnalyticsResponse.MonthlyVolumeData> result = new ArrayList<>();
 
-        // Get current date and calculate start date (months ago)
         LocalDate currentDate = LocalDate.now();
         LocalDate startDate = currentDate.minusMonths(months - 1).withDayOfMonth(1);
 
-        // Format for month display
         DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MMM");
 
-        // Create a map for each month
         for (int i = 0; i < months; i++) {
             LocalDate date = startDate.plusMonths(i);
             InventoryAnalyticsResponse.MonthlyVolumeData monthData = new InventoryAnalyticsResponse.MonthlyVolumeData();
             monthData.setMonth(date.format(monthFormatter));
-
-            // Initialize with zero counts for each product type
             Map<String, Integer> volumeByCategory = new HashMap<>();
             for (ProductType type : ProductType.values()) {
                 volumeByCategory.put(type.name(), 0);
             }
 
-            // Calculate volume for this month based on import and export data
             Date monthStart = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
             Date monthEnd = Date.from(date.plusMonths(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
 
-            // Find all lots created during this month
             List<LotEntity> lotsInMonth = lotRepository.findAll().stream()
                     .filter(lot -> lot.getImportDate().after(monthStart) && lot.getImportDate().before(monthEnd))
                     .collect(Collectors.toList());
 
-            // Find all dispatches created during this month
             List<DispatchEntity> dispatchesInMonth = dispatchRepository.findAll().stream()
                     .filter(dispatch -> dispatch.getCompletedAt() != null &&
                             dispatch.getCompletedAt().after(monthStart) &&
                             dispatch.getCompletedAt().before(monthEnd))
                     .collect(Collectors.toList());
 
-            // Count products per type for each lot
             for (LotEntity lot : lotsInMonth) {
                 for (LotItemEntity item : lot.getItems()) {
                     if (item.getProduct() != null) {
@@ -108,7 +99,6 @@ public class InventoryAnalyticsServiceImpl implements InventoryAnalyticsService 
                 }
             }
 
-            // Subtract products per type for each dispatch
             for (DispatchEntity dispatch : dispatchesInMonth) {
                 for (DispatchItemEntity item : dispatch.getItems()) {
                     if (item.getProduct() != null) {

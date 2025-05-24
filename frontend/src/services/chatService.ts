@@ -38,7 +38,6 @@ class ChatService {
     return ChatService.instance;
   }
 
-  // Connect to WebSocket for real-time messaging
   public connect(userId: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (this.connected && this.stompClient) {
@@ -70,7 +69,6 @@ class ChatService {
           this.connected = true;
           console.log('Connected to Chat WebSocket');
           
-          // Subscribe to personal messages
           this.subscribeToPersonalMessages(userId);
           resolve(true);
         };
@@ -123,7 +121,6 @@ class ChatService {
   }
 
   public sendMessage(message: Message): Promise<Message> {
-    // If WebSocket is connected, send through WebSocket
     if (this.connected && this.stompClient) {
       return new Promise((resolve, reject) => {
         try {
@@ -134,14 +131,12 @@ class ChatService {
           resolve(message);
         } catch (error) {
           console.error('Error sending WebSocket message:', error);
-          // Fallback to REST API if WebSocket fails
           this.sendMessageViaRest(message)
             .then(resolve)
             .catch(reject);
         }
       });
     } else {
-      // Fallback to REST API
       return this.sendMessageViaRest(message);
     }
   }
@@ -158,36 +153,30 @@ class ChatService {
       });
   }
 
-  // Get all conversation partners
   public getConversations(userId: string): Promise<string[]> {
     return chatApiClient.get(`/chat/conversations?userId=${userId}`)
       .then(response => response.data.data);
   }
 
-  // Get detailed conversation summaries
   public getConversationSummaries(userId: string): Promise<Conversation[]> {
     return chatApiClient.get(`/chat/conversation-summaries?userId=${userId}`)
       .then(response => response.data.data);
   }
 
-  // Get conversation history between two users
   public getConversation(senderId: string, receiverId: string): Promise<Message[]> {
     return chatApiClient.get(`/chat/conversation-dto?senderId=${senderId}&receiverId=${receiverId}`)
       .then(response => response.data.data);
   }
 
-  // Mark messages as read
   public markMessagesAsRead(senderId: string, receiverId: string): Promise<void> {
     return chatApiClient.post(`/chat/mark-read?senderId=${senderId}&receiverId=${receiverId}`)
       .then(() => {});
   }
 
-  // Register a callback for new messages
   public onNewMessage(callback: (message: Message) => void): void {
     this.messageCallbacks.push(callback);
   }
 
-  // Remove a callback
   public removeNewMessageCallback(callback: (message: Message) => void): void {
     const index = this.messageCallbacks.indexOf(callback);
     if (index !== -1) {
@@ -195,7 +184,6 @@ class ChatService {
     }
   }
 
-  // Check if WebSocket is connected
   public isConnected(): boolean {
     return this.connected;
   }

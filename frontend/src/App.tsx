@@ -7,6 +7,7 @@ import Login from './pages/login/login';
 import Register from './pages/register/register';
 import { AuthProvider } from './hooks/useAuth'; 
 import { ProfileImageProvider } from './context/ProfileImageContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/layout/navbar/navbar';
 import Footer from './components/layout/footer/Footer';
 import PrivateRoute from "./components/privateroute";
@@ -21,6 +22,7 @@ import ProfilePage from './pages/profile/ProfilePage';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import AdminInventoryPage from './pages/inventory/AdminInventoryPage';
 import MessagingPage from './pages/messaging';
+import ChatBubbleWrapper from './components/chat/ChatBubbleWrapper';
 
 function AppContent() {
   const location = useLocation();
@@ -113,15 +115,16 @@ function AppContent() {
           } />
           
           <Route path='/messaging' element={
-            <PrivateRoute>
+            <AdminRoute>
               <MessagingPage />
-            </PrivateRoute>
+            </AdminRoute>
           } />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       {!hideFooter && <Footer />}
+      <ChatBubbleWrapper />
     </div>
   );
 }
@@ -130,9 +133,11 @@ function App() {
   return (
     <ProfileImageProvider>
       <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <NotificationProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </ProfileImageProvider>
   );

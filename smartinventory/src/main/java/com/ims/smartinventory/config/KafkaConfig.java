@@ -26,6 +26,13 @@ public class KafkaConfig {
         configMap.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, serversConfig);
         configMap.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configMap.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        
+        // Add timeout configurations to prevent hanging
+        configMap.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 5000); // 5 seconds
+        configMap.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 10000); // 10 seconds
+        configMap.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000); // 3 seconds max wait
+        configMap.put(ProducerConfig.RETRIES_CONFIG, 0); // Don't retry on failure
+        
         return new DefaultKafkaProducerFactory<>(configMap);
     }
 

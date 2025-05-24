@@ -21,6 +21,8 @@ export interface User {
   role: string;
   token: string;
   img_url?: string;
+  name?: string;
+  email?: string;
 }
 
 const tokenKey = 'authToken';
@@ -133,6 +135,20 @@ export const getUserId = (): string | null => {
 
 export const getUserRole = (): string | null => {
   return localStorage.getItem(userRoleKey);
+};
+
+export const getUserInfo = (): User | null => {
+  const userStr = localStorage.getItem(userKey);
+  if (!userStr) {
+    return null;
+  }
+  
+  try {
+    return JSON.parse(userStr);
+  } catch (error) {
+    console.error('Error parsing user from localStorage:', error);
+    return null;
+  }
 };
 
 export default authService;

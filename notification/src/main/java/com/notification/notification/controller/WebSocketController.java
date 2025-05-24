@@ -9,11 +9,9 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.stereotype.Controller;
 
+import java.security.Principal;
 import java.util.List;
 
-/**
- * Controller for WebSocket connections
- */
 @Controller
 public class WebSocketController {
 
@@ -24,39 +22,31 @@ public class WebSocketController {
         this.notificationService = notificationService;
     }
 
-    /**
-     * Handle subscription to user's notifications
-     * Returns all unread notifications for the user when they subscribe
-     *
-     * @param userId The user ID from the subscription path
-     * @return List of unread notifications
-     */
-    @SubscribeMapping("/queue/notifications/{userId}")
-    public List<NotificationEntity> getUnreadUserNotifications(@DestinationVariable String userId) {
+    @SubscribeMapping("/user/queue/notifications")
+    public List<NotificationEntity> getUserNotifications(Principal principal) {
+        String userId = principal.getName();
         return notificationService.getUnreadNotificationsForUser(userId);
     }
 
-    /**
-     * Handle subscription to admin notifications
-     * Returns all unread admin notifications when they subscribe
-     *
-     * @return List of unread admin notifications
-     */
     @SubscribeMapping("/topic/admin/notifications")
-    public List<NotificationEntity> getUnreadAdminNotifications() {
+    public List<NotificationEntity> getAdminNotifications() {
         return notificationService.getUnreadNotificationsForUser("admin");
     }
 
-    /**
-     * Allow clients to mark notifications as read via WebSocket
-     *
-     * @param notificationId The ID of the notification to mark as read
-     * @return Success message
-     */
     @MessageMapping("/notifications/read/{notificationId}")
     @SendTo("/topic/notifications/read")
-    public String markNotificationAsRead(@DestinationVariable Long notificationId) {
+    public String markNotificationAsRead(@DestinationVariable Long notificationId, Principal principal) {
+        NotificationEntity notification = notificationService.getNotificationById(notificationId);
+        if (notification == null) {
+            return "Notification not found";
+        }
+
+        String userId = principal.getName();
+        if (!notification.getToUserId().equals(userId)) {
+            return "Access denied";
+        }
+
         boolean success = notificationService.markNotificationAsRead(notificationId);
-        return success ? "Notification " + notificationId + " marked as read" : "Notification not found";
+        return success ? "Notification " + notificationId + " marked as read" : "Failed to mark notification as read";
     }
 }

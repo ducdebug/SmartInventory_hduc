@@ -82,31 +82,33 @@ const ProductTypeChart: React.FC = () => {
         
         <div className="donut-chart-container">
           <div className="donut-chart">
-            {chartData.map((item, index, arr) => {
-              const circumference = 2 * Math.PI * 50; // 50 is the radius
-              const strokeDasharray = (item.percentage * circumference) + ' ' + circumference;
-              
-              let strokeDashoffset = 0;
-              for (let i = 0; i < index; i++) {
-                strokeDashoffset -= arr[i].percentage * circumference;
-              }
-              
-              return (
-                <circle
-                  key={index}
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  fill="transparent"
-                  stroke={item.color}
-                  strokeWidth="20"
-                  strokeDasharray={strokeDasharray}
-                  strokeDashoffset={strokeDashoffset}
-                  transform="rotate(-90) translate(-120, 0)"
-                />
-              );
-            })}
-            <text x="60" y="65" textAnchor="middle" className="donut-text">{total}</text>
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              {chartData.map((item, index, arr) => {
+                const circumference = 2 * Math.PI * 50; // 50 is the radius
+                const strokeDasharray = (item.percentage * circumference) + ' ' + circumference;
+                
+                let strokeDashoffset = 0;
+                for (let i = 0; i < index; i++) {
+                  strokeDashoffset -= arr[i].percentage * circumference;
+                }
+                
+                return (
+                  <circle
+                    key={index}
+                    cx="60"
+                    cy="60"
+                    r="50"
+                    fill="transparent"
+                    stroke={item.color}
+                    strokeWidth="20"
+                    strokeDasharray={strokeDasharray}
+                    strokeDashoffset={strokeDashoffset}
+                    transform="rotate(-90) translate(-120, 0)"
+                  />
+                );
+              })}
+              <text x="60" y="65" textAnchor="middle" className="donut-text">{total}</text>
+            </svg>
           </div>
         </div>
       </div>
