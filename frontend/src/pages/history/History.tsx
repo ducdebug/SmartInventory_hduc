@@ -189,11 +189,8 @@ const History: React.FC = () => {
                             </tr>
                           );
                         } else {
-                          // Fallback to client-side calculation if subtotal not provided by server
-                          // First check for product's unitPrice which should be populated by the backend
                           let unitPrice = item.product?.unitPrice;
                           
-                          // If unitPrice not set by the backend, try to find it in other fields as fallback
                           if (!unitPrice) {
                             if (item.product?.baseProduct?.secondaryPrice) {
                               unitPrice = item.product.baseProduct.secondaryPrice;
@@ -203,9 +200,7 @@ const History: React.FC = () => {
                               unitPrice = item.product.primaryPrice;
                             }
                           }
-                          
-                          // Calculate subtotal based on unitPrice and quantity
-                          const subtotal = unitPrice 
+                           const subtotal = unitPrice
                             ? { 
                                 value: parseFloat((unitPrice.value * item.quantity).toFixed(2)),
                                 currency: unitPrice.currency

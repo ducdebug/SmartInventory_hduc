@@ -85,4 +85,50 @@ public class AuthController {
                     .body(new AuthErrorResponse(e.getMessage()));
         }
     }
+
+    @GetMapping("/test-auth")
+    public ResponseEntity<?> testAuth(@AuthenticationPrincipal UserEntity currentUser) {
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "No authenticated user"));
+        }
+        
+        return ResponseEntity.ok(Map.of(
+                "message", "Authentication successful",
+                "userId", currentUser.getId(),
+                "username", currentUser.getUsername(),
+                "role", currentUser.getRole()
+        ));
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getUserInfo(@PathVariable String userId,
+                                         @AuthenticationPrincipal UserEntity currentUser) {
+        try {
+            System.out.println("AuthController - Getting user info for userId: " + userId +
+                    ", requested by: " + (currentUser != null ? currentUser.getId() : "null"));
+
+            UserEntity user = authService.getUserById(userId);
+            if (user == null) {
+                System.out.println("AuthController - User not found for userId: " + userId);
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> userInfo = Map.of(
+                    "id", user.getId(),
+                    "username", user.getUsername() != null ? user.getUsername() : user.getId(),
+                    "role", user.getRole() != null ? user.getRole().toString() : "USER",
+                    "img_url", user.getImg_url() != null ? user.getImg_url() : ""
+            );
+
+            System.out.println("AuthController - Successfully retrieved user info for userId: " + userId);
+            return ResponseEntity.ok(userInfo);
+        } catch (Exception e) {
+            System.out.println("AuthController - Error getting user info for userId: " + userId + ", error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new AuthErrorResponse("Failed to fetch user info: " + e.getMessage()));
+        }
+    }
 }

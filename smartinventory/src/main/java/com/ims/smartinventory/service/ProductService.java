@@ -23,6 +23,8 @@ public interface ProductService {
     
     List<ProductsByLotResponse> getAllProductsByLot();
     
+    List<ProductsByLotResponse> getProductsByLotForSupplier(UserEntity supplier);
+    
     @Transactional
     void updateSecondaryPrices(UpdateSecondaryPriceRequest request);
 }

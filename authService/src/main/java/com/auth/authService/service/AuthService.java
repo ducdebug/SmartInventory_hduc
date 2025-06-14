@@ -4,6 +4,7 @@ import com.auth.authService.dto.request.ChangePasswordRequest;
 import com.auth.authService.dto.request.LoginRequest;
 import com.auth.authService.dto.request.RegisterRequest;
 import com.auth.authService.dto.response.JwtResponse;
+import com.ims.common.entity.UserEntity;
 import jakarta.transaction.Transactional;
 
 public interface AuthService {
@@ -15,4 +16,6 @@ public interface AuthService {
 
     @Transactional
     void changePassword(String userId, ChangePasswordRequest request);
+    
+    UserEntity getUserById(String userId);
 }

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Table,
   Card,
-  Button,
   message,
   Collapse,
   Typography,
@@ -10,19 +9,14 @@ import {
   Space,
   Tag,
   Tooltip,
-  Modal,
-  Form,
-  InputNumber,
-  Select,
-  Checkbox,
+  Button,
 } from 'antd';
-import { EditOutlined, SaveOutlined, WarningOutlined } from '@ant-design/icons';
+import { EyeOutlined, WarningOutlined } from '@ant-design/icons';
 import inventoryService from '../../services/inventoryService';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 const { Panel } = Collapse;
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 interface LotProduct {
   productId: string;
@@ -49,20 +43,15 @@ interface ProductLot {
   products: LotProduct[];
 }
 
-interface EditableProduct extends LotProduct {
-  isEditing: boolean;
-  newPrice: number;
-  currency: string;
-  isSelected: boolean;
+interface DisplayProduct extends LotProduct {
+  // No editing fields needed for view-only
 }
 
 const ProductPricingPage: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
   const [lots, setLots] = useState<ProductLot[]>([]);
-  const [editableProducts, setEditableProducts] = useState<Record<string, EditableProduct[]>>({});
-  const [savingLotId, setSavingLotId] = useState<string | null>(null);
-  const [selectAll, setSelectAll] = useState<Record<string, boolean>>({});
+  const [displayProducts, setDisplayProducts] = useState<Record<string, DisplayProduct[]>>({});
 
   useEffect(() => {
     if (user?.role !== 'ADMIN') {
@@ -72,10 +61,6 @@ const ProductPricingPage: React.FC = () => {
     
     fetchProductsByLot();
   }, [user]);
-  
-  useEffect(() => {
-    console.log('editableProducts state updated:', editableProducts);
-  }, [editableProducts]);
 
   const fetchProductsByLot = async () => {
     try {
@@ -83,28 +68,20 @@ const ProductPricingPage: React.FC = () => {
       const response = await inventoryService.getProductsByLot();
       setLots(response || []);
       
-      const editableProdMap: Record<string, EditableProduct[]> = {};
-      const initialSelectAllState: Record<string, boolean> = {};
+      const displayProdMap: Record<string, DisplayProduct[]> = {};
       
       (response || []).forEach((lot: ProductLot) => {
-        editableProdMap[lot.lotId] = (lot.products || []).map(product => {
+        displayProdMap[lot.lotId] = (lot.products || []).map(product => {
           const primaryPrice = product.primaryPrice || { value: 0, currency: 'VND' };
-          const secondaryPrice = product.secondaryPrice;
           
           return {
             ...product,
-            isEditing: false,
-            primaryPrice: primaryPrice,
-            newPrice: secondaryPrice?.value || (primaryPrice.value * 1.2),
-            currency: secondaryPrice?.currency || primaryPrice.currency || 'VND',
-            isSelected: false
+            primaryPrice: primaryPrice
           };
         });
-        initialSelectAllState[lot.lotId] = false;
       });
       
-      setEditableProducts(editableProdMap);
-      setSelectAll(initialSelectAllState);
+      setDisplayProducts(displayProdMap);
     } catch (error) {
       console.error('Error fetching products by lot:', error);
       message.error('Failed to load product pricing data');
@@ -113,286 +90,7 @@ const ProductPricingPage: React.FC = () => {
     }
   };
 
-  const handleEdit = React.useCallback((lotId: string, productId: string) => {
-    console.log('Edit button clicked for:', { lotId, productId });
-    
-    setEditableProducts(prev => {
-      const currentProducts = prev[lotId] || [];
-      console.log('Current products for lotId:', lotId, currentProducts);
-      
-      const updatedProducts = [...currentProducts];
-      const productIndex = updatedProducts.findIndex(p => p.productId === productId);
-      console.log('Product index:', productIndex);
-      
-      if (productIndex >= 0) {
-        updatedProducts[productIndex] = {
-          ...updatedProducts[productIndex],
-          isEditing: true
-        };
-        console.log('Product updated to editing mode:', updatedProducts[productIndex]);
-      } else {
-        console.log('Product not found in the array');
-      }
-      
-      const newState = { ...prev };
-      newState[lotId] = updatedProducts;
-      return newState;
-    });
-  }, []);
-
-  const handlePriceChange = (lotId: string, productId: string, value: number) => {
-    setEditableProducts(prev => {
-      const currentProducts = prev[lotId] || [];
-      const updatedProducts = [...currentProducts];
-      const productIndex = updatedProducts.findIndex(p => p.productId === productId);
-      if (productIndex >= 0) {
-        updatedProducts[productIndex] = {
-          ...updatedProducts[productIndex],
-          newPrice: value
-        };
-      }
-      return { ...prev, [lotId]: updatedProducts };
-    });
-  };
-
-  const handleCurrencyChange = (lotId: string, productId: string, currency: string) => {
-    setEditableProducts(prev => {
-      const currentProducts = prev[lotId] || [];
-      const updatedProducts = [...currentProducts];
-      const productIndex = updatedProducts.findIndex(p => p.productId === productId);
-      if (productIndex >= 0) {
-        updatedProducts[productIndex] = {
-          ...updatedProducts[productIndex],
-          currency: currency
-        };
-      }
-      return { ...prev, [lotId]: updatedProducts };
-    });
-  };
-
-  const handleProductSelect = (lotId: string, productId: string, checked: boolean) => {
-    setEditableProducts(prev => {
-      const currentProducts = prev[lotId] || [];
-      const updatedProducts = [...currentProducts];
-      const productIndex = updatedProducts.findIndex(p => p.productId === productId);
-      
-      if (productIndex >= 0) {
-        updatedProducts[productIndex] = {
-          ...updatedProducts[productIndex],
-          isSelected: checked
-        };
-      }
-      
-      const allSelected = updatedProducts.every(p => p.isSelected);
-      setSelectAll(prev => ({
-        ...prev,
-        [lotId]: allSelected
-      }));
-      
-      return { ...prev, [lotId]: updatedProducts };
-    });
-  };
-
-  const handleSelectAllProducts = (lotId: string, checked: boolean) => {
-    setSelectAll(prev => ({
-      ...prev,
-      [lotId]: checked
-    }));
-    
-    setEditableProducts(prev => {
-      const currentProducts = prev[lotId] || [];
-      const updatedProducts = currentProducts.map(product => ({
-        ...product,
-        isSelected: checked
-      }));
-      
-      return { ...prev, [lotId]: updatedProducts };
-    });
-  };
-
-  const handleSaveLotPrices = async (lotId: string) => {
-    try {
-      setSavingLotId(lotId);
-      
-      const lotProducts = editableProducts[lotId] || [];
-        const productsToUpdate = lotProducts
-        .filter(p => p.isSelected || p.isEditing || !p.secondaryPrice)
-        .map(p => ({
-          productId: p.productId,
-          price: p.newPrice,
-          currency: p.currency
-        }));
-
-      if (productsToUpdate.length === 0) {
-        message.info('No price changes to save');
-        return;
-      }
-
-      await inventoryService.updateSecondaryPrices({
-        productPrices: productsToUpdate
-      });
-
-      message.success('Prices updated successfully');
-      
-      setEditableProducts(prev => {
-        const currentProducts = prev[lotId] || [];
-        const updatedProducts = currentProducts.map(product => {
-          if (productsToUpdate.some(p => p.productId === product.productId)) {
-            return {
-              ...product,
-              isEditing: false,
-              isSelected: false,
-              secondaryPrice: {
-                id: product.secondaryPrice?.id || '',
-                value: product.newPrice,
-                currency: product.currency
-              }
-            };
-          }
-          return {
-            ...product,
-            isSelected: false 
-          };
-        });
-        return { ...prev, [lotId]: updatedProducts };
-      });
-      
-      setSelectAll(prev => ({
-        ...prev,
-        [lotId]: false
-      }));
-      fetchProductsByLot();
-    } catch (error) {
-      console.error('Error saving prices:', error);
-      message.error('Failed to update prices');
-    } finally {
-      setSavingLotId(null);
-    }
-  };
-
-  const handleBulkMarkup = async (lotId: string, percentage: number) => {
-    try {
-      setSavingLotId(lotId);
-      
-      const currentProducts = editableProducts[lotId] || [];
-      const anySelected = currentProducts.some(p => p.isSelected);
-      
-      const productsToUpdate = currentProducts
-        .filter(p => anySelected ? p.isSelected : true)
-        .map(p => ({
-          productId: p.productId,
-          price: 0,
-          currency: p.primaryPrice?.currency || 'VND'
-        }));
-      
-      if (productsToUpdate.length === 0) {
-        message.info('No products selected for markup');
-        return;
-      }
-      
-      await inventoryService.updateSecondaryPrices({
-        productPrices: productsToUpdate,
-        bulkMarkupPercentage: percentage
-      });
-      
-      message.success('Markup applied successfully');
-      
-      setEditableProducts(prev => {
-        const updatedProducts = currentProducts.map(p => ({
-          ...p,
-          isSelected: false
-        }));
-        return { ...prev, [lotId]: updatedProducts };
-      });
-      
-      setSelectAll(prev => ({
-        ...prev,
-        [lotId]: false
-      }));
-      
-      fetchProductsByLot();
-    } catch (error) {
-      console.error('Error applying markup:', error);
-      message.error('Failed to apply markup');
-    } finally {
-      setSavingLotId(null);
-    }
-  };
-
-  const handleSetBulkPrice = async (lotId: string, price: number, currency: string) => {
-    try {
-      setSavingLotId(lotId);
-      
-      const currentProducts = editableProducts[lotId] || [];
-      
-      const productsToUpdate = currentProducts
-        .filter(p => p.isSelected)
-        .map(p => ({
-          productId: p.productId,
-          price: 0,
-          currency: currency
-        }));
-      
-      if (productsToUpdate.length === 0) {
-        message.info('No products selected');
-        return;
-      }
-      
-      await inventoryService.updateSecondaryPrices({
-        productPrices: productsToUpdate,
-        bulkPrice: price,
-        currency: currency
-      });
-      
-      message.success('Price updated successfully');
-      
-      setEditableProducts(prev => {
-        const updatedProducts = currentProducts.map(p => ({
-          ...p,
-          isSelected: false
-        }));
-        return { ...prev, [lotId]: updatedProducts };
-      });
-      
-      setSelectAll(prev => ({
-        ...prev,
-        [lotId]: false
-      }));
-      
-      fetchProductsByLot();
-    } catch (error) {
-      console.error('Error setting bulk price:', error);
-      message.error('Failed to update prices');
-    } finally {
-      setSavingLotId(null);
-    }
-  };
-
-  const renderPriceColumn = (product: EditableProduct, lotId: string) => {
-    console.log('Rendering price column for product:', product.productId, 'in lot:', lotId, 'isEditing:', product.isEditing);
-    
-    if (product.isEditing) {
-      return (
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <InputNumber
-            min={0}
-            value={product.newPrice || 0}
-            onChange={(value: number | null) => handlePriceChange(lotId, product.productId, Number(value) || 0)}
-            style={{ width: '100%' }}
-          />
-          <Select
-            value={product.currency || 'VND'}
-            onChange={(value: string) => handleCurrencyChange(lotId, product.productId, value)}
-            style={{ width: '100%' }}
-          >
-            <Option value="VND">VND</Option>
-            <Option value="USD">USD</Option>
-            <Option value="EUR">EUR</Option>
-          </Select>
-        </Space>
-      );
-    }
-
+  const renderPriceColumn = (product: DisplayProduct) => {
     return (
       <Space direction="vertical">
         {product.secondaryPrice ? (
@@ -401,93 +99,14 @@ const ProductPricingPage: React.FC = () => {
           </Text>
         ) : (
           <Text type="warning">
-            <WarningOutlined /> Not set
+            <WarningOutlined /> Not set by supplier
           </Text>
         )}
-        <Button
-          type="link"
-          icon={<EditOutlined />}
-          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-            console.log('Edit button clicked from UI for lot:', lotId, 'product:', product.productId);
-            e.stopPropagation();
-            handleEdit(lotId, product.productId);
-          }}
-        >
-          Edit
-        </Button>
+        <Text type="secondary" style={{ fontSize: '12px' }}>
+          (View only)
+        </Text>
       </Space>
     );
-  };
-
-  const handleBulkMarkupClick = (lotId: string) => {
-    let markupPercentage = 20;
-    
-    Modal.confirm({
-      title: 'Apply Bulk Markup',
-      content: (
-        <div>
-          <p>Set a percentage markup for {hasSelectedProducts(lotId) ? 'selected' : 'all'} products in this lot based on their primary prices.</p>
-          <Form layout="vertical">
-            <Form.Item label="Markup Percentage">
-              <InputNumber
-                min={0}
-                defaultValue={markupPercentage}
-                onChange={(value: number | null) => { markupPercentage = Number(value) }}
-                addonAfter="%"
-                style={{ width: '100%' }}
-              />
-            </Form.Item>
-          </Form>
-        </div>
-      ),
-      onOk: () => handleBulkMarkup(lotId, markupPercentage),
-    });
-  };
-
-  const handleSetPriceClick = (lotId: string) => {
-    let price = 0;
-    let currency = 'VND';
-    
-    Modal.confirm({
-      title: 'Set Price for Selected Products',
-      content: (
-        <div>
-          <p>Set a fixed price for the selected products:</p>
-          <Form layout="vertical">
-            <Form.Item label="Price">
-              <InputNumber
-                min={0}
-                defaultValue={price}
-                onChange={(value: number | null) => { price = Number(value) }}
-                style={{ width: '100%' }}
-              />
-            </Form.Item>
-            <Form.Item label="Currency">
-              <Select
-                defaultValue={currency}
-                onChange={(value: string) => { currency = value }}
-                style={{ width: '100%' }}
-              >
-                <Option value="VND">VND</Option>
-                <Option value="USD">USD</Option>
-                <Option value="EUR">EUR</Option>
-              </Select>
-            </Form.Item>
-          </Form>
-        </div>
-      ),
-      onOk: () => handleSetBulkPrice(lotId, price, currency),
-    });
-  };
-
-  const hasSelectedProducts = (lotId: string): boolean => {
-    const products = editableProducts[lotId] || [];
-    return products.some(product => product.isSelected);
-  };
-
-  const getSelectedCount = (lotId: string): number => {
-    const products = editableProducts[lotId] || [];
-    return products.filter(product => product.isSelected).length;
   };
 
   if (user?.role !== 'ADMIN') {
@@ -497,8 +116,12 @@ const ProductPricingPage: React.FC = () => {
   return (
     <div style={{ padding: '20px' }}>
       <Card>
-        <Title level={3}>Product Pricing Management</Title>
-        <Text>Set the secondary (selling) prices for products by lot. Use checkboxes to select multiple products for bulk actions.</Text>
+        <Title level={3}>Admin: Product Pricing Overview</Title>
+        <Text>View the secondary (selling) prices for products by lot. Prices are managed by suppliers.</Text>
+        <br />
+        <Text type="secondary" style={{ fontStyle: 'italic' }}>
+          Note: This is a read-only view. Suppliers are responsible for setting secondary prices.
+        </Text>
       </Card>
 
       {loading ? (
@@ -517,63 +140,26 @@ const ProductPricingPage: React.FC = () => {
                   <span><strong>Lot:</strong> {lot.lotCode}</span>
                   <span><strong>Import Date:</strong> {new Date(lot.importDate).toLocaleDateString()}</span>
                   <span><strong>Products:</strong> {lot.products.length}</span>
-                  {getSelectedCount(lot.lotId) > 0 && (
-                    <Tag color="blue">{getSelectedCount(lot.lotId)} product(s) selected</Tag>
-                  )}
+                  <span><strong>Imported by:</strong> {lot.importedByUser}</span>
                 </Space>
               } 
               key={lot.lotId}
               extra={
-                <Space>
-                  <Button 
-                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleBulkMarkupClick(lot.lotId); }}
-                  >
-                    Bulk Markup
-                  </Button>
-                  {hasSelectedProducts(lot.lotId) && (
-                    <Button
-                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleSetPriceClick(lot.lotId); }}
-                    >
-                      Set Price for Selected
-                    </Button>
-                  )}
-                  <Button 
-                    type="primary"
-                    icon={<SaveOutlined />}
-                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleSaveLotPrices(lot.lotId); }}
-                    loading={savingLotId === lot.lotId}
-                  >
-                    Save Changes
-                  </Button>
-                </Space>
+                <Button 
+                  icon={<EyeOutlined />}
+                  onClick={(e: React.MouseEvent) => { e.stopPropagation(); }}
+                >
+                  View Only
+                </Button>
               }
             >
               <Table 
                 columns={[
                   {
-                    title: () => (
-                      <Checkbox 
-                        checked={selectAll[lot.lotId] || false} 
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectAllProducts(lot.lotId, e.target.checked)}
-                      >
-                        Select
-                      </Checkbox>
-                    ),
-                    dataIndex: 'select',
-                    key: 'select',
-                    width: '60px',
-                    render: (text: string, record: EditableProduct) => (
-                      <Checkbox 
-                        checked={record.isSelected} 
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleProductSelect(lot.lotId, record.productId, e.target.checked)}
-                      />
-                    ),
-                  },
-                  {
                     title: 'Product',
                     dataIndex: 'productName',
                     key: 'productName',
-                    render: (text: string, record: EditableProduct) => (
+                    render: (text: string, record: DisplayProduct) => (
                       <Space direction="vertical" size="small">
                         <Text strong>{text}</Text>
                         <Tag color="blue">{record.productType}</Tag>
@@ -594,13 +180,29 @@ const ProductPricingPage: React.FC = () => {
                   {
                     title: 'Secondary Price (Export)',
                     key: 'secondaryPrice',
-                    render: (text: string, record: EditableProduct) => 
-                      renderPriceColumn(record, lot.lotId)
+                    render: (text: string, record: DisplayProduct) => 
+                      renderPriceColumn(record)
+                  },
+                  {
+                    title: 'Price Margin',
+                    key: 'margin',
+                    render: (text: string, record: DisplayProduct) => {
+                      if (!record.secondaryPrice || !record.primaryPrice) {
+                        return <Text type="secondary">N/A</Text>;
+                      }
+                      const margin = ((record.secondaryPrice.value - record.primaryPrice.value) / record.primaryPrice.value * 100);
+                      const color = margin > 0 ? 'green' : margin < 0 ? 'red' : 'orange';
+                      return (
+                        <Text style={{ color }}>
+                          {margin > 0 ? '+' : ''}{margin.toFixed(1)}%
+                        </Text>
+                      );
+                    },
                   },
                   {
                     title: 'Details',
                     key: 'details',
-                    render: (text: string, record: EditableProduct) => (
+                    render: (text: string, record: DisplayProduct) => (
                       <Tooltip
                         title={
                           <div>
@@ -617,7 +219,7 @@ const ProductPricingPage: React.FC = () => {
                     ),
                   },
                 ]} 
-                dataSource={editableProducts[lot.lotId]} 
+                dataSource={displayProducts[lot.lotId]} 
                 rowKey="productId"
                 pagination={false}
                 size="middle"

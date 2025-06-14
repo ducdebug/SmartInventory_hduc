@@ -69,7 +69,7 @@ public class ProductServiceImpl implements ProductService {
         lot.setImportDate(new Date());
         lot.setUser(currentUser);
         lot.setStorageStrategy(batchRequest.getStorageStrategy());
-        lot.setAccepted(false);
+        lot.setStatus(LotStatus.PENDING);
         lot = lotRepository.save(lot);
 
         List<Map<String, Object>> productDetails = batchRequest.getProductDetails();
@@ -477,6 +477,55 @@ public class ProductServiceImpl implements ProductService {
             response.setLotCode(lot.getLotCode());
             response.setImportDate(lot.getImportDate());
             response.setImportedByUser(lot.getUser() != null ? lot.getUser().getUsername() : "Unknown");
+            response.setStatus(lot.getStatus());
+
+            List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(product -> {
+                ProductsByLotResponse.ProductInLot productItem = new ProductsByLotResponse.ProductInLot();
+                productItem.setProductId(product.getId());
+                productItem.setProductName(product.getName());
+                productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
+
+                if (product.getPrimaryPrice() != null) {
+                    ProductsByLotResponse.PriceDTO primaryPriceDTO = new ProductsByLotResponse.PriceDTO(
+                            product.getPrimaryPrice().getId(),
+                            product.getPrimaryPrice().getValue(),
+                            product.getPrimaryPrice().getCurrency()
+                    );
+                    productItem.setPrimaryPrice(primaryPriceDTO);
+                }
+
+                if (product.getSecondaryPrice() != null) {
+                    ProductsByLotResponse.PriceDTO secondaryPriceDTO = new ProductsByLotResponse.PriceDTO(
+                            product.getSecondaryPrice().getId(),
+                            product.getSecondaryPrice().getValue(),
+                            product.getSecondaryPrice().getCurrency()
+                    );
+                    productItem.setSecondaryPrice(secondaryPriceDTO);
+                }
+
+                productItem.setDetails(extractDetail(product));
+
+                return productItem;
+            }).toList();
+
+            response.setProducts(productList);
+            return response;
+        }).toList();
+    }
+
+    @Override
+    public List<ProductsByLotResponse> getProductsByLotForSupplier(UserEntity supplier) {
+        // Return all lots imported by the supplier, regardless of their status
+        List<LotEntity> supplierLots = lotRepository.findByUserId(supplier.getId());
+        return supplierLots.stream().map(lot -> {
+            List<BaseProductEntity> products = productRepository.findByLotId(lot.getId());
+
+            ProductsByLotResponse response = new ProductsByLotResponse();
+            response.setLotId(lot.getId());
+            response.setLotCode(lot.getLotCode());
+            response.setImportDate(lot.getImportDate());
+            response.setImportedByUser(lot.getUser() != null ? lot.getUser().getUsername() : "Unknown");
+            response.setStatus(lot.getStatus());
 
             List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(product -> {
                 ProductsByLotResponse.ProductInLot productItem = new ProductsByLotResponse.ProductInLot();

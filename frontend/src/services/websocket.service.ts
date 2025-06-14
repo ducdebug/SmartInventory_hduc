@@ -60,7 +60,7 @@ class WebSocketService implements IWebSocketService {
 
   public connect(userId: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      fetch('http://localhost:8082/actuator/health')
+      fetch('http://localhost:8083/api/actuator/health')
         .then(response => {
           if (!response.ok) {
             throw new Error(`Notification service returned ${response.status}: ${response.statusText}`);
@@ -202,7 +202,9 @@ class WebSocketService implements IWebSocketService {
         if (subscription) {
           subscription.unsubscribe();
         }
-      } catch (error) {}
+      } catch (error) {
+        console.error('Error unsubscribing from previous user subscription:', error);
+      }
     }
     
     try {
@@ -223,7 +225,9 @@ class WebSocketService implements IWebSocketService {
             this.notifications.push(notification);
             this.notifyListeners(WebSocketEvent.NOTIFICATION, notification);
             
-          } catch (error) {}
+          } catch (error) {
+            console.error('Error processing notification message:', error);
+          }
         },
         { ack: 'auto' }
       );
@@ -231,6 +235,7 @@ class WebSocketService implements IWebSocketService {
       this.subscriptions.set('user', subscription);
       
     } catch (error) {
+      console.error('Failed to subscribe to user notifications:', error);
       this.notifyListeners(WebSocketEvent.ERROR, { 
         message: 'Failed to subscribe to notifications' 
       });

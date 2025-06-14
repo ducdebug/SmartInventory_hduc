@@ -46,6 +46,7 @@ const SectionsPage: React.FC = () => {
 
   const conditionUnits: { [key: string]: string } = {
     'TEMPERATURE_CONTROLLED': '°C',
+    'HUMIDITY_CONTROLLED': '%',
     'HIGH_HUMIDITY': '%',
     'LOW_HUMIDITY': '%',
     'REFRIGERATED': '°C',

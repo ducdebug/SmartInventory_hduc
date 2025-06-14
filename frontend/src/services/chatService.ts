@@ -55,11 +55,8 @@ class ChatService {
         }
         
         this.stompClient = new Client({
-          webSocketFactory: () => new SockJS('http://localhost:8083/ws'),
+          webSocketFactory: () => new SockJS('http://localhost:8083/api/ws'),
           connectHeaders: headers,
-          debug: (str) => {
-            console.log(str);
-          },
           reconnectDelay: 5000,
           heartbeatIncoming: 4000,
           heartbeatOutgoing: 4000
@@ -67,26 +64,25 @@ class ChatService {
         
         this.stompClient.onConnect = () => {
           this.connected = true;
-          console.log('Connected to Chat WebSocket');
-          
           this.subscribeToPersonalMessages(userId);
           resolve(true);
         };
         
         this.stompClient.onStompError = (frame) => {
-          console.error('STOMP error:', frame);
           reject(new Error(`STOMP error: ${frame.headers['message']}`));
         };
         
         this.stompClient.onWebSocketError = (event) => {
-          console.error('WebSocket error:', event);
           reject(new Error('WebSocket connection error'));
+        };
+        
+        this.stompClient.onWebSocketClose = (event) => {
+          this.connected = false;
         };
         
         this.stompClient.activate();
         
       } catch (error) {
-        console.error('Error setting up Chat WebSocket:', error);
         reject(error);
       }
     });
@@ -94,17 +90,24 @@ class ChatService {
 
   private subscribeToPersonalMessages(userId: string): void {
     if (!this.stompClient || !this.connected) {
-      console.error('Cannot subscribe: WebSocket not connected');
       return;
     }
 
     this.stompClient.subscribe(`/user/${userId}/private`, (message) => {
       try {
         const receivedMessage = JSON.parse(message.body);
-        console.log('Received message:', receivedMessage);
-        this.messageCallbacks.forEach(callback => callback(receivedMessage));
+        console.log('ChatService - Received WebSocket message:', receivedMessage);
+        
+        // Trigger all callbacks
+        this.messageCallbacks.forEach(callback => {
+          try {
+            callback(receivedMessage);
+          } catch (error) {
+            console.error('Error in message callback:', error);
+          }
+        });
       } catch (error) {
-        console.error('Error processing message:', error);
+        console.error('Error processing WebSocket message:', error);
       }
     });
   }
@@ -113,7 +116,6 @@ class ChatService {
     if (this.stompClient) {
       if (this.connected) {
         this.stompClient.deactivate();
-        console.log('Disconnected from Chat WebSocket');
       }
       this.connected = false;
       this.stompClient = null;
@@ -128,9 +130,17 @@ class ChatService {
             destination: '/app/private-message',
             body: JSON.stringify(message)
           });
-          resolve(message);
+          
+          // For WebSocket sends, we should get the response via the callback
+          // But let's also try REST as fallback
+          this.sendMessageViaRest(message)
+            .then(resolve)
+            .catch(() => {
+              // If REST also fails, still resolve with the original message
+              resolve(message);
+            });
+            
         } catch (error) {
-          console.error('Error sending WebSocket message:', error);
           this.sendMessageViaRest(message)
             .then(resolve)
             .catch(reject);
@@ -144,33 +154,45 @@ class ChatService {
   private sendMessageViaRest(message: Message): Promise<Message> {
     return chatApiClient.post('/chat/send-dto', message)
       .then(response => {
-        console.log('Message sent via REST:', response.data);
-        return response.data.data;
+        const sentMessage = response.data.data;
+        
+        this.messageCallbacks.forEach(callback => {
+          try {
+            callback(sentMessage);
+          } catch (error) {
+            // Silent fail
+          }
+        });
+        
+        return sentMessage;
       })
       .catch(error => {
-        console.error('Error sending message via REST:', error);
         throw error;
       });
   }
 
-  public getConversations(userId: string): Promise<string[]> {
-    return chatApiClient.get(`/chat/conversations?userId=${userId}`)
-      .then(response => response.data.data);
+  public getConversationSummaries(): Promise<Conversation[]> {
+    return chatApiClient.get('/chat/conversation-summaries')
+      .then(response => response.data.data)
+      .catch(error => {
+        throw error;
+      });
   }
 
-  public getConversationSummaries(userId: string): Promise<Conversation[]> {
-    return chatApiClient.get(`/chat/conversation-summaries?userId=${userId}`)
-      .then(response => response.data.data);
+  public getConversation(receiverId: string): Promise<Message[]> {
+    return chatApiClient.get(`/chat/conversation-dto?receiverId=${receiverId}`)
+      .then(response => response.data.data)
+      .catch(error => {
+        throw error;
+      });
   }
 
-  public getConversation(senderId: string, receiverId: string): Promise<Message[]> {
-    return chatApiClient.get(`/chat/conversation-dto?senderId=${senderId}&receiverId=${receiverId}`)
-      .then(response => response.data.data);
-  }
-
-  public markMessagesAsRead(senderId: string, receiverId: string): Promise<void> {
-    return chatApiClient.post(`/chat/mark-read?senderId=${senderId}&receiverId=${receiverId}`)
-      .then(() => {});
+  public markMessagesAsRead(senderId: string): Promise<void> {
+    return chatApiClient.post(`/chat/mark-messages-read?senderId=${senderId}`)
+      .then(response => response.data)
+      .catch(error => {
+        throw error;
+      });
   }
 
   public onNewMessage(callback: (message: Message) => void): void {

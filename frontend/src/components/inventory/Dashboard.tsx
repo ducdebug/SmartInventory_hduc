@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 import ProductTypeChart from './ProductTypeChart';
+import FinancialSummaryCards from '../financial/FinancialSummaryCards';
 import Magnet from '../advancedanimation/Magnet';
 import inventoryService from '../../services/inventoryService';
+import { useAuth } from '../../hooks/useAuth';
 
 interface SummaryStatistics {
   totalProducts: number;
@@ -13,9 +15,12 @@ interface SummaryStatistics {
 }
 
 const Dashboard: React.FC = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [summaryStats, setSummaryStats] = useState<SummaryStatistics | null>(null);
+
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -75,11 +80,17 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
+          {/* Financial Summary Cards - Show for Admin users */}
+          {isAdmin && (
+            <div className="financial-section">
+              <FinancialSummaryCards />
+            </div>
+          )}
+
           <div className="dashboard-charts">
             <div className="chart-container">
               <ProductTypeChart />
             </div>
-            {/* Additional charts can be added here */}
           </div>
         </>
       )}

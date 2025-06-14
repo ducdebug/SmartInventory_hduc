@@ -101,6 +101,46 @@ const inventoryService = {
     }
   },
 
+  withdrawLot: async (lotId: string) => {
+    try {
+      const response = await apiClient.post(`/lot/${lotId}/withdraw`, {});
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+
+  acceptWithdrawal: async (lotId: string) => {
+    try {
+      const response = await apiClient.post(`/lot/${lotId}/accept-withdrawal`, {});
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+
+  rejectWithdrawal: async (lotId: string) => {
+    try {
+      const response = await apiClient.post(`/lot/${lotId}/reject-withdrawal`, {});
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+
+  getAllLots: async () => {
+    try {
+      const response = await apiClient.get('/lot/all');
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+
   getProductBySlot: async (slotId: string) => {
     try {
       const response = await apiClient.get(`/inventory/${slotId}/product`);
@@ -132,6 +172,16 @@ const inventoryService = {
     }
   },
 
+  getProductsByLotForSupplier: async () => {
+    try {
+      const response = await apiClient.get('/inventory/supplier/products');
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+
   updateSecondaryPrices: async (data: { 
     productPrices: Array<{
       productId: string;
@@ -144,6 +194,25 @@ const inventoryService = {
   }) => {
     try {
       const response = await apiClient.post('/inventory/admin/products/prices', data);
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+
+  updateSecondaryPricesAsSupplier: async (data: { 
+    productPrices: Array<{
+      productId: string;
+      price: number;
+      currency: string;
+    }>,
+    bulkPrice?: number,
+    currency?: string,
+    bulkMarkupPercentage?: number
+  }) => {
+    try {
+      const response = await apiClient.post('/inventory/supplier/products/prices', data);
       return response.data;
     } catch (error) {
 
@@ -208,6 +277,35 @@ const inventoryService = {
   getInventoryAnalytics: async () => {
     try {
       const response = await apiClient.get('/inventory/analytics');
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+
+  getFinancialAnalytics: async () => {
+    try {
+      const response = await apiClient.get('/inventory/financial-analytics');
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+
+  getTopSuppliers: async (limit: number = 10) => {
+    try {
+      const response = await apiClient.get(`/inventory/top-suppliers?limit=${limit}`);
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+  getTopBuyers: async (limit: number = 10) => {
+    try {
+      const response = await apiClient.get(`/inventory/top-buyers?limit=${limit}`);
       return response.data;
     } catch (error) {
 

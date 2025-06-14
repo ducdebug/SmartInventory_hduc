@@ -1,5 +1,6 @@
 package com.ims.smartinventory.service.impl;
 
+import com.ims.common.config.LotStatus;
 import com.ims.common.config.TransactionType;
 import com.ims.common.entity.BaseProductEntity;
 import com.ims.common.entity.management.InventoryTransactionEntity;
@@ -52,13 +53,13 @@ public class LotServiceImpl implements LotService {
 
     @Override
     public List<LotDto> getPendingLots() {
-        List<LotEntity> pendingLots = lotRepository.findByAcceptedFalse();
+        List<LotEntity> pendingLots = lotRepository.findByStatusPending();
         return convertLotEntitiesToDtos(pendingLots);
     }
 
     @Override
     public List<LotDto> getAcceptedLots() {
-        List<LotEntity> acceptedLots = lotRepository.findByAcceptedTrue();
+        List<LotEntity> acceptedLots = lotRepository.findByStatusAccepted();
         return convertLotEntitiesToDtos(acceptedLots);
     }
 
@@ -70,7 +71,7 @@ public class LotServiceImpl implements LotService {
         if (lotOpt.isPresent()) {
             LotEntity lot = lotOpt.get();
 
-            if (lot.isAccepted()) {
+            if (lot.getStatus() == LotStatus.ACCEPTED) {
                 return true;
             }
 
@@ -87,7 +88,7 @@ public class LotServiceImpl implements LotService {
                 }
             }
 
-            lot.setAccepted(true);
+            lot.setStatus(LotStatus.ACCEPTED);
             lotRepository.save(lot);
 
             InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
@@ -153,6 +154,76 @@ public class LotServiceImpl implements LotService {
         return null;
     }
 
+    @Override
+    @Transactional
+    public boolean withdrawLot(String lotId, String supplierId) {
+        Optional<LotEntity> lotOpt = lotRepository.findById(lotId);
+
+        if (lotOpt.isEmpty()) {
+            return false;
+        }
+
+        LotEntity lot = lotOpt.get();
+
+        // Check if the lot belongs to the requesting supplier
+        if (!lot.getUser().getId().equals(supplierId)) {
+            throw new SecurityException("Supplier can only withdraw their own lots");
+        }
+
+        LotStatus currentStatus = lot.getStatus();
+
+        switch (currentStatus) {
+            case PENDING -> {
+                // For PENDING lots, delete all products and the lot itself
+                List<BaseProductEntity> products = productRepository.findByLotId(lot.getId());
+
+                // Remove products from their slots first
+                for (BaseProductEntity product : products) {
+                    if (product.getSlotShelf() != null) {
+                        SlotShelf slot = product.getSlotShelf();
+                        slot.setOccupied(false);
+                        slot.setProduct(null);
+                        slotShelfRepository.save(slot);
+                    }
+                    if (product.getSlotSection() != null) {
+                        SlotSection slot = product.getSlotSection();
+                        slot.setOccupied(false);
+                        slot.setProduct(null);
+                        slotSectionRepository.save(slot);
+                    }
+                }
+
+                // Delete all products
+                productRepository.deleteAll(products);
+
+                // Delete the lot
+                lotRepository.delete(lot);
+
+                return true;
+            }
+            case ACCEPTED -> {
+                // For ACCEPTED lots, change status to PEND_WITHDRAW
+                lot.setStatus(LotStatus.PEND_WITHDRAW);
+                lotRepository.save(lot);
+
+                // Create inventory transaction for withdrawal request
+                InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
+                inventoryTransaction.setType(TransactionType.EXPORT);
+                inventoryTransaction.setRelated_dispatch_lot_id(lot.getId());
+                inventoryTransaction.setTimestamp(new Date());
+                inventoryTransactionRepository.save(inventoryTransaction);
+
+                return true;
+            }
+            case PEND_WITHDRAW -> {
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
     private List<LotDto> convertLotEntitiesToDtos(List<LotEntity> lots) {
         return lots.stream().map(lot -> {
             LotDto dto = new LotDto();
@@ -160,7 +231,7 @@ public class LotServiceImpl implements LotService {
             dto.setImportDate(lot.getImportDate().toString());
             dto.setStorageStrategy(lot.getStorageStrategy().name());
             dto.setUsername(lot.getUser().getUsername());
-            dto.setAccepted(lot.isAccepted());
+            dto.setStatus(lot.getStatus());
 
             List<LotItemDto> groupedItems = new ArrayList<>();
             List<Map<String, Object>> groupedDetails = new ArrayList<>();
@@ -206,5 +277,81 @@ public class LotServiceImpl implements LotService {
             dto.setItems(groupedItems);
             return dto;
         }).toList();
+    }
+
+    @Override
+    @Transactional
+    public boolean acceptWithdrawal(String lotId) {
+        Optional<LotEntity> lotOpt = lotRepository.findById(lotId);
+
+        if (lotOpt.isEmpty()) {
+            return false;
+        }
+
+        LotEntity lot = lotOpt.get();
+
+        if (lot.getStatus() != LotStatus.PEND_WITHDRAW) {
+            return false;
+        }
+
+        List<BaseProductEntity> products = productRepository.findByLotId(lot.getId());
+
+        for (BaseProductEntity product : products) {
+            if (product.getSlotShelf() != null) {
+                SlotShelf slot = product.getSlotShelf();
+                slot.setOccupied(false);
+                slot.setProduct(null);
+                slotShelfRepository.save(slot);
+            }
+            if (product.getSlotSection() != null) {
+                SlotSection slot = product.getSlotSection();
+                slot.setOccupied(false);
+                slot.setProduct(null);
+                slotSectionRepository.save(slot);
+            }
+        }
+
+        // Delete all products
+        productRepository.deleteAll(products);
+
+        // Update lot status to WITHDRAWN
+        lot.setStatus(LotStatus.WITHDRAWN);
+        lotRepository.save(lot);
+
+        // Create inventory transaction for completed withdrawal
+        InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
+        inventoryTransaction.setType(TransactionType.EXPORT);
+        inventoryTransaction.setRelated_dispatch_lot_id(lot.getId());
+        inventoryTransaction.setTimestamp(new Date());
+        inventoryTransactionRepository.save(inventoryTransaction);
+
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean rejectWithdrawal(String lotId) {
+        Optional<LotEntity> lotOpt = lotRepository.findById(lotId);
+
+        if (lotOpt.isEmpty()) {
+            return false;
+        }
+
+        LotEntity lot = lotOpt.get();
+
+        if (lot.getStatus() != LotStatus.PEND_WITHDRAW) {
+            return false;
+        }
+
+        lot.setStatus(LotStatus.ACCEPTED);
+        lotRepository.save(lot);
+
+        return true;
+    }
+
+    @Override
+    public List<LotDto> getAllLotsWithAllStatuses() {
+        List<LotEntity> allLots = lotRepository.findAllWithItemsAndUser();
+        return convertLotEntitiesToDtos(allLots);
     }
 }

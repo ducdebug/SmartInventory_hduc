@@ -1,0 +1,487 @@
+/* Supplier Lot History Styles */
+.supplier-lot-history-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.supplier-lot-history-header {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.supplier-lot-history-header h1 {
+  color: #1a202c;
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.supplier-lot-history-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.search-input {
+  padding: 10px 15px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 300px;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.supplier-lot-history-loading,
+.supplier-lot-history-error,
+.supplier-lot-history-empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f7fafc;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.supplier-lot-history-loading {
+  color: #4a5568;
+  font-size: 16px;
+}
+
+.supplier-lot-history-error {
+  color: #e53e3e;
+  font-size: 16px;
+  background: #fed7d7;
+}
+
+.supplier-lot-history-empty {
+  color: #718096;
+  font-size: 16px;
+}
+
+.supplier-lot-history-content {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.lot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.lot-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.lot-card:hover {
+  border-color: #3182ce;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.lot-card.selected {
+  border-color: #3182ce;
+  background: #ebf8ff;
+  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.2);
+}
+
+.lot-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.lot-status-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lot-code {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Withdraw buttons */
+.withdraw-btn, .withdraw-btn-large {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-transform: uppercase;
+}
+
+.withdraw-btn-large {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.withdraw-btn-delete, .withdraw-btn-large.withdraw-btn-delete {
+  background: #e53e3e;
+  color: white;
+}
+
+.withdraw-btn-delete:hover {
+  background: #c53030;
+}
+
+.withdraw-btn-request, .withdraw-btn-large.withdraw-btn-request {
+  background: #ed8936;
+  color: white;
+}
+
+.withdraw-btn-request:hover {
+  background: #dd6b20;
+}
+
+.withdraw-btn:disabled, .withdraw-btn-large:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lot-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  grid-column: span 2;
+}
+
+/* Status badges */
+.lot-status .status-pending,
+.lot-status-actions .status-pending {
+  background: #ed8936;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.lot-status .status-accepted,
+.lot-status-actions .status-accepted {
+  background: #38a169;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.lot-status .status-rejected,
+.lot-status-actions .status-rejected {
+  background: #e53e3e;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.lot-status .status-imported,
+.lot-status-actions .status-imported {
+  background: #3182ce;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.lot-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lot-date,
+.lot-summary,
+.lot-value,
+.lot-types {
+  font-size: 14px;
+  color: #4a5568;
+}
+
+.lot-value {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.lot-types {
+  font-size: 12px;
+  color: #718096;
+  font-style: italic;
+}
+
+.lot-details {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.lot-details h2 {
+  color: #1a202c;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.lot-details-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.lot-details-header > div {
+  font-size: 14px;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lot-details-header strong {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+/* Status badges in details header */
+.lot-details-header .status-pending,
+.lot-details-header .status-accepted,
+.lot-details-header .status-rejected,
+.lot-details-header .status-imported {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: white;
+}
+
+.lot-details-header .status-pending {
+  background: #ed8936;
+}
+
+.lot-details-header .status-accepted {
+  background: #38a169;
+}
+
+.lot-details-header .status-rejected {
+  background: #e53e3e;
+}
+
+.lot-details-header .status-imported {
+  background: #3182ce;
+}
+
+.total-value span {
+  color: #3182ce;
+  font-weight: 700;
+}
+
+.lot-products h3 {
+  color: #2d3748;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.products-table th {
+  background: #f7fafc;
+  color: #2d3748;
+  font-weight: 600;
+  padding: 15px 12px;
+  text-align: left;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.products-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+  color: #4a5568;
+}
+
+.products-table tbody tr:hover {
+  background: #f7fafc;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.product-type-badge {
+  background: #3182ce;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.not-set {
+  color: #e53e3e;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.margin.positive {
+  color: #38a169;
+  font-weight: 600;
+}
+
+.margin.negative {
+  color: #e53e3e;
+  font-weight: 600;
+}
+
+.margin.neutral {
+  color: #718096;
+  font-weight: 600;
+}
+
+.not-available {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.details-btn {
+  background: #3182ce;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.details-btn:hover {
+  background: #2c5aa0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .supplier-lot-history-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .lot-list {
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .supplier-lot-history-container {
+    padding: 15px;
+  }
+  
+  .supplier-lot-history-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+  
+  .lot-details-header {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .lot-status-actions {
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+  }
+  
+  .withdraw-btn {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+  
+  .products-table {
+    font-size: 12px;
+  }
+  
+  .products-table th,
+  .products-table td {
+    padding: 8px 6px;
+  }
+  
+  /* Hide less important columns on mobile */
+  .products-table th:nth-child(5),
+  .products-table td:nth-child(5),
+  .products-table th:nth-child(6),
+  .products-table td:nth-child(6) {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .lot-card {
+    padding: 15px;
+  }
+  
+  .lot-details {
+    padding: 20px;
+  }
+  
+  /* Show only essential columns on very small screens */
+  .products-table th:nth-child(3),
+  .products-table td:nth-child(3),
+  .products-table th:nth-child(4),
+  .products-table td:nth-child(4) {
+    display: none;
+  }
+}

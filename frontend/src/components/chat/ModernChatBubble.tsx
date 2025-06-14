@@ -8,7 +8,7 @@ import {
   PaperClipOutlined
 } from '@ant-design/icons';
 import chatService, { Message } from '../../services/chatService';
-import { getUserInfo, User } from '../../services/authService';
+import { getUserInfo, getUserId, getUserRole, User } from '../../services/authService';
 import { formatDateString, formatTimeAgo } from '../../utils/dateUtils';
 
 const { TextArea } = Input;
@@ -23,102 +23,101 @@ const ModernChatBubble: React.FC<ChatBubbleProps> = ({
   adminId, 
   adminName = "Admin Support" 
 }) => {
-  console.log('ModernChatBubble - Rendering with props:', { adminId, adminName });
-  
   const [visible, setVisible] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
+  const [forceUpdate, setForceUpdate] = useState<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<any>(null);
-  const currentUser: User | null = getUserInfo();
   
-  console.log('ModernChatBubble - Current user:', currentUser);
+  // Get user info from localStorage
+  const currentUser: User | null = getUserInfo();
+  const currentUserId = getUserId();
+  const userRole = getUserRole();
   
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
-    console.log('ModernChatBubble - useEffect for connection, currentUser:', currentUser);
-    
-    if (!currentUser?.id) {
-      console.log('ModernChatBubble - No current user, skipping connection');
+    if (!currentUserId) {
       return;
     }
     
     const connectAndLoadMessages = async () => {
       try {
-        console.log('ModernChatBubble - Attempting to connect to chat service');
-        
         if (!chatService.isConnected()) {
-          await chatService.connect(currentUser.id);
-          console.log('ModernChatBubble - Connected to WebSocket successfully');
+          await chatService.connect(currentUserId);
         }
         
-        console.log('ModernChatBubble - Loading message history');
-        loadMessageHistory();
+        await loadMessageHistory();
         
         chatService.onNewMessage(handleNewMessage);
-        console.log('ModernChatBubble - Registered message callback');
       } catch (error) {
-        console.error('ModernChatBubble - Error connecting to chat service:', error);
+        try {
+          await loadMessageHistory();
+        } catch (restError) {
+          // Silent fail
+        }
       }
     };
     
     connectAndLoadMessages();
     
     return () => {
-      console.log('ModernChatBubble - Cleaning up message callback');
       chatService.removeNewMessageCallback(handleNewMessage);
     };
-  }, [currentUser?.id]);
+  }, [currentUserId]);
 
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUserId) return;
     
     updateUnreadCount();
     
     const intervalId = setInterval(updateUnreadCount, 30000); 
     
-    return () => clearInterval(intervalId);
-  }, [currentUser?.id]);
+    const messageRefreshId = setInterval(() => {
+      if (visible && !isMinimized) {
+        loadMessageHistory();
+      }
+    }, 10000);
+    
+    return () => {
+      clearInterval(intervalId);
+      clearInterval(messageRefreshId);
+    };
+  }, [currentUserId, visible, isMinimized]);
 
   const updateUnreadCount = async () => {
-    if (!currentUser?.id) return;
+    if (!currentUserId) return;
     
     try {
-      const summaries = await chatService.getConversationSummaries(currentUser.id);
+      const summaries = await chatService.getConversationSummaries();
       const adminConversation = summaries.find(conv => conv.userId === adminId);
       setUnreadCount(adminConversation?.unreadCount || 0);
     } catch (error) {
-      console.error('ModernChatBubble - Error updating unread count:', error);
+      // Silent fail
     }
   };
 
   const loadMessageHistory = async () => {
-    console.log('ModernChatBubble - loadMessageHistory called');
-    
-    if (!currentUser?.id) {
-      console.log('ModernChatBubble - No current user for loading messages');
+    if (!currentUserId) {
       return;
     }
     
     setLoading(true);
     try {
-      console.log('ModernChatBubble - Fetching conversation history');
-      const history = await chatService.getConversation(currentUser.id, adminId);
-      console.log('ModernChatBubble - Message history loaded:', history.length, 'messages');
+      const history = await chatService.getConversation(adminId);
       setMessages(history);
       
       if (visible && !isMinimized) {
-        await chatService.markMessagesAsRead(adminId, currentUser.id);
+        await chatService.markMessagesAsRead(adminId);
         setUnreadCount(0);
       }
     } catch (error) {
-      console.error('ModernChatBubble - Error loading message history:', error);
       setMessages([]);
     } finally {
       setLoading(false);
@@ -126,18 +125,33 @@ const ModernChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   const handleNewMessage = (message: Message) => {
-    if ((message.senderId === adminId && message.receiverId === currentUser?.id) || 
-        (message.senderId === currentUser?.id && message.receiverId === adminId)) {
+    if ((message.senderId === adminId && message.receiverId === currentUserId) || 
+        (message.senderId === currentUserId && message.receiverId === adminId)) {
       
       setMessages(prev => {
-        const exists = prev.some(m => m.id === message.id);
-        if (exists) return prev;
-        return [...prev, message];
+        const exists = prev.some(m => 
+          (m.id && m.id === message.id) || 
+          (m.content === message.content && m.timestamp === message.timestamp && m.senderId === message.senderId)
+        );
+        
+        if (exists) {
+          return prev;
+        }
+        
+        const newMessages = [...prev, message];
+        setForceUpdate(Date.now());
+        return newMessages;
       });
       
       if ((isMinimized || !visible) && message.senderId === adminId) {
         setUnreadCount(prev => prev + 1);
       }
+      
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   };
 
@@ -146,29 +160,23 @@ const ModernChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   const toggleChatWindow = async () => {
-    console.log('ModernChatBubble - toggleChatWindow called', { visible, isMinimized });
-    
     if (!visible || isMinimized) {
-      console.log('ModernChatBubble - Opening chat window');
       setVisible(true);
       setIsMinimized(false);
       
-      // Mark messages as read when opening chat
-      if (currentUser?.id && unreadCount > 0) {
+      if (currentUserId && unreadCount > 0) {
         try {
-          await chatService.markMessagesAsRead(adminId, currentUser.id);
+          await chatService.markMessagesAsRead(adminId);
           setUnreadCount(0);
         } catch (error) {
-          console.error('Error marking messages as read:', error);
+          // Silent fail
         }
       }
       
-      // Focus on message input after a short delay
       setTimeout(() => {
         messageInputRef.current?.focus();
       }, 100);
     } else {
-      console.log('ModernChatBubble - Minimizing chat window');
       setIsMinimized(true);
     }
   };
@@ -178,24 +186,48 @@ const ModernChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !currentUser?.id) return;
+    if (!newMessage.trim() || !currentUserId) return;
     
     const message: Message = {
-      senderId: currentUser.id,
+      senderId: currentUserId,
       receiverId: adminId,
       content: newMessage.trim(),
       timestamp: new Date().toISOString(),
-      senderName: currentUser.username || currentUser.id,
+      senderName: currentUser?.username || currentUserId,
       receiverName: adminName
     };
     
     try {
-      await chatService.sendMessage(message);
       setNewMessage('');
-      // Focus back on the input after sending
+      
+      const sentMessage = await chatService.sendMessage(message);
+      
+      if (!chatService.isConnected()) {
+        setMessages(prev => {
+          const exists = prev.some(m => 
+            (m.id && m.id === sentMessage.id) || 
+            (m.content === sentMessage.content && m.timestamp === sentMessage.timestamp && m.senderId === sentMessage.senderId)
+          );
+          
+          if (!exists) {
+            return [...prev, sentMessage];
+          }
+          return prev;
+        });
+        
+        setForceUpdate(Date.now());
+      }
+      
       messageInputRef.current?.focus();
+      
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 50);
+      
     } catch (error) {
-      console.error('Error sending message:', error);
+      setNewMessage(message.content);
     }
   };
 
@@ -214,7 +246,7 @@ const ModernChatBubble: React.FC<ChatBubbleProps> = ({
 
   // Determine if a message is from the current user
   const isOwnMessage = (senderId: string) => {
-    return senderId === currentUser?.id;
+    return senderId === currentUserId;
   };
 
   // Group messages by date for better display
@@ -245,8 +277,7 @@ const ModernChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   const showEmoji = () => {
-    // This would be where you'd implement an emoji picker
-    console.log('Emoji picker not implemented yet');
+    // Emoji picker implementation would go here
   };
 
   // Render the chat bubble with the improved UI
@@ -275,6 +306,7 @@ const ModernChatBubble: React.FC<ChatBubbleProps> = ({
       {/* Chat Window */}
       {visible && (
         <div
+          key={`chat-window-${forceUpdate}`}
           style={{
             position: 'fixed',
             bottom: '20px',
@@ -416,9 +448,10 @@ const ModernChatBubble: React.FC<ChatBubbleProps> = ({
                       
                       {group.messages.map((item: Message, index: number) => {
                         const isOwn = isOwnMessage(item.senderId);
+                        
                         return (
                           <div
-                            key={item.id || index}
+                            key={`${item.id || index}-${item.timestamp}-${forceUpdate}`}
                             style={{
                               marginBottom: '16px',
                               display: 'flex',

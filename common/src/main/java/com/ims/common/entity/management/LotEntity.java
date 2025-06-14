@@ -1,5 +1,6 @@
 package com.ims.common.entity.management;
 
+import com.ims.common.config.LotStatus;
 import com.ims.common.config.StorageStrategy;
 import com.ims.common.entity.UserEntity;
 import jakarta.persistence.*;
@@ -22,7 +23,8 @@ public class LotEntity {
 
     private Date importDate;
 
-    private boolean accepted;
+    @Enumerated(EnumType.STRING)
+    private LotStatus status;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

@@ -7,7 +7,6 @@ import com.ims.chat.repository.MessageRepository;
 import com.ims.chat.service.interfaces.MessageService;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -48,25 +47,15 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public List<MessageEntity> getMessagesBetweenUsers(String senderId, String receiverId) {
-        return messageRepository.findAllMessagesBetweenUsers(senderId, receiverId);
-    }
-
-    @Override
     public List<MessageDTO> getMessagesBetweenUsersAsDTO(String senderId, String receiverId) {
-        return getMessagesBetweenUsers(senderId, receiverId).stream()
+        return messageRepository.findAllMessagesBetweenUsers(senderId, receiverId).stream()
                 .map(MessageDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<MessageEntity> getAllMessagesForUser(String userId) {
-        return messageRepository.findAllMessagesForUser(userId);
-    }
-
-    @Override
-    public Set<String> getAllConversations(String userId) {
-        List<MessageEntity> messages = getAllMessagesForUser(userId);
+    public List<ConversationDTO> getConversationSummaries(String userId) {
+        List<MessageEntity> messages = messageRepository.findAllMessagesForUser(userId);
         Set<String> conversationIds = new HashSet<>();
 
         for (MessageEntity message : messages) {
@@ -77,21 +66,15 @@ public class MessageServiceImpl implements MessageService {
             }
         }
 
-        return conversationIds;
-    }
-
-    @Override
-    public List<ConversationDTO> getConversationSummaries(String userId) {
-        Set<String> conversationIds = getAllConversations(userId);
         List<ConversationDTO> conversations = new ArrayList<>();
 
         for (String partnerId : conversationIds) {
-            List<MessageEntity> messages = messageRepository.findAllMessagesBetweenUsers(userId, partnerId);
+            List<MessageEntity> conversationMessages = messageRepository.findAllMessagesBetweenUsers(userId, partnerId);
 
-            if (!messages.isEmpty()) {
-                MessageEntity lastMessage = messages.get(messages.size() - 1);
+            if (!conversationMessages.isEmpty()) {
+                MessageEntity lastMessage = conversationMessages.get(conversationMessages.size() - 1);
 
-                long unreadCount = messages.stream()
+                long unreadCount = conversationMessages.stream()
                         .filter(m -> m.getReceiverId().equals(userId) && !m.isSeen())
                         .count();
 
@@ -114,23 +97,19 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    @Transactional
-    public void markMessagesAsRead(String senderId, String receiverId) {
-        List<MessageEntity> messages = messageRepository.findAllMessagesBetweenUsers(senderId, receiverId);
+    public void markMessagesAsRead(String receiverId, String senderId) {
+        // Mark all messages from senderId to receiverId as read
+        List<MessageEntity> unreadMessages = messageRepository.findAllMessagesBetweenUsers(receiverId, senderId)
+                .stream()
+                .filter(message -> message.getSenderId().equals(senderId) && message.getReceiverId().equals(receiverId) && !message.isSeen())
+                .collect(Collectors.toList());
 
-        for (MessageEntity message : messages) {
-            if (message.getReceiverId().equals(receiverId) && !message.isSeen()
-            ) {
-                message.setSeen(true);
-                messageRepository.save(message);
-            }
+        for (MessageEntity message : unreadMessages) {
+            message.setSeen(true);
         }
-    }
 
-    @Override
-    @Transactional
-    public void deleteAllUserMessage(Long userId) {
-        String user_id = userId.toString();
-        messageRepository.deleteAllMessagesForUser(user_id);
+        if (!unreadMessages.isEmpty()) {
+            messageRepository.saveAll(unreadMessages);
+        }
     }
 }

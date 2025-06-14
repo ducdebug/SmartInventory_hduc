@@ -63,7 +63,6 @@ const dispatchService = {
           status: item.status as 'PENDING' | 'ACCEPTED' | 'REJECTED'
         };
         
-        // If totalPrice is missing or zero, use the server-calculated one if available
         if (!dispatch.totalPrice || dispatch.totalPrice.value === 0) {
           let totalValue = 0;
           let currency = 'VND';

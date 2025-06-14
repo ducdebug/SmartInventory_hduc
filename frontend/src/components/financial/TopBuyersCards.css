@@ -1,0 +1,172 @@
+.top-buyers-cards {
+  margin: 20px 0;
+}
+
+.top-buyers-loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.top-buyer-card {
+  text-align: center;
+  border: 2px solid;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.top-buyer-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.top-buyer-card.rank-1 {
+  border-color: #ffd700;
+  background: linear-gradient(135deg, #ffd70010 0%, #ffd70020 100%);
+}
+
+.top-buyer-card.rank-1::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #ffd700 0%, #ffed4a 100%);
+}
+
+.top-buyer-card.rank-2 {
+  border-color: #c0c0c0;
+  background: linear-gradient(135deg, #c0c0c010 0%, #c0c0c020 100%);
+}
+
+.top-buyer-card.rank-2::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #c0c0c0 0%, #e5e5e5 100%);
+}
+
+.top-buyer-card.rank-3 {
+  border-color: #cd7f32;
+  background: linear-gradient(135deg, #cd7f3210 0%, #cd7f3220 100%);
+}
+
+.top-buyer-card.rank-3::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #cd7f32 0%, #d4af37 100%);
+}
+
+.buyer-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  position: relative;
+}
+
+.buyer-rank {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+}
+
+.buyer-stats {
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* Compact Buyer Cards */
+.buyer-card-compact {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.buyer-card-compact:hover {
+  border-color: #1677ff;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.buyer-card-compact .ant-card-body {
+  padding: 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .buyer-card-content {
+    padding: 12px;
+  }
+
+  .top-buyer-card .ant-avatar {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .buyer-card-compact .ant-card-body {
+    padding: 8px;
+  }
+
+  .buyer-card-compact .ant-avatar {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .buyer-card-compact {
+    margin-bottom: 8px;
+  }
+  
+  .top-buyer-card {
+    margin-bottom: 16px;
+  }
+}
+
+/* Loading animation */
+.top-buyers-loading .ant-spin {
+  color: #1677ff;
+}
+
+/* Trophy animations */
+@keyframes trophy-shine {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(5deg) scale(1.1); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.top-buyer-card:hover .buyer-rank .anticon {
+  animation: trophy-shine 0.6s ease-in-out;
+}
+
+/* Gradient text for top buyers */
+.rank-1 .ant-typography h4 {
+  background: linear-gradient(45deg, #ffd700, #ffed4a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.rank-2 .ant-typography h4 {
+  background: linear-gradient(45deg, #c0c0c0, #e5e5e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.rank-3 .ant-typography h4 {
+  background: linear-gradient(45deg, #cd7f32, #d4af37);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

@@ -1,5 +1,6 @@
 package com.ims.smartinventory.dto.Response;
 
+import com.ims.common.config.LotStatus;
 import lombok.Data;
 
 import java.util.List;
@@ -10,6 +11,6 @@ public class LotDto {
     private String importDate;
     private String storageStrategy;
     private String username;
-    private boolean accepted;
+    private LotStatus status;
     private List<LotItemDto> items;
 }

@@ -3,6 +3,7 @@ package com.auth.authService.config;
 import com.auth.authService.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -39,10 +40,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/user/profile/**").authenticated()
-                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .anyRequest().authenticated()
+                        .requestMatchers("/auth/login", "/auth/register", "/auth/register-with-image").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/profile").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/auth/change-password").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/auth/test-auth").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/auth/user/**").authenticated()
+                        .requestMatchers("/user/profile/**").authenticated()
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
+                        .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

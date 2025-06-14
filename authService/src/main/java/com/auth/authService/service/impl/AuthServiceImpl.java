@@ -93,4 +93,9 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
+
+    @Override
+    public UserEntity getUserById(String userId) {
+        return userRepository.findById(userId).orElse(null);
+    }
 }

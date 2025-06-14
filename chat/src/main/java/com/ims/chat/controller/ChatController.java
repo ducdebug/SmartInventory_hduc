@@ -8,14 +8,17 @@ import com.ims.chat.service.interfaces.MessageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/chat")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ChatController {
 
     private final MessageService messageService;
@@ -29,44 +32,37 @@ public class ChatController {
         messageService.sendMessage(message);
     }
 
-    @GetMapping("/conversations")
-    public ResponseEntity<ApiResponse<Set<String>>> getConversations(@RequestParam String userId) {
-        Set<String> conversations = messageService.getAllConversations(userId);
-        return ResponseEntity.ok(ApiResponse.success(conversations));
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> health() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "UP");
+        response.put("service", "chat-service");
+        response.put("timestamp", System.currentTimeMillis());
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            response.put("authenticated", true);
+            response.put("principal", auth.getName());
+            response.put("authorities", auth.getAuthorities());
+        } else {
+            response.put("authenticated", false);
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/conversation-summaries")
-    public ResponseEntity<ApiResponse<List<ConversationDTO>>> getConversationSummaries(@RequestParam String userId) {
-        List<ConversationDTO> summaries = messageService.getConversationSummaries(userId);
+    public ResponseEntity<ApiResponse<List<ConversationDTO>>> getConversationSummaries(@AuthenticationPrincipal String currentUserId) {
+        List<ConversationDTO> summaries = messageService.getConversationSummaries(currentUserId);
         return ResponseEntity.ok(ApiResponse.success(summaries));
-    }
-
-    @GetMapping("/conversation")
-    public ResponseEntity<ApiResponse<List<MessageEntity>>> getConversation(
-            @RequestParam String senderId,
-            @RequestParam String receiverId) {
-        List<MessageEntity> messages = messageService.getMessagesBetweenUsers(senderId, receiverId);
-        return ResponseEntity.ok(ApiResponse.success(messages));
     }
 
     @GetMapping("/conversation-dto")
     public ResponseEntity<ApiResponse<List<MessageDTO>>> getConversationAsDTO(
-            @RequestParam String senderId,
-            @RequestParam String receiverId) {
+            @RequestParam String receiverId,
+            @AuthenticationPrincipal String senderId) {
         List<MessageDTO> messages = messageService.getMessagesBetweenUsersAsDTO(senderId, receiverId);
         return ResponseEntity.ok(ApiResponse.success(messages));
-    }
-
-    @GetMapping("/messages")
-    public ResponseEntity<ApiResponse<List<MessageEntity>>> getAllMessagesForUser(@RequestParam String userId) {
-        List<MessageEntity> messages = messageService.getAllMessagesForUser(userId);
-        return ResponseEntity.ok(ApiResponse.success(messages));
-    }
-
-    @PostMapping("/send")
-    public ResponseEntity<ApiResponse<MessageEntity>> sendMessage(@RequestBody MessageEntity message) {
-        MessageEntity sentMessage = messageService.sendMessage(message);
-        return ResponseEntity.ok(ApiResponse.success(sentMessage));
     }
 
     @PostMapping("/send-dto")
@@ -75,17 +71,12 @@ public class ChatController {
         return ResponseEntity.ok(ApiResponse.success(sentMessage));
     }
 
-    @PostMapping("/mark-read")
+    @PostMapping("/mark-messages-read")
     public ResponseEntity<ApiResponse<Void>> markMessagesAsRead(
             @RequestParam String senderId,
-            @RequestParam String receiverId) {
-        messageService.markMessagesAsRead(senderId, receiverId);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
+            @AuthenticationPrincipal String currentUserId) {
 
-    @DeleteMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<Void>> deleteAllUserMessages(@PathVariable Long userId) {
-        messageService.deleteAllUserMessage(userId);
+        messageService.markMessagesAsRead(currentUserId, senderId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

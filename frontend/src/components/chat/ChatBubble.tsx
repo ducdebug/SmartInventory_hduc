@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Badge, Button, Drawer, Input, List, Avatar, Spin, Typography, Space } from 'antd';
 import { MessageOutlined, SendOutlined, CloseOutlined } from '@ant-design/icons';
 import chatService, { Message } from '../../services/chatService';
-import { getUserInfo, User } from '../../services/authService';
+import { getUserInfo, getUserId, getUserRole, User } from '../../services/authService';
 import { formatTimeAgo } from '../../utils/dateUtils';
 
 const { TextArea } = Input;
@@ -23,19 +23,33 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Get user info from localStorage
   const currentUser: User | null = getUserInfo();
+  const currentUserId = getUserId();
+  const userRole = getUserRole();
+  
+  console.log('ChatBubble - Current user from localStorage:', { 
+    user: currentUser, 
+    userId: currentUserId, 
+    role: userRole,
+    adminId
+  });
   
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUserId) {
+      console.log('ChatBubble - No user ID found in localStorage');
+      return;
+    }
     
     const connectAndLoadMessages = async () => {
       try {
         if (!chatService.isConnected()) {
-          await chatService.connect(currentUser.id);
+          await chatService.connect(currentUserId);
         }
         
         loadMessageHistory();
@@ -51,22 +65,22 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     return () => {
       chatService.removeNewMessageCallback(handleNewMessage);
     };
-  }, [currentUser?.id]);
+  }, [currentUserId]);
 
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUserId) return;
     
     updateUnreadCount();
     
     const intervalId = setInterval(updateUnreadCount, 30000); 
     return () => clearInterval(intervalId);
-  }, [currentUser?.id]);
+  }, [currentUserId]);
 
   const updateUnreadCount = async () => {
-    if (!currentUser?.id) return;
+    if (!currentUserId) return;
     
     try {
-      const summaries = await chatService.getConversationSummaries(currentUser.id);
+      const summaries = await chatService.getConversationSummaries();
       const adminConversation = summaries.find(conv => conv.userId === adminId);
       setUnreadCount(adminConversation?.unreadCount || 0);
     } catch (error) {
@@ -75,15 +89,15 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   const loadMessageHistory = async () => {
-    if (!currentUser?.id) return;
+    if (!currentUserId) return;
     
     setLoading(true);
     try {
-      const history = await chatService.getConversation(currentUser.id, adminId);
+      const history = await chatService.getConversation(adminId);
       setMessages(history);
       
       if (visible) {
-        await chatService.markMessagesAsRead(adminId, currentUser.id);
+        await chatService.markMessagesAsRead(adminId);
         setUnreadCount(0);
       }
     } catch (error) {
@@ -94,8 +108,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   const handleNewMessage = (message: Message) => {
-    if ((message.senderId === adminId && message.receiverId === currentUser?.id) || 
-        (message.senderId === currentUser?.id && message.receiverId === adminId)) {
+    if ((message.senderId === adminId && message.receiverId === currentUserId) || 
+        (message.senderId === currentUserId && message.receiverId === adminId)) {
       
       setMessages(prev => {
         const exists = prev.some(m => m.id === message.id);
@@ -116,9 +130,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const showDrawer = async () => {
     setVisible(true);
     
-    if (currentUser?.id && unreadCount > 0) {
+    if (currentUserId && unreadCount > 0) {
       try {
-        await chatService.markMessagesAsRead(adminId, currentUser.id);
+        await chatService.markMessagesAsRead(adminId);
         setUnreadCount(0);
       } catch (error) {
         console.error('Error marking messages as read:', error);
@@ -131,14 +145,14 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !currentUser?.id) return;
+    if (!newMessage.trim() || !currentUserId) return;
     
     const message: Message = {
-      senderId: currentUser.id,
+      senderId: currentUserId,
       receiverId: adminId,
       content: newMessage.trim(),
       timestamp: new Date().toISOString(),
-      senderName: currentUser.username || currentUser.id,
+      senderName: currentUser?.username || currentUserId,
       receiverName: adminName
     };
     
@@ -163,7 +177,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   const isOwnMessage = (senderId: string) => {
-    return senderId === currentUser?.id;
+    return senderId === currentUserId;
   };
 
   return (
@@ -235,7 +249,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
                         {item.content}
                       </div>
                       <Text type="secondary" style={{ fontSize: '12px', marginTop: '4px' }}>
-                        {formatTime(item.timestamp)}
+                        {formatTime(item.timestamp)} | Sender: {item.senderId} | Own: {isOwn.toString()}
                       </Text>
                     </div>
                   </List.Item>

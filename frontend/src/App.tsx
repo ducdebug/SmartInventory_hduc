@@ -12,16 +12,18 @@ import Navbar from './components/layout/navbar/navbar';
 import Footer from './components/layout/footer/Footer';
 import PrivateRoute from "./components/privateroute";
 import AdminRoute from "./components/adminroute";
+import SupplierRoute from "./components/supplierroute";
 import LotHistoryPage from './pages/lothistory/LotHistoryPage';
 import RetrieveProductPage from './pages/retrieveproductpage/RetrieveProductPage';
-import DashboardPage from './pages/dashboard/dashboard';
+
 import UserManagement from './pages/user-management/user-management';
 import ExportManagementPage from './pages/export-management/ExportManagementPage';
 import History from './pages/history/History';
 import ProfilePage from './pages/profile/ProfilePage';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import AdminInventoryPage from './pages/inventory/AdminInventoryPage';
-import MessagingPage from './pages/messaging';
+import SupplierInventoryPage from './pages/supplier/SupplierInventoryPage';
+import MessagePage from './pages/messaging/MessagePage';
 import ChatBubbleWrapper from './components/chat/ChatBubbleWrapper';
 
 function AppContent() {
@@ -78,12 +80,7 @@ function AppContent() {
             </PrivateRoute>
           } />
           
-          <Route path='/dashboard' element={
-            <PrivateRoute>
-              <DashboardPage />
-            </PrivateRoute>
-          } />
-          
+
           <Route path='/profile' element={
             <PrivateRoute>
               <ProfilePage />
@@ -114,9 +111,15 @@ function AppContent() {
             </AdminRoute>
           } />
           
+          <Route path='/inventory-supplier' element={
+            <SupplierRoute>
+              <SupplierInventoryPage />
+            </SupplierRoute>
+          } />
+          
           <Route path='/messaging' element={
             <AdminRoute>
-              <MessagingPage />
+              <MessagePage />
             </AdminRoute>
           } />
           

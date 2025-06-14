@@ -1,5 +1,6 @@
 package com.ims.smartinventory.dto.Response;
 
+import com.ims.common.config.LotStatus;
 import com.ims.common.entity.PriceEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,6 +18,7 @@ public class ProductsByLotResponse {
     private String lotCode;
     private Date importDate;
     private String importedByUser;
+    private LotStatus status;
     private List<ProductInLot> products;
     
     @Data

@@ -45,7 +45,13 @@ chatApiClient.interceptors.response.use(
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
-      } 
+      } else if (error.response.status === 403) {
+        console.error('Access forbidden - insufficient permissions');
+      } else if (error.response.status >= 500) {
+        console.error('Server error - please try again later');
+      }
+    } else if (error.request) {
+      console.error('Network error - please check your connection');
     }
     
     return Promise.reject(error);

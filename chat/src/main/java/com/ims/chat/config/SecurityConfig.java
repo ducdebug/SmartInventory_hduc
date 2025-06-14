@@ -18,8 +18,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
@@ -39,12 +37,24 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        // Allow WebSocket connections without authentication
-                        .requestMatchers("/ws/**", "/topic/**", "/app/**").permitAll()
-                        // Secure all API endpoints
-                        .requestMatchers("/api/**").authenticated()
-                        // Permit actuator endpoints for health checks
+                        // WebSocket endpoints (public)
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/api/ws/**").permitAll()
+                        .requestMatchers("/app/**").permitAll()
+                        .requestMatchers("/topic/**").permitAll()
+                        .requestMatchers("/user/**").permitAll()
+
+                        // Health and monitoring (public)
                         .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/api/actuator/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/chat/health").permitAll()
+                        .requestMatchers("/api/chat/health").permitAll()
+
+                        // Chat REST API endpoints (require authentication)
+                        .requestMatchers("/api/chat/**").authenticated()
+                        .requestMatchers("/chat/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -56,9 +66,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3001", "http://localhost:3002"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.addAllowedOriginPattern("http://localhost:3000");
+        configuration.addAllowedOriginPattern("http://localhost:3001");
+        configuration.addAllowedOriginPattern("http://localhost:3002");
+
+        configuration.addAllowedMethod("*");
+        configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

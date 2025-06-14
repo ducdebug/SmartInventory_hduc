@@ -1,7 +1,6 @@
 package com.ims.chat.service.interfaces;
 
 import java.util.List;
-import java.util.Set;
 
 import com.ims.chat.dto.ConversationDTO;
 import com.ims.chat.dto.MessageDTO;
@@ -20,24 +19,9 @@ public interface MessageService {
     MessageDTO sendMessage(MessageDTO messageDTO);
     
     /**
-     * Get all messages between two users
-     */
-    List<MessageEntity> getMessagesBetweenUsers(String senderId, String receiverId);
-    
-    /**
      * Get all messages between two users as DTOs
      */
     List<MessageDTO> getMessagesBetweenUsersAsDTO(String senderId, String receiverId);
-    
-    /**
-     * Get all messages for a user
-     */
-    List<MessageEntity> getAllMessagesForUser(String userId);
-    
-    /**
-     * Get all conversations for a user
-     */
-    Set<String> getAllConversations(String userId);
     
     /**
      * Get all conversations for a user with detailed information
@@ -45,12 +29,7 @@ public interface MessageService {
     List<ConversationDTO> getConversationSummaries(String userId);
     
     /**
-     * Mark messages as read
+     * Mark messages as read between two users
      */
-    void markMessagesAsRead(String senderId, String receiverId);
-    
-    /**
-     * Delete all messages for a user
-     */
-    void deleteAllUserMessage(Long userId);
+    void markMessagesAsRead(String receiverId, String senderId);
 }

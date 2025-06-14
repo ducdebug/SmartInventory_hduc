@@ -91,12 +91,20 @@ export interface SectionEntity {
   percentAvailable: number;
 }
 
+export enum LotStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+  PEND_WITHDRAW = 'PEND_WITHDRAW',
+  WITHDRAWN = 'WITHDRAWN'
+}
+
 export interface Lot {
   id: string;
   importDate: string;
   storageStrategy: string;
   username: string;
-  accepted: boolean;
+  status: LotStatus;
   items: LotItem[];
 }
 export interface LotItem {

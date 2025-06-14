@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs, Card, Typography } from 'antd';
 import { DollarOutlined, AreaChartOutlined } from '@ant-design/icons';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import ProductPricingPage from './ProductPricingPage';
 
 const { Title, Text } = Typography;

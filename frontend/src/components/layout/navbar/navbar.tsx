@@ -88,22 +88,15 @@ const Navbar: React.FC = () => {
 
         <div className={`navbar-links ${isMenuOpen ? 'open' : ''}`}>
           <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9.55228 21 10 20.5523 10 20V16C10 15.4477 10.4477 15 11 15H13C13.5523 15 14 15.4477 14 16V20C14 20.5523 14.4477 21 15 21M9 21H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span>Home</span>
           </Link>
 
-          <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 13V17M16 11V17M12 7V17M3 21H21C21.5523 21 22 20.5523 22 20V4C22 3.44772 21.5523 3 21 3H3C2.44772 3 2 3.44772 2 4V20C2 20.5523 2.44772 21 3 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>Dashboard</span>
-          </Link>
-
           {user?.role === 'ADMIN' && (
             <Link to="/messaging" className={location.pathname === '/messaging' ? 'active' : ''}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8 12H8.01M12 12H12.01M16 12H16.01M21 12C21 16.418 16.97 20 12 20C10.5286 20 9.14629 19.7004 7.94309 19.1699C7.61383 19.0498 7.45008 18.9896 7.31062 18.9669C7.17118 18.9442 7.04834 18.9496 6.81583 18.9605C6.58332 18.9713 6.39145 19.0134 6.00771 19.0977L3 19.7747C2.69623 19.8356 2.54434 19.866 2.42045 19.8157C2.31213 19.7716 2.22838 19.6878 2.18428 19.5795C2.13396 19.4556 2.1644 19.3037 2.22527 19.0002L2.90238 16.0343C2.98668 15.6514 3.02883 15.4599 3.03966 15.2283C3.0504 15.0006 3.0276 14.8786 2.97463 14.7405C2.9217 14.6024 2.83156 14.4402 2.65128 14.116C2.23289 13.3525 2 12.5037 2 11.609C2 7.55001 6.02944 4.27001 11 4.02001" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span>Messages</span>
@@ -112,7 +105,7 @@ const Navbar: React.FC = () => {
 
           {user?.role === 'ADMIN' && (
             <Link to="/sections" className={location.pathname === '/sections' ? 'active' : ''}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 7L12 3L4 7M20 7V17L12 21M20 7L12 11M12 21L4 17V7M12 21V11M4 7L12 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span>Sections</span>
@@ -156,11 +149,12 @@ const Navbar: React.FC = () => {
                 <span>Export Management</span>
               </Link>
               <Link to="/inventory-admin" className={location.pathname === '/inventory-admin' ? 'active' : ''}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 6H21M3 12H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M19 3V6M19 18V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 5H7C5.89543 5 5 5.89543 5 7V18C5 19.1046 5.89543 20 7 20H17C18.1046 20 19 19.1046 19 18V7C19 5.89543 18.1046 5 17 5H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 12H15M9 16H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <span>Inventory Admin</span>
+                <span>Inventory Overview</span>
               </Link>
               <Link to="/user-management" className={location.pathname === '/user-management' ? 'active' : ''}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -173,12 +167,22 @@ const Navbar: React.FC = () => {
           )}
 
           {user?.role === 'SUPPLIER' && (
-            <button onClick={() => setIsBatchModalOpen(true)} className="new-batch-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>New Batch</span>
-            </button>
+            <>
+              <Link to="/inventory-supplier" className={location.pathname === '/inventory-supplier' ? 'active' : ''}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Inventory Management</span>
+              </Link>
+              <button onClick={() => setIsBatchModalOpen(true)} className="new-batch-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>New Batch</span>
+              </button>
+            </>
           )}
         </div>
 

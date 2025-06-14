@@ -55,9 +55,11 @@ export const NotificationProvider: React.FC<{children: React.ReactNode}> = ({ ch
         return prev;
       }
       
-      return [notification, ...prev];
+      const newNotifications = [notification, ...prev];
+      return [...newNotifications];
     });
     
+    // Show browser notification
     if (window.Notification && window.Notification.permission === 'granted') {
       try {
         const browserNotification = new window.Notification('Smart Inventory', {
@@ -71,7 +73,9 @@ export const NotificationProvider: React.FC<{children: React.ReactNode}> = ({ ch
         browserNotification.onclick = () => {
           window.focus();
         };
-      } catch (error) {}
+      } catch (error) {
+        console.error('Failed to show browser notification:', error);
+      }
     } else if (window.Notification && window.Notification.permission !== 'denied') {
       window.Notification.requestPermission();
     }

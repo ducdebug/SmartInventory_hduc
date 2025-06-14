@@ -217,29 +217,45 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
 .modal-content {
   background: white;
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 12px;
+  padding: 0;
   width: 90%;
-  max-width: 500px;
+  max-width: 700px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .modal-content h2 {
-  margin-top: 0;
-  color: #333;
+  margin: 0;
+  padding: 24px 24px 16px 24px;
+  color: #1f2937;
+  font-size: 20px;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .modal-content form {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-height: calc(90vh - 140px);
+  overflow-y: auto;
+}
+
+/* Form sections */
+.modal-content form > div:first-child {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -247,81 +263,199 @@
 
 .modal-content label {
   font-weight: 500;
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 6px;
   display: block;
-  margin-bottom: 8px;
 }
 
 .modal-content input, .modal-content select {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
   width: 100%;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background-color: white;
+  box-sizing: border-box;
 }
 
+.modal-content input:focus, .modal-content select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal-content input:hover, .modal-content select:hover {
+  border-color: #d1d5db;
+}
+
+/* Storage conditions fieldset styling */
 .modal-content fieldset {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 16px;
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .modal-content legend {
-  padding: 0 8px;
-  font-weight: 500;
+  padding: 0;
+  font-weight: 600;
+  font-size: 16px;
+  color: #1f2937;
+  margin-bottom: 12px;
 }
 
+/* Individual condition row styling */
+.condition-row {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.condition-row:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Condition row grid layout */
 .condition-row {
   display: grid;
-  grid-template-columns: 3fr 1fr 1fr 1fr auto;
-  gap: 8px;
-  margin-bottom: 12px;
-  align-items: center;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
 }
 
+.condition-row > select {
+  grid-column: 1;
+  margin-bottom: 8px;
+}
+
+.condition-row .condition-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.condition-row input[type="number"] {
+  margin: 0;
+}
+
+.condition-row input[disabled] {
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* Remove button styling */
 .remove-btn {
-  background: none;
-  border: none;
-  color: #f44336;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
   cursor: pointer;
-  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s ease;
 }
 
+.remove-btn:hover {
+  background: #fecaca;
+  border-color: #f87171;
+  transform: scale(1.05);
+}
+
+/* Add condition button */
 .add-btn {
-  background: none;
-  border: 1px dashed #ccc;
-  padding: 8px;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 2px dashed #0ea5e9;
+  border-radius: 12px;
+  padding: 16px;
   width: 100%;
-  color: #666;
-  border-radius: 4px;
+  color: #0369a1;
   cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
   margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
+.add-btn:hover {
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  border-color: #0284c7;
+  transform: translateY(-1px);
+}
+
+.add-btn::before {
+  content: '+';
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Modal actions (footer) */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 16px;
+  padding: 20px 24px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  margin: 0 -24px -24px -24px;
+  border-radius: 0 0 12px 12px;
 }
 
 .submit-btn {
-  padding: 10px 20px;
-  background-color: #2196f3;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.4);
 }
 
 .cancel-btn {
-  padding: 10px 20px;
-  background-color: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px 24px;
+  background: white;
+  color: #6b7280;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
   cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
 }
 
 .loading-spinner {
@@ -363,11 +497,34 @@
     width: 100%;
   }
   
-  .condition-row {
-    grid-template-columns: 1fr;
+  .modal-content {
+    width: 95%;
+    max-width: none;
+    margin: 10px;
   }
   
-  .condition-row input, .condition-row select {
-    margin-bottom: 8px;
+  .modal-content h2 {
+    padding: 20px 20px 16px 20px;
+    font-size: 18px;
+  }
+  
+  .modal-content form {
+    padding: 20px;
+  }
+  
+  .condition-row .condition-values {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .modal-actions {
+    padding: 16px 20px;
+    margin: 0 -20px -20px -20px;
+    flex-direction: column-reverse;
+  }
+  
+  .submit-btn, .cancel-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
