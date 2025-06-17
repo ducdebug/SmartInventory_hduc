@@ -139,11 +139,7 @@ public class DispatchServiceImpl implements DispatchService {
     }
 
     private PriceEntity getProductPrice(BaseProductEntity product) {
-        if (product.getSecondaryPrice() != null) {
-            return product.getSecondaryPrice();
-        } else if (product.getPrimaryPrice() != null) {
-            return product.getPrimaryPrice();
-        }
+
         return null;
     }
 

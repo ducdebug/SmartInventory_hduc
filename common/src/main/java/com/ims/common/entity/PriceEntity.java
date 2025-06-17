@@ -1,11 +1,10 @@
 package com.ims.common.entity;
 
 import com.ims.common.config.TransactionType;
+import com.ims.common.entity.storage.SectionEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 @Getter
 @Setter
@@ -17,14 +16,13 @@ public class PriceEntity {
     private String id;
 
     private double value;
+
     private String currency;
 
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
 
-    @OneToMany(mappedBy = "primaryPrice", cascade = CascadeType.ALL)
-    private List<BaseProductEntity> primaryProducts;
-    
-    @OneToMany(mappedBy = "secondaryPrice", cascade = CascadeType.ALL)
-    private List<BaseProductEntity> secondaryProducts;
+    @OneToOne(mappedBy = "price")
+    private SectionEntity section;
+
 }

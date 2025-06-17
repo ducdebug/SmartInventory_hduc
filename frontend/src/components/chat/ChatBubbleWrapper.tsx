@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import ModernChatBubble from './ModernChatBubble';
 import { getUserRole, getUserInfo, getUserId } from '../../services/authService';
 
-const ADMIN_USER_ID = 'f43739f6-b25c-4360-a38f-f8cf0fba558a';
+const ADMIN_USER_ID = '37e4db5d-7ad4-4120-99d8-19f38ec6d8c1';
 const ADMIN_USER_NAME = 'Support Team';
 
 const ChatBubbleWrapper: React.FC = () => {

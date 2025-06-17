@@ -32,14 +32,6 @@ public abstract class BaseProductEntity {
     @JoinColumn(name = "lot_id", nullable = false)
     private LotEntity lot;
 
-    @ManyToOne
-    @JoinColumn(name = "primary_price_id")
-    private PriceEntity primaryPrice;
-
-    @ManyToOne
-    @JoinColumn(name = "secondary_price_id")
-    private PriceEntity secondaryPrice;
-
     @OneToOne
     @JsonBackReference
     @JoinColumn(name = "slot_shelf_id", referencedColumnName = "id")

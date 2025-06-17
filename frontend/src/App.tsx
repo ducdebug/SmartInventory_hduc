@@ -13,8 +13,10 @@ import Footer from './components/layout/footer/Footer';
 import PrivateRoute from "./components/privateroute";
 import AdminRoute from "./components/adminroute";
 import SupplierRoute from "./components/supplierroute";
+import BuyerRoute from "./components/buyerroute";
 import LotHistoryPage from './pages/lothistory/LotHistoryPage';
 import RetrieveProductPage from './pages/retrieveproductpage/RetrieveProductPage';
+import BuyerDashboard from './pages/buyerdashboard/BuyerDashboard';
 
 import UserManagement from './pages/user-management/user-management';
 import ExportManagementPage from './pages/export-management/ExportManagementPage';
@@ -75,9 +77,15 @@ function AppContent() {
           } />
           
           <Route path='/retrieve' element={
-            <PrivateRoute>
+            <BuyerRoute>
               <RetrieveProductPage />
-            </PrivateRoute>
+            </BuyerRoute>
+          } />
+          
+          <Route path='/buyer-dashboard' element={
+            <BuyerRoute>
+              <BuyerDashboard />
+            </BuyerRoute>
           } />
           
 

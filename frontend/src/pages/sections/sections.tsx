@@ -5,6 +5,15 @@ import inventoryService from '../../services/inventoryService';
 import { useNavigate } from 'react-router-dom';
 import './sections.css';
 
+interface PriceCalculationResponse {
+  basePrice: number;
+  finalPrice: number;
+  multiplier: number;
+  currency: string;
+  slotCount: number;
+  breakdown: string;
+}
+
 const SectionsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -13,6 +22,11 @@ const SectionsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCondition, setFilterCondition] = useState<string>('');
+  
+  // Price calculation state
+  const [priceData, setPriceData] = useState<PriceCalculationResponse | null>(null);
+  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -24,6 +38,61 @@ const SectionsPage: React.FC = () => {
   useEffect(() => {
     fetchSections();
   }, []);
+
+  // Calculate price when form data changes
+  useEffect(() => {
+    console.log('useEffect triggered:', { 
+      isModalOpen, 
+      y_slot: formData.y_slot, 
+      storageConditions: formData.storageConditions 
+    });
+    
+    if (isModalOpen && formData.y_slot > 0) {
+      const activeConditions = formData.storageConditions
+        .filter(cond => cond.conditionType)
+        .map(cond => cond.conditionType);
+      
+      console.log('Active conditions:', activeConditions);
+      console.log('Slot count:', formData.y_slot * 6);
+      
+      // Calculate price even with no conditions for testing
+      calculatePrice(formData.y_slot * 6, activeConditions);
+    }
+  }, [formData.y_slot, formData.storageConditions, isModalOpen]);
+
+  const calculatePrice = async (slotCount: number, storageConditions: string[]) => {
+    console.log('calculatePrice called with:', { slotCount, storageConditions });
+    
+    if (slotCount <= 0) {
+      console.log('Slot count is 0 or negative, skipping calculation');
+      return;
+    }
+    
+    setIsCalculatingPrice(true);
+    setPriceError(null);
+    
+    try {
+      console.log('Making API call to calculate price...');
+      const response = await inventoryService.calculatePrice({
+        slotCount,
+        storageConditions
+      });
+      console.log('Price calculation response:', response);
+      setPriceData(response);
+      
+      // Force re-render by updating a dummy state
+      setTimeout(() => {
+        console.log('Price data set, current state:', response);
+      }, 100);
+      
+    } catch (error) {
+      console.error('Price calculation failed:', error);
+      setPriceError('Failed to calculate price');
+      setPriceData(null);
+    } finally {
+      setIsCalculatingPrice(false);
+    }
+  };
 
   const fetchSections = async () => {
     try {
@@ -41,8 +110,23 @@ const SectionsPage: React.FC = () => {
     navigate(`/sections/${sectionId}`);
   };
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const openModal = () => {
+    setIsModalOpen(true);
+    setPriceData(null);
+    setPriceError(null);
+    
+    // Add a test price calculation for debugging
+    console.log('Modal opened, testing price calculation...');
+    setTimeout(() => {
+      calculatePrice(6, ['TEMPERATURE_CONTROLLED']); // Test with 1 slot and temp control
+    }, 1000);
+  };
+  
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setPriceData(null);
+    setPriceError(null);
+  };
 
   const conditionUnits: { [key: string]: string } = {
     'TEMPERATURE_CONTROLLED': '°C',
@@ -96,11 +180,17 @@ const SectionsPage: React.FC = () => {
   };
 
   const handleCreateSection = async () => {
+    if (!priceData) {
+      setError('Please wait for price calculation to complete');
+      return;
+    }
+
     try {
       const payload = {
         name: formData.name.trim(),
         y_slot: Number(formData.y_slot),
         shelf_height: formData.shelf_height ? Number(formData.shelf_height) : undefined,
+        calculatedPrice: priceData.finalPrice, // Include the calculated price
         storageConditions: formData.storageConditions
           .filter(c => c.conditionType)
           .map(c => ({
@@ -227,37 +317,39 @@ const SectionsPage: React.FC = () => {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h2>Create New Section</h2>
             <form onSubmit={e => { e.preventDefault(); handleCreateSection(); }}>
-              <label htmlFor="name">Section Name</label>
-              <input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter section name"
-              />
+              <div className="form-section">
+                <label htmlFor="name">Section Name</label>
+                <input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter section name"
+                />
 
-              <label htmlFor="y_slot">Slot Height (y)</label>
-              <input
-                id="y_slot"
-                type="number"
-                name="y_slot"
-                min={1}
-                value={formData.y_slot}
-                onChange={handleInputChange}
-                required
-              />
+                <label htmlFor="y_slot">Slot Height (y)</label>
+                <input
+                  id="y_slot"
+                  type="number"
+                  name="y_slot"
+                  min={1}
+                  value={formData.y_slot}
+                  onChange={handleInputChange}
+                  required
+                />
 
-              <label htmlFor="shelf_height">Shelf Height (optional)</label>
-              <input
-                id="shelf_height"
-                type="number"
-                name="shelf_height"
-                min={1}
-                value={formData.shelf_height}
-                onChange={handleInputChange}
-                placeholder="Enter shelf height"
-              />
+                <label htmlFor="shelf_height">Shelf Height (optional)</label>
+                <input
+                  id="shelf_height"
+                  type="number"
+                  name="shelf_height"
+                  min={1}
+                  value={formData.shelf_height}
+                  onChange={handleInputChange}
+                  placeholder="Enter shelf height"
+                />
+              </div>
 
               <fieldset>
                 <legend>Storage Conditions</legend>
@@ -309,8 +401,135 @@ const SectionsPage: React.FC = () => {
                 </button>
               </fieldset>
 
+              {/* Price Display Section */}
+              <div className="price-section">
+                <h3>Pricing Information</h3>
+                
+                {/* Always show debug info */}
+                <div style={{ 
+                  fontSize: '12px', 
+                  color: '#666', 
+                  marginBottom: '16px',
+                  background: '#f0f0f0',
+                  padding: '8px',
+                  borderRadius: '4px'
+                }}>
+                  <div>State Debug:</div>
+                  <div>• Calculating: {String(isCalculatingPrice)}</div>
+                  <div>• Has Data: {String(!!priceData)}</div>
+                  <div>• Error: {priceError || 'none'}</div>
+                  <div>• Slots: {formData.y_slot * 6}</div>
+                  {priceData && (
+                    <div>• Final Price: ${priceData.finalPrice}</div>
+                  )}
+                  <div style={{ marginTop: '8px' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => calculatePrice(6, ['TEMPERATURE_CONTROLLED'])}
+                      style={{ fontSize: '10px', padding: '4px 8px', marginRight: '8px' }}
+                    >
+                      Test Price API
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        console.log('Current states:', { isCalculatingPrice, priceData, priceError });
+                        // Force update with mock data for testing
+                        setPriceData({
+                          basePrice: 60,
+                          finalPrice: 78,
+                          multiplier: 1.3,
+                          currency: 'USD',
+                          slotCount: 6,
+                          breakdown: 'Test breakdown'
+                        });
+                      }}
+                      style={{ fontSize: '10px', padding: '4px 8px' }}
+                    >
+                      Force Mock Data
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Simplified conditional rendering */}
+                <div style={{ minHeight: '100px', border: '1px solid #ddd', padding: '16px', borderRadius: '8px' }}>
+                  {isCalculatingPrice && (
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ display: 'inline-block', width: '20px', height: '20px', border: '2px solid #f3f3f3', borderTop: '2px solid #3498db', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                      <div>Calculating price...</div>
+                    </div>
+                  )}
+                  
+                  {priceError && !isCalculatingPrice && (
+                    <div style={{ color: 'red', textAlign: 'center' }}>
+                      ⚠️ {priceError}
+                    </div>
+                  )}
+                  
+                  {priceData && !isCalculatingPrice && !priceError && (
+                    <div>
+                      <div style={{ 
+                        backgroundColor: '#e3f2fd', 
+                        padding: '16px', 
+                        borderRadius: '8px', 
+                        marginBottom: '16px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <span style={{ fontWeight: 'bold', color: '#1976d2' }}>Monthly Cost:</span>
+                        <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#1976d2' }}>
+                          ${priceData.finalPrice.toFixed(2)} {priceData.currency}
+                        </span>
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                        <div style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '12px', color: '#666' }}>Base Price</div>
+                          <div style={{ fontWeight: 'bold' }}>${priceData.basePrice.toFixed(2)}</div>
+                        </div>
+                        <div style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '12px', color: '#666' }}>Slot Count</div>
+                          <div style={{ fontWeight: 'bold' }}>{priceData.slotCount} slots</div>
+                        </div>
+                        <div style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '12px', color: '#666' }}>Multiplier</div>
+                          <div style={{ fontWeight: 'bold' }}>{priceData.multiplier.toFixed(1)}x</div>
+                        </div>
+                      </div>
+                      
+                      <details style={{ marginTop: '16px' }}>
+                        <summary style={{ cursor: 'pointer', color: '#1976d2' }}>View detailed breakdown</summary>
+                        <pre style={{ 
+                          background: '#f5f5f5', 
+                          padding: '12px', 
+                          borderRadius: '4px', 
+                          fontSize: '12px',
+                          marginTop: '8px',
+                          whiteSpace: 'pre-wrap'
+                        }}>
+                          {priceData.breakdown}
+                        </pre>
+                      </details>
+                    </div>
+                  )}
+                  
+                  {!isCalculatingPrice && !priceError && !priceData && (
+                    <div style={{ textAlign: 'center', color: '#999', fontStyle: 'italic' }}>
+                      Configure your section to see pricing
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="modal-actions">
-                <button type="submit" className="submit-btn">Create</button>
+                <button 
+                  type="submit" 
+                  className="submit-btn"
+                  disabled={!priceData || isCalculatingPrice}
+                >
+                  {isCalculatingPrice ? 'Calculating...' : 'Create Section'}
+                </button>
                 <button type="button" onClick={closeModal} className="cancel-btn">Cancel</button>
               </div>
             </form>

@@ -52,7 +52,7 @@ const Dashboard: React.FC = () => {
         <div className="error-message">{error}</div>
       ) : (
         <>
-          {summaryStats && (
+          {isAdmin && summaryStats && (
             <div className="summary-cards">
               <div className="summary-card">
                 <h3>Total Products</h3>
@@ -80,7 +80,6 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Financial Summary Cards - Show for Admin users */}
           {isAdmin && (
             <div className="financial-section">
               <FinancialSummaryCards />

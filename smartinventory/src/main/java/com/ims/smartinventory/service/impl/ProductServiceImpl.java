@@ -76,7 +76,8 @@ public class ProductServiceImpl implements ProductService {
 
         for (Map<String, Object> productData : productDetails) {
             boolean onShelf = (boolean) productData.getOrDefault("onShelf", false);
-            int quantity = ((Number) productData.getOrDefault("quantity", 1)).intValue();
+            int quantity = ((Number) productData.getOrDefault(
+                    "quantity", 1)).intValue();
             List<SectionEntity> sections = sectionRepository.findAllWithStorageConditions();
 
             SectionEntity suitableSection = sections.stream()
@@ -134,14 +135,7 @@ public class ProductServiceImpl implements ProductService {
                 newDto.setProductType(product.getClass().getSimpleName().replace("ProductEntity", "").toUpperCase());
                 newDto.setName(product.getName());
                 newDto.setDetail(extractDetail(product));
-                if (product.getPrimaryPrice() != null) {
-                    newDto.getDetail().put("primaryPrice", product.getPrimaryPrice().getValue());
-                    newDto.getDetail().put("primaryCurrency", product.getPrimaryPrice().getCurrency());
-                }
-                if (product.getSecondaryPrice() != null) {
-                    newDto.getDetail().put("secondaryPrice", product.getSecondaryPrice().getValue());
-                    newDto.getDetail().put("secondaryCurrency", product.getSecondaryPrice().getCurrency());
-                }
+
                 newDto.setCount(0);
                 return newDto;
             });
@@ -310,7 +304,6 @@ public class ProductServiceImpl implements ProductService {
         price.setCurrency((String) productData.getOrDefault("currency", "VND"));
         price.setTransactionType(TransactionType.IMPORT);
         price = priceRepository.save(price);
-        product.setPrimaryPrice(price);
         return product;
     }
 
@@ -451,7 +444,6 @@ public class ProductServiceImpl implements ProductService {
 
             PriceEntity exportPrice = new PriceEntity();
             exportPrice.setTransactionType(TransactionType.EXPORT);
-            exportPrice.setCurrency(reference.getSecondaryPrice().getCurrency());
             exportPrice = priceRepository.save(exportPrice);
             dispatchItem.setPrice(exportPrice);
 
@@ -485,23 +477,6 @@ public class ProductServiceImpl implements ProductService {
                 productItem.setProductName(product.getName());
                 productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
 
-                if (product.getPrimaryPrice() != null) {
-                    ProductsByLotResponse.PriceDTO primaryPriceDTO = new ProductsByLotResponse.PriceDTO(
-                            product.getPrimaryPrice().getId(),
-                            product.getPrimaryPrice().getValue(),
-                            product.getPrimaryPrice().getCurrency()
-                    );
-                    productItem.setPrimaryPrice(primaryPriceDTO);
-                }
-
-                if (product.getSecondaryPrice() != null) {
-                    ProductsByLotResponse.PriceDTO secondaryPriceDTO = new ProductsByLotResponse.PriceDTO(
-                            product.getSecondaryPrice().getId(),
-                            product.getSecondaryPrice().getValue(),
-                            product.getSecondaryPrice().getCurrency()
-                    );
-                    productItem.setSecondaryPrice(secondaryPriceDTO);
-                }
 
                 productItem.setDetails(extractDetail(product));
 
@@ -533,23 +508,6 @@ public class ProductServiceImpl implements ProductService {
                 productItem.setProductName(product.getName());
                 productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
 
-                if (product.getPrimaryPrice() != null) {
-                    ProductsByLotResponse.PriceDTO primaryPriceDTO = new ProductsByLotResponse.PriceDTO(
-                            product.getPrimaryPrice().getId(),
-                            product.getPrimaryPrice().getValue(),
-                            product.getPrimaryPrice().getCurrency()
-                    );
-                    productItem.setPrimaryPrice(primaryPriceDTO);
-                }
-
-                if (product.getSecondaryPrice() != null) {
-                    ProductsByLotResponse.PriceDTO secondaryPriceDTO = new ProductsByLotResponse.PriceDTO(
-                            product.getSecondaryPrice().getId(),
-                            product.getSecondaryPrice().getValue(),
-                            product.getSecondaryPrice().getCurrency()
-                    );
-                    productItem.setSecondaryPrice(secondaryPriceDTO);
-                }
 
                 productItem.setDetails(extractDetail(product));
 
@@ -570,40 +528,6 @@ public class ProductServiceImpl implements ProductService {
             }
             return;
         }
-        for (UpdateSecondaryPriceRequest.ProductPrice productPrice : request.getProductPrices()) {
-            BaseProductEntity product = productRepository.findById(productPrice.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found: " + productPrice.getProductId()));
 
-            PriceEntity secondaryPrice;
-            if (product.getSecondaryPrice() == null) {
-                secondaryPrice = new PriceEntity();
-                secondaryPrice.setTransactionType(TransactionType.EXPORT);
-            } else {
-                secondaryPrice = product.getSecondaryPrice();
-            }
-
-            if (request.getBulkPrice() != null) {
-                secondaryPrice.setValue(request.getBulkPrice());
-                secondaryPrice.setCurrency(request.getCurrency());
-            } else if (request.getBulkMarkupPercentage() != null) {
-                if (product.getPrimaryPrice() != null) {
-                    double primaryValue = product.getPrimaryPrice().getValue();
-                    double markup = 1 + (request.getBulkMarkupPercentage() / 100.0);
-                    secondaryPrice.setValue(primaryValue * markup);
-                    secondaryPrice.setCurrency(product.getPrimaryPrice().getCurrency());
-                } else {
-                    secondaryPrice.setValue(productPrice.getPrice());
-                    secondaryPrice.setCurrency(productPrice.getCurrency());
-                }
-            } else {
-                secondaryPrice.setValue(productPrice.getPrice());
-                secondaryPrice.setCurrency(productPrice.getCurrency());
-            }
-
-            secondaryPrice = priceRepository.save(secondaryPrice);
-
-            product.setSecondaryPrice(secondaryPrice);
-            productRepository.save(product);
-        }
     }
 }

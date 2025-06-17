@@ -2,6 +2,8 @@ package com.ims.common.entity.storage;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.ims.common.config.SectionStatus;
+import com.ims.common.entity.PriceEntity;
 import com.ims.common.entity.WarehouseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -19,6 +21,13 @@ public class SectionEntity {
     private String id;
 
     private String name;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "price_id", referencedColumnName = "id")
+    private PriceEntity price;
+
+    @Enumerated(EnumType.STRING)
+    private SectionStatus status;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "section", orphanRemoval = true)
     @JsonManagedReference

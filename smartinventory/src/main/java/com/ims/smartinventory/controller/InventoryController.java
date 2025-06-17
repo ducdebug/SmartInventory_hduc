@@ -4,7 +4,6 @@ import com.ims.common.config.UserRole;
 import com.ims.common.entity.UserEntity;
 import com.ims.common.entity.storage.SectionEntity;
 import com.ims.smartinventory.dto.Request.*;
-import com.ims.smartinventory.dto.Response.FinancialAnalyticsResponse;
 import com.ims.smartinventory.dto.Response.InventoryAnalyticsResponse;
 import com.ims.smartinventory.dto.Response.ProductResponse;
 import com.ims.smartinventory.dto.Response.ProductsByLotResponse;
@@ -130,38 +129,38 @@ public class InventoryController {
         productService.updateSecondaryPrices(request);
         return ResponseEntity.ok().build();
     }
-
-    @GetMapping("/financial-analytics")
-    public ResponseEntity<FinancialAnalyticsResponse> getFinancialAnalytics(@AuthenticationPrincipal UserEntity currentUser) {
-        if (currentUser == null || !UserRole.ADMIN.equals(currentUser.getRole())) {
-            return ResponseEntity.status(403).body(null);
-        }
-
-        FinancialAnalyticsResponse analytics = financialAnalyticsService.getFinancialAnalytics();
-        return ResponseEntity.ok(analytics);
-    }
-
-    @GetMapping("/top-suppliers")
-    public ResponseEntity<List<FinancialAnalyticsResponse.TopSupplier>> getTopSuppliers(
-            @RequestParam(defaultValue = "10") int limit,
-            @AuthenticationPrincipal UserEntity currentUser) {
-        if (currentUser == null || !UserRole.ADMIN.equals(currentUser.getRole())) {
-            return ResponseEntity.status(403).body(null);
-        }
-
-        List<FinancialAnalyticsResponse.TopSupplier> topSuppliers = financialAnalyticsService.getTopSuppliersByRevenue(limit);
-        return ResponseEntity.ok(topSuppliers);
-    }
-
-    @GetMapping("/top-buyers")
-    public ResponseEntity<List<FinancialAnalyticsResponse.TopBuyer>> getTopBuyers(
-            @RequestParam(defaultValue = "10") int limit,
-            @AuthenticationPrincipal UserEntity currentUser) {
-        if (currentUser == null || !UserRole.ADMIN.equals(currentUser.getRole())) {
-            return ResponseEntity.status(403).body(null);
-        }
-
-        List<FinancialAnalyticsResponse.TopBuyer> topBuyers = financialAnalyticsService.getTopBuyersBySpending(limit);
-        return ResponseEntity.ok(topBuyers);
-    }
+//
+//    @GetMapping("/financial-analytics")
+//    public ResponseEntity<FinancialAnalyticsResponse> getFinancialAnalytics(@AuthenticationPrincipal UserEntity currentUser) {
+//        if (currentUser == null || !UserRole.ADMIN.equals(currentUser.getRole())) {
+//            return ResponseEntity.status(403).body(null);
+//        }
+//
+//        FinancialAnalyticsResponse analytics = financialAnalyticsService.getFinancialAnalytics();
+//        return ResponseEntity.ok(analytics);
+//    }
+//
+//    @GetMapping("/top-suppliers")
+//    public ResponseEntity<List<FinancialAnalyticsResponse.TopSupplier>> getTopSuppliers(
+//            @RequestParam(defaultValue = "10") int limit,
+//            @AuthenticationPrincipal UserEntity currentUser) {
+//        if (currentUser == null || !UserRole.ADMIN.equals(currentUser.getRole())) {
+//            return ResponseEntity.status(403).body(null);
+//        }
+//
+//        List<FinancialAnalyticsResponse.TopSupplier> topSuppliers = financialAnalyticsService.getTopSuppliersByRevenue(limit);
+//        return ResponseEntity.ok(topSuppliers);
+//    }
+//
+//    @GetMapping("/top-buyers")
+//    public ResponseEntity<List<FinancialAnalyticsResponse.TopBuyer>> getTopBuyers(
+//            @RequestParam(defaultValue = "10") int limit,
+//            @AuthenticationPrincipal UserEntity currentUser) {
+//        if (currentUser == null || !UserRole.ADMIN.equals(currentUser.getRole())) {
+//            return ResponseEntity.status(403).body(null);
+//        }
+//
+//        List<FinancialAnalyticsResponse.TopBuyer> topBuyers = financialAnalyticsService.getTopBuyersBySpending(limit);
+//        return ResponseEntity.ok(topBuyers);
+//    }
 }

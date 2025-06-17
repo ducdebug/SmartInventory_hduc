@@ -37,21 +37,16 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        // WebSocket endpoints (public)
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/ws/**").permitAll()
                         .requestMatchers("/app/**").permitAll()
                         .requestMatchers("/topic/**").permitAll()
                         .requestMatchers("/user/**").permitAll()
-
-                        // Health and monitoring (public)
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/actuator/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/chat/health").permitAll()
                         .requestMatchers("/api/chat/health").permitAll()
-
-                        // Chat REST API endpoints (require authentication)
                         .requestMatchers("/api/chat/**").authenticated()
                         .requestMatchers("/chat/**").authenticated()
 

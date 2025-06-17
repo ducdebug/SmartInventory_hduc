@@ -29,6 +29,9 @@ public class UserEntity implements UserDetails {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    private String name;
+    private String email;
+    private String company;
     private boolean enabled;
     private boolean deleted;
 

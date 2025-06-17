@@ -1,7 +1,31 @@
 import apiClient from '../utils/apiClient';
 import { SlotInfo, ShelfInfo, ProductType, StorageStrategy } from '../types/inventory';
 
+interface PriceCalculationRequest {
+  slotCount: number;
+  storageConditions: string[];
+}
+
+interface PriceCalculationResponse {
+  basePrice: number;
+  finalPrice: number;
+  multiplier: number;
+  currency: string;
+  slotCount: number;
+  breakdown: string;
+}
+
 const inventoryService = {
+  calculatePrice: async (request: PriceCalculationRequest): Promise<PriceCalculationResponse> => {
+    try {
+      const response = await apiClient.post('/api/price/calculate', request);
+      return response.data;
+    } catch (error) {
+      console.error('Price calculation error:', error);
+      throw error;
+    }
+  },
+
   getSectionInfo: async () => {
     try {
       const response = await apiClient.get('/warehouse/sections/info');
@@ -240,6 +264,7 @@ const inventoryService = {
     name: string;
     y_slot: number;
     shelf_height?: number;
+    calculatedPrice: number;
     storageConditions: {
       conditionType: string;
       minValue?: number;

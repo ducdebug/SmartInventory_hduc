@@ -1,5 +1,8 @@
 package com.ims.smartinventory.service.impl;
 
+import com.ims.common.config.SectionStatus;
+import com.ims.common.config.TransactionType;
+import com.ims.common.entity.PriceEntity;
 import com.ims.common.entity.WarehouseEntity;
 import com.ims.common.entity.storage.*;
 import com.ims.smartinventory.dto.Request.SectionRequestDto;
@@ -8,6 +11,7 @@ import com.ims.smartinventory.dto.Response.SlotInfo;
 import com.ims.smartinventory.repository.SectionRepository;
 import com.ims.smartinventory.repository.WarehouseRepository;
 import com.ims.smartinventory.service.SectionService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class SectionServiceImpl implements SectionService {
     private final SectionRepository sectionRepository;
@@ -82,6 +87,18 @@ public class SectionServiceImpl implements SectionService {
                     return newCond;
                 }).toList();
         section.setStorageConditions(storageConditions);
+
+        section.setStatus(SectionStatus.ACTIVE);
+
+        // Use the calculated price from the request instead of calculating it internally
+        PriceEntity priceEntity = new PriceEntity();
+        priceEntity.setValue(sectionRequest.getCalculatedPrice());
+        priceEntity.setCurrency("USD");
+        priceEntity.setTransactionType(TransactionType.MAINTENANCE);
+        section.setPrice(priceEntity);
+        
+        log.info("Section created with price: ${} USD from API calculation", 
+                sectionRequest.getCalculatedPrice());
 
         if (sectionRequest.getShelf_height() > 0) {
             section.setNumShelves(sectionRequest.getY_slot());

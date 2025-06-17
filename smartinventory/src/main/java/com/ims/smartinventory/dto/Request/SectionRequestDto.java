@@ -13,6 +13,7 @@ public class SectionRequestDto {
     private int y_slot;
     private int shelf_height;
     private List<StorageConditionDto> storageConditions;
+    private double calculatedPrice; // Price from the calculation API
 
     public int getRequiredSlot() {
         return 6 * y_slot;
