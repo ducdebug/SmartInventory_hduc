@@ -46,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/auth/test-auth").authenticated()
                         .requestMatchers(HttpMethod.GET, "/auth/user/**").authenticated()
                         .requestMatchers("/user/profile/**").authenticated()
+                        .requestMatchers("/api/temporary-users/**").authenticated()
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
                         .anyRequest().permitAll()
                 )

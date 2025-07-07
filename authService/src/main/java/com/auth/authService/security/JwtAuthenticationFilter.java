@@ -25,7 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
     private final List<String> PUBLIC_PATHS = Arrays.asList(
             "/auth/login",
-            "/auth/register", 
+            "/auth/register",
             "/auth/register-with-image",
             "/login",
             "/register",
@@ -66,14 +66,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             userId = jwtUtil.extractUserId(jwt);
-            System.out.println("JWT Debug - Extracted userId: " + userId + " for request: " + request.getRequestURI());
         } catch (ExpiredJwtException e) {
-            System.out.println("Token has expired: " + e.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Token has expired");
             return;
         } catch (Exception e) {
-            System.out.println("Invalid token: " + e.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Invalid token");
             return;
@@ -83,9 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 UserEntity user = userRepository.findById(userId)
                         .orElseThrow(() -> new RuntimeException("User not found"));
-                
-                System.out.println("JWT Debug - Found user: " + user.getUsername() + " with ID: " + user.getId());
-                
+
                 if (!jwtUtil.validateToken(jwt, user.getId())) {
                     System.out.println("JWT Debug - Token validation failed for user: " + user.getId());
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -98,10 +93,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
-                System.out.println("JWT Debug - Successfully authenticated user: " + user.getId() + " for request: " + request.getRequestURI());
                 filterChain.doFilter(request, response);
             } catch (Exception e) {
-                System.err.println("Error authenticating user: " + e.getMessage());
                 e.printStackTrace();
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("Authentication error: " + e.getMessage());

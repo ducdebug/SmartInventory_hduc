@@ -1,6 +1,8 @@
 package com.ims.smartinventory.service;
 
 import com.ims.common.entity.UserEntity;
+import com.ims.smartinventory.dto.Request.CreateTemporaryUserRequest;
+import com.ims.smartinventory.dto.Response.TemporaryUserResponse;
 
 import java.util.List;
 
@@ -14,4 +16,6 @@ public interface UserManagementService {
     UserEntity deleteUser(String userId);
 
     UserEntity restoreUser(String userId);
+    
+    TemporaryUserResponse createTemporaryUser(CreateTemporaryUserRequest request, String supplierId);
 }

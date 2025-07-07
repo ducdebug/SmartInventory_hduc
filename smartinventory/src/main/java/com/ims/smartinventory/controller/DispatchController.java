@@ -31,8 +31,8 @@ public class DispatchController {
             return ResponseEntity.status(401).build();
         }
 
-        if (!"BUYER".equals(currentUser.getRole().name())) {
-            System.out.println("DispatchController - User does not have BUYER role: " + currentUser.getRole().name());
+        if (!"SUPPLIER".equals(currentUser.getRole().name())) {
+            System.out.println("DispatchController - User does not have SUPPLIER role: " + currentUser.getRole().name());
             return ResponseEntity.status(403).build();
         }
 
@@ -52,8 +52,10 @@ public class DispatchController {
         DispatchDetailResponse dispatch;
         if ("ADMIN".equals(currentUser.getRole().name())) {
             dispatch = dispatchService.getDispatchDetailsAdmin(dispatchId);
-        } else {
+        } else if ("BUYER".equals(currentUser.getRole().name()) || "SUPPLIER".equals(currentUser.getRole().name())) {
             dispatch = dispatchService.getDispatchDetails(dispatchId, currentUser.getId());
+        } else {
+            return ResponseEntity.status(403).build();
         }
 
         if (dispatch == null) {

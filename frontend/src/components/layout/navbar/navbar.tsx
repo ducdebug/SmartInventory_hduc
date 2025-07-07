@@ -23,8 +23,14 @@ const Navbar: React.FC = () => {
     return profileImageUrl || (user?.img_url ? user.img_url : null);
   }, [profileImageUrl, user, isAuthenticated]);
 
-  useEffect(() => {
-  }, [user, profileImageUrl, isAuthenticated]);
+  const getHomeLink = () => {
+    if (user?.role === 'ADMIN') {
+      return '/';
+    } else if (user?.role === 'SUPPLIER' || user?.role === 'TEMPORARY') {
+      return '/buyer-dashboard';
+    }
+    return '/history'; // fallback for any other authenticated user
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -69,7 +75,7 @@ const Navbar: React.FC = () => {
     <nav className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`} aria-label="Main Navigation">
       <div className="navbar-container">
         <div className="navbar-left">
-          <Link to="/" className="navbar-brand">
+          <Link to={getHomeLink()} className="navbar-brand">
             <img src="/logo.png" alt="Smart Warehouse Logo" className="logo-icon logo-white" width="28" height="28" />
             <span className="brand-text">Smart Warehouse</span>
           </Link>
@@ -87,12 +93,14 @@ const Navbar: React.FC = () => {
         </div>
 
         <div className={`navbar-links ${isMenuOpen ? 'open' : ''}`}>
-          <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9.55228 21 10 20.5523 10 20V16C10 15.4477 10.4477 15 11 15H13C13.5523 15 14 15.4477 14 16V20C14 20.5523 14.4477 21 15 21M9 21H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>Home</span>
-          </Link>
+          {user?.role === 'ADMIN' && (
+            <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9.55228 21 10 20.5523 10 20V16C10 15.4477 10.4477 15 11 15H13C13.5523 15 14 15.4477 14 16V20C14 20.5523 14.4477 21 15 21M9 21H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>Dashboard</span>
+            </Link>
+          )}
 
           {user?.role === 'ADMIN' && (
             <Link to="/messaging" className={location.pathname === '/messaging' ? 'active' : ''}>
@@ -112,32 +120,44 @@ const Navbar: React.FC = () => {
             </Link>
           )}
 
-          {user?.role === 'BUYER' && (
+          {user?.role === 'SUPPLIER' && (
+            <>
+              <Link to="/buyer-dashboard" className={location.pathname === '/buyer-dashboard' ? 'active' : ''}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 3H5L5.4 5M7 13H17L21 5H5.4M7 13L5.4 5M7 13L4.7 15.3C4.3 15.7 4.6 16.5 5.1 16.5H17M17 13V17C17 18.1046 17.8954 19 19 19C20.1046 19 21 18.1046 21 17C21 15.8954 20.1046 15 19 15C17.8954 15 17 15.8954 17 17ZM9 19C10.1046 19 11 18.1046 11 17C11 15.8954 10.1046 15 9 15C7.89543 15 7 15.8954 7 17C7 18.1046 7.89543 19 9 19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Product Catalog</span>
+              </Link>
+              <Link to="/temporary-users" className={location.pathname === '/temporary-users' ? 'active' : ''}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="8.5" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M20 8V14M23 11H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Temporary Users</span>
+              </Link>
+              <Link to="/history" className={location.pathname === '/history' ? 'active' : ''}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                  <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Request History</span>
+              </Link>
+              <button onClick={() => setIsBatchModalOpen(true)} className="new-batch-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>New Batch</span>
+              </button>
+            </>
+          )}
+
+          {user?.role === 'TEMPORARY' && (
             <Link to="/buyer-dashboard" className={location.pathname === '/buyer-dashboard' ? 'active' : ''}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 3H5L5.4 5M7 13H17L21 5H5.4M7 13L5.4 5M7 13L4.7 15.3C4.3 15.7 4.6 16.5 5.1 16.5H17M17 13V17C17 18.1046 17.8954 19 19 19C20.1046 19 21 18.1046 21 17C21 15.8954 20.1046 15 19 15C17.8954 15 17 15.8954 17 17ZM9 19C10.1046 19 11 18.1046 11 17C11 15.8954 10.1046 15 9 15C7.89543 15 7 15.8954 7 17C7 18.1046 7.89543 19 9 19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span>Product Catalog</span>
-            </Link>
-          )}
-
-          {user?.role === 'BUYER' && (
-            <Link to="/history" className={location.pathname === '/history' ? 'active' : ''}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>History</span>
-            </Link>
-          )}
-
-          {user?.role === 'BUYER' && (
-            <Link to="/retrieve" className={location.pathname === '/retrieve' ? 'active' : ''}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 19.1046 19 18V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M15 3L21 9M21 3L15 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Retrieve Product</span>
             </Link>
           )}
 
@@ -175,24 +195,7 @@ const Navbar: React.FC = () => {
             </>
           )}
 
-          {user?.role === 'SUPPLIER' && (
-            <>
-              <Link to="/inventory-supplier" className={location.pathname === '/inventory-supplier' ? 'active' : ''}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>Inventory Management</span>
-              </Link>
-              <button onClick={() => setIsBatchModalOpen(true)} className="new-batch-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>New Batch</span>
-              </button>
-            </>
-          )}
+
         </div>
 
         <div className="navbar-right">

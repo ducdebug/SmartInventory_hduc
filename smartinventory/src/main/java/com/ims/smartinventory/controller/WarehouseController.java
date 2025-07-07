@@ -1,6 +1,7 @@
 package com.ims.smartinventory.controller;
 
 import com.ims.smartinventory.dto.Response.SectionInfoResponse;
+import com.ims.smartinventory.dto.Response.WarehouseRevenueResponse;
 import com.ims.smartinventory.service.WarehouseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,11 @@ public class WarehouseController {
     @GetMapping("/sections/info")
     public ResponseEntity<List<SectionInfoResponse>> getSection() {
         return ResponseEntity.ok(warehouseService.getAllSection());
+    }
+
+    @GetMapping("/revenue")
+    public ResponseEntity<WarehouseRevenueResponse> getWarehouseRevenue() {
+        return ResponseEntity.ok(warehouseService.calculateWarehouseRevenue());
     }
 
 }

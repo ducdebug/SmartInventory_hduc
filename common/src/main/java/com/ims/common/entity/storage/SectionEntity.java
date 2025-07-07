@@ -8,7 +8,9 @@ import com.ims.common.entity.WarehouseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -29,6 +31,10 @@ public class SectionEntity {
     @Enumerated(EnumType.STRING)
     private SectionStatus status;
 
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "section", orphanRemoval = true)
     @JsonManagedReference
     private List<ShelfEntity> shelves;

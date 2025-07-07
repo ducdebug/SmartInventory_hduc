@@ -347,71 +347,6 @@
   letter-spacing: 0.025em;
 }
 
-.status-pending-withdrawal {
-  background-color: #f97316;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-}
-
-.status-withdrawn {
-  background-color: #6b7280;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-}
-
-/* Action buttons */
-.accept-withdrawal-button {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: #10b981;
-  color: white;
-  border: 1px solid #059669;
-}
-
-.accept-withdrawal-button:hover {
-  background-color: #059669;
-}
-
-.accept-withdrawal-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.reject-withdrawal-button {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: #ef4444;
-  color: white;
-  border: 1px solid #dc2626;
-}
-
-.reject-withdrawal-button:hover {
-  background-color: #dc2626;
-}
-
-.reject-withdrawal-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .accept-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -445,9 +380,7 @@
   }
 
   .view-details-button, 
-  .accept-button, 
-  .accept-withdrawal-button, 
-  .reject-withdrawal-button {
+  .accept-button {
     width: 100%;
   }
 

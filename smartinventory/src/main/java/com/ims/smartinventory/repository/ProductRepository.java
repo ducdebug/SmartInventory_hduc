@@ -22,4 +22,10 @@ public interface ProductRepository extends JpaRepository<BaseProductEntity, Stri
 
     List<BaseProductEntity> findByLotId(String lotId);
 
+    List<BaseProductEntity> findByLotIdAndDispatchIsNull(String lotId);
+
+    List<BaseProductEntity> findByLotUserId(String userId);
+
+    List<BaseProductEntity> findByLotUserIdAndDispatchIsNull(String userId);
+
 }

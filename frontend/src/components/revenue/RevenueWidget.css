@@ -1,0 +1,193 @@
+.revenue-widget {
+  width: 100%;
+}
+
+.revenue-header-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+}
+
+.revenue-header-card .ant-card-body {
+  padding: 32px;
+}
+
+.revenue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.revenue-main {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.revenue-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  font-size: 32px;
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.revenue-content h2 {
+  color: white !important;
+  font-size: 3rem !important;
+  font-weight: 700 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: slideInUp 0.6s ease-out;
+}
+
+.revenue-stats {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.revenue-stats .ant-statistic {
+  text-align: center;
+}
+
+.revenue-stats .ant-statistic-title {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 14px !important;
+  margin-bottom: 8px !important;
+}
+
+.revenue-stats .ant-statistic-content {
+  color: white !important;
+}
+
+.revenue-stats .anticon {
+  color: rgba(255, 255, 255, 0.9);
+  margin-right: 8px;
+}
+
+.revenue-table .ant-table {
+  font-size: 13px;
+}
+
+.revenue-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  border-bottom: 2px solid #f0f0f0;
+  font-weight: 600;
+  font-size: 12px;
+  color: #262626;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.revenue-table .ant-table-tbody > tr > td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.revenue-table .ant-table-tbody > tr:hover > td {
+  background: #fafafa;
+}
+
+.revenue-table .ant-table-tbody > tr:nth-child(even) {
+  background: #ffffff;
+}
+
+.revenue-table .ant-table-tbody > tr:nth-child(odd) {
+  background: #fafafa;
+}
+
+/* Card styling improvements */
+.revenue-widget .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.revenue-widget .ant-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.revenue-widget .ant-card-head {
+  border-bottom: 2px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+.revenue-widget .ant-card-head-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #262626;
+}
+
+.revenue-widget .ant-card-body {
+  padding: 24px;
+}
+
+/* Animation keyframes */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .revenue-header {
+    flex-direction: column;
+    gap: 24px;
+    text-align: center;
+  }
+
+  .revenue-main {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .revenue-stats {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .revenue-content h2 {
+    font-size: 2rem !important;
+  }
+
+  .revenue-header-card .ant-card-body {
+    padding: 24px;
+  }
+
+  .revenue-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 576px) {
+  .revenue-table .ant-table-thead > tr > th,
+  .revenue-table .ant-table-tbody > tr > td {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .revenue-widget .ant-card-body {
+    padding: 16px;
+  }
+
+  .revenue-widget .ant-card-head {
+    padding: 12px 16px;
+  }
+}

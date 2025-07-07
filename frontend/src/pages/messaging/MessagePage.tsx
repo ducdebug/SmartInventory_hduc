@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Button, Input, List, Avatar, Badge, Spin, Tooltip, Typography, Layout, Divider } from 'antd';
 import { SendOutlined, UserOutlined } from '@ant-design/icons';
 import chatService, { Message, Conversation } from '../../services/chatService';
@@ -27,7 +27,9 @@ const MessagePage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [sendingMessage, setSendingMessage] = useState<boolean>(false);
   const [userCache, setUserCache] = useState<Record<string, UserInfo>>({});
+  const [shouldAutoScroll, setShouldAutoScroll] = useState<boolean>(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const userId = getUserId();
 
   const fetchUserInfo = async (userId: string): Promise<UserInfo | null> => {
@@ -37,21 +39,20 @@ const MessagePage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('authToken');
-      const currentUserId = localStorage.getItem('userId');
-      
+
       if (!token) {
         console.error('No auth token available');
         return null;
       }
-      
+
       const response = await authApiClient.get(`/auth/user/${userId}`);
       const userInfo: UserInfo = response.data;
-      
+
       setUserCache(prev => ({
         ...prev,
         [userId]: userInfo
       }));
-      
+
       return userInfo;
     } catch (error: any) {
       console.error('Error fetching user info for ID:', userId, {
@@ -63,44 +64,75 @@ const MessagePage: React.FC = () => {
         message: error.message,
         headers: error.config?.headers
       });
-      
-      // If it's a 403, it might be a permission issue
+
       if (error.response?.status === 403) {
         console.error('403 Forbidden - User may not have permission to access this user info');
       }
-      
+
       return null;
     }
   };
 
   // Get display name for a user ID
-  const getDisplayName = (userId: string): string => {
+  const getDisplayName = useCallback((userId: string): string => {
     const userInfo = userCache[userId];
     if (userInfo) {
       return userInfo.username || userId;
     }
-    return userId; // Fallback to ID if username not available
-  };
+    return userId;
+  }, [userCache]);
+
+  // Check if user is at bottom of messages container
+  const isScrolledToBottom = useCallback(() => {
+    if (!messagesContainerRef.current) return true;
+
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    return scrollTop + clientHeight >= scrollHeight - 50; // 50px threshold
+  }, []);
+
+  // Enhanced scroll to bottom with better control - only scroll the messages container
+  const scrollToBottom = useCallback((force: boolean = false) => {
+    if (!messagesEndRef.current || !messagesContainerRef.current) return;
+
+    // Only auto-scroll if user was already at bottom or if it's forced
+    if (force || shouldAutoScroll) {
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        const container = messagesContainerRef.current;
+        if (container) {
+          // Scroll to the very bottom
+          container.scrollTop = container.scrollHeight;
+        }
+      });
+    }
+  }, [shouldAutoScroll]);
+
+  // Handle scroll events to determine if we should auto-scroll
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    // Prevent scroll event from bubbling up to parent elements
+    e.stopPropagation();
+    e.preventDefault();
+    setShouldAutoScroll(isScrolledToBottom());
+  }, [isScrolledToBottom]);
 
   // Enhanced conversation loading with username fetching
-  const loadConversationsWithUsernames = async () => {
+  const loadConversationsWithUsernames = useCallback(async () => {
     try {
       const data = await chatService.getConversationSummaries();
 
-      
       // Fetch user info for all conversation participants
       const userPromises = data.map(conv => fetchUserInfo(conv.userId));
       await Promise.all(userPromises);
-      
+
       // Update conversations with usernames
       const enhancedConversations = data.map(conv => ({
         ...conv,
         userName: getDisplayName(conv.userId)
       }));
-      
+
       setConversations(enhancedConversations);
       setLoading(false);
-      
+
       if (enhancedConversations.length > 0 && !selectedContact) {
         setSelectedContact(enhancedConversations[0].userId);
         loadMessages(enhancedConversations[0].userId);
@@ -109,12 +141,12 @@ const MessagePage: React.FC = () => {
       console.error('Error loading conversations:', error);
       setLoading(false);
     }
-  };
-  
+  }, [getDisplayName, selectedContact]);
+
   useEffect(() => {
     if (user && userId) {
       setLoading(true);
-      
+
       chatService.connect(userId)
         .then(() => {
           chatService.onNewMessage(handleNewMessage);
@@ -124,100 +156,134 @@ const MessagePage: React.FC = () => {
           console.error('Failed to connect to chat service:', error);
           loadConversationsWithUsernames();
         });
-      
+
       return () => {
         chatService.disconnect();
       };
     }
-  }, [user, userId]);
-  
-  const loadConversations = () => {
-    loadConversationsWithUsernames();
-  };
-  
-  const loadMessages = async (contactId: string) => {
+  }, [user, userId, loadConversationsWithUsernames]);
+
+  // Effect to scroll to bottom when messages are updated
+  useEffect(() => {
+    if (messages.length > 0 && messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+      }, 50);
+    }
+  }, [messages.length]);
+
+  const loadMessages = useCallback(async (contactId: string) => {
     if (user && userId) {
       setLoading(true);
       try {
         const data = await chatService.getConversation(contactId);
-        
+
         // Fetch user info for message senders/receivers if not already cached
         const userIds = new Set<string>();
         data.forEach(message => {
           if (message.senderId) userIds.add(message.senderId);
           if (message.receiverId) userIds.add(message.receiverId);
         });
-        
-        // Fetch user info for any uncached users
+
         const uncachedUsers = Array.from(userIds).filter(id => !userCache[id]);
         if (uncachedUsers.length > 0) {
           const userPromises = uncachedUsers.map(id => fetchUserInfo(id));
           await Promise.all(userPromises);
         }
-        
-        // Enhance messages with usernames
+
         const enhancedMessages = data.map(message => ({
           ...message,
           senderName: getDisplayName(message.senderId),
           receiverName: getDisplayName(message.receiverId)
         }));
-        
+
         setMessages(enhancedMessages);
         setLoading(false);
-        scrollToBottom();
+        setShouldAutoScroll(true);
+        // Scroll to bottom when loading messages with a longer delay to ensure DOM is ready
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        }, 100);
       } catch (error) {
         console.error('Error loading messages:', error);
         setLoading(false);
       }
     }
-  };
-  
-  const handleNewMessage = async (message: Message) => {
-    // Fetch sender info if not cached
+  }, [user, userId, userCache, getDisplayName, scrollToBottom]);
+
+  const handleNewMessage = useCallback(async (message: Message) => {
     if (message.senderId && !userCache[message.senderId]) {
       await fetchUserInfo(message.senderId);
     }
-    
-    // Enhance message with username
+
     const enhancedMessage = {
       ...message,
       senderName: getDisplayName(message.senderId),
       receiverName: getDisplayName(message.receiverId)
     };
-    
-    if (selectedContact && userId && 
-        ((message.senderId === selectedContact && message.receiverId === userId) || 
+
+    if (selectedContact && userId &&
+        ((message.senderId === selectedContact && message.receiverId === userId) ||
          (message.senderId === userId && message.receiverId === selectedContact))) {
-      setMessages(prev => [...prev, enhancedMessage]);
-      scrollToBottom();
+      
+      setMessages(prev => {
+        const newMessages = [...prev, enhancedMessage];
+        
+        // Always scroll to bottom for new messages with a slight delay
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        }, 50);
+        
+        return newMessages;
+      });
     }
-    
+
     loadConversationsWithUsernames();
-  };
-  
-  const selectConversation = (contactId: string) => {
+  }, [userCache, getDisplayName, selectedContact, userId, loadConversationsWithUsernames]);
+
+  const selectConversation = useCallback((contactId: string, e?: React.MouseEvent<HTMLElement>) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setSelectedContact(contactId);
     loadMessages(contactId);
-  };
-  
-  const sendMessage = () => {
+  }, [loadMessages]);
+
+  const sendMessage = useCallback(() => {
     if (!messageInput.trim() || !selectedContact || !userId) {
       return;
     }
-    
+
     const newMessage: Message = {
       senderId: userId,
       receiverId: selectedContact,
       content: messageInput.trim(),
       timestamp: new Date().toISOString()
     };
-    
+
     setSendingMessage(true);
     chatService.sendMessage(newMessage)
       .then(sentMessage => {
-        setMessages(prev => [...prev, sentMessage]);
+        setMessages(prev => {
+          const newMessages = [...prev, sentMessage];
+          
+          // Immediately scroll to bottom for sent messages
+          setTimeout(() => {
+            if (messagesContainerRef.current) {
+              messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+            }
+          }, 10);
+          
+          return newMessages;
+        });
         setMessageInput('');
-        scrollToBottom();
       })
       .catch(error => {
         console.error('Error sending message:', error);
@@ -225,33 +291,27 @@ const MessagePage: React.FC = () => {
       .finally(() => {
         setSendingMessage(false);
       });
-  };
-  
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
-  
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  }, [messageInput, selectedContact, userId]);
+
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
-  };
-  
-  const formatTimestamp = (timestamp: string | undefined) => {
+  }, [sendMessage]);
+
+  const formatTimestamp = useCallback((timestamp: string | undefined) => {
     if (!timestamp) return '';
-    
+
     const date = new Date(timestamp);
     const now = new Date();
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     if (date.toDateString() === now.toDateString()) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
-    
+
     if (date.toDateString() === yesterday.toDateString()) {
       return `Yesterday, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
@@ -259,10 +319,10 @@ const MessagePage: React.FC = () => {
     if (date.getFullYear() === now.getFullYear()) {
       return date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
-    
+
     return date.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric' });
-  };
-  
+  }, []);
+
   return (
     <Layout className="messaging-layout">
       <Sider
@@ -275,10 +335,10 @@ const MessagePage: React.FC = () => {
         <div className="conversations-header">
           <Title level={4}>Conversations</Title>
         </div>
-        
+
         {loading && conversations.length === 0 ? (
           <div className="loading-container">
-            <Spin />
+            <Spin size="large" />
           </div>
         ) : (
           <List
@@ -287,12 +347,12 @@ const MessagePage: React.FC = () => {
             renderItem={(conversation: Conversation) => (
               <List.Item
                 className={`conversation-item ${selectedContact === conversation.userId ? 'selected' : ''}`}
-                onClick={() => selectConversation(conversation.userId)}
+                onClick={(e: React.MouseEvent<HTMLElement>) => selectConversation(conversation.userId, e)}
               >
                 <List.Item.Meta
                   avatar={
                     <Badge count={conversation.unreadCount} size="small">
-                      <Avatar 
+                      <Avatar
                         icon={<UserOutlined />}
                         src={userCache[conversation.userId]?.img_url}
                       />
@@ -317,26 +377,31 @@ const MessagePage: React.FC = () => {
           />
         )}
       </Sider>
-      
+
       <Content className="messages-content">
         {selectedContact ? (
           <>
             <div className="messages-header">
-              <Avatar 
+              <Avatar
                 icon={<UserOutlined />}
                 src={userCache[selectedContact]?.img_url}
+                className="contact-avatar"
               />
               <Title level={5} className="selected-contact-name">
                 {getDisplayName(selectedContact)}
               </Title>
             </div>
-            
+
             <Divider className="messages-divider" />
-            
-            <div className="messages-container">
+
+            <div
+              className="messages-container"
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+            >
               {loading ? (
                 <div className="loading-container">
-                  <Spin />
+                  <Spin size="large" />
                 </div>
               ) : messages.length === 0 ? (
                 <div className="no-messages">
@@ -368,7 +433,7 @@ const MessagePage: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="message-input-container">
               <TextArea
                 value={messageInput}
@@ -377,6 +442,7 @@ const MessagePage: React.FC = () => {
                 placeholder="Type a message..."
                 autoSize={{ minRows: 1, maxRows: 4 }}
                 disabled={sendingMessage}
+                className="message-input"
               />
               <Button
                 type="primary"
@@ -384,6 +450,7 @@ const MessagePage: React.FC = () => {
                 onClick={sendMessage}
                 loading={sendingMessage}
                 disabled={!messageInput.trim()}
+                className="send-button"
               >
                 Send
               </Button>

@@ -3,23 +3,20 @@ import { useAuth } from '../../hooks/useAuth';
 import { Link } from 'react-router-dom';
 import './home.css';
 import ProductTypeChart from '../../components/inventory/ProductTypeChart';
-import TopSuppliersCards from '../../components/financial/TopSuppliersCards';
-import TopBuyersCards from '../../components/financial/TopBuyersCards';
+import SectionsWidget from '../../components/sections/SectionsWidget';
+import RevenueWidget from '../../components/revenue/RevenueWidget';
 import Magnet from '../../components/advancedanimation/Magnet';
 import inventoryService from '../../services/inventoryService';
-import { Card, Row, Col, Statistic, Button, Spin, Alert, Divider } from 'antd';
-import { 
-  AppstoreOutlined, 
-  ShoppingOutlined, 
-  ClockCircleOutlined, 
+import { Card, Row, Col, Statistic, Button, Spin, Alert } from 'antd';
+import {
+  AppstoreOutlined,
+  ShoppingOutlined,
+  ClockCircleOutlined,
   InfoCircleOutlined,
   CalendarOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
   BarChartOutlined,
   AuditOutlined,
-  ShopOutlined,
-  DashboardOutlined
+  ShopOutlined
 } from '@ant-design/icons';
 
 interface SummaryStatistics {
@@ -27,7 +24,6 @@ interface SummaryStatistics {
   overallUtilization: number;
   overallTurnoverRate: number;
   expiringProductsCount: number;
-  monthlyGrowthRate: number;
 }
 
 const Home: React.FC = () => {
@@ -65,9 +61,9 @@ const Home: React.FC = () => {
           </h2>
           <div className="action-buttons">
             <Link to="/sections">
-              <Button 
-                type="primary" 
-                icon={<AppstoreOutlined />} 
+              <Button
+                type="primary"
+                icon={<AppstoreOutlined />}
                 size="large"
                 className="action-button"
               >
@@ -75,9 +71,9 @@ const Home: React.FC = () => {
               </Button>
             </Link>
             <Link to="/user-management">
-              <Button 
-                type="primary" 
-                icon={<AuditOutlined />} 
+              <Button
+                type="primary"
+                icon={<AuditOutlined />}
                 size="large"
                 className="action-button"
               >
@@ -85,9 +81,9 @@ const Home: React.FC = () => {
               </Button>
             </Link>
             <Link to="/lot-history">
-              <Button 
-                type="primary" 
-                icon={<BarChartOutlined />} 
+              <Button
+                type="primary"
+                icon={<BarChartOutlined />}
                 size="large"
                 className="action-button"
               >
@@ -95,43 +91,13 @@ const Home: React.FC = () => {
               </Button>
             </Link>
             <Link to="/export-management">
-              <Button 
-                type="primary" 
-                icon={<ShopOutlined />} 
+              <Button
+                type="primary"
+                icon={<ShopOutlined />}
                 size="large"
                 className="action-button"
               >
                 Export Management
-              </Button>
-            </Link>
-          </div>
-        </div>
-      );
-    } else if (user?.role === 'BUYER') {
-      return (
-        <div className="role-actions">
-          <h2>
-            <InfoCircleOutlined /> Buyer Quick Actions
-          </h2>
-          <div className="action-buttons">
-            <Link to="/history">
-              <Button 
-                type="primary" 
-                icon={<ClockCircleOutlined />} 
-                size="large"
-                className="action-button"
-              >
-                View History
-              </Button>
-            </Link>
-            <Link to="/retrieve">
-              <Button 
-                type="primary" 
-                icon={<ShoppingOutlined />} 
-                size="large"
-                className="action-button"
-              >
-                Retrieve Products
               </Button>
             </Link>
           </div>
@@ -145,18 +111,18 @@ const Home: React.FC = () => {
           </h2>
           <div className="action-buttons">
             <Link to="/inventory-supplier">
-              <Button 
-                type="primary" 
-                icon={<AppstoreOutlined />} 
+              <Button
+                type="primary"
+                icon={<AppstoreOutlined />}
                 size="large"
                 className="action-button"
               >
                 Manage Inventory
               </Button>
             </Link>
-            <Button 
-              type="primary" 
-              icon={<ShopOutlined />} 
+            <Button
+              type="primary"
+              icon={<ShopOutlined />}
               size="large"
               className="action-button"
               onClick={() => document.dispatchEvent(new CustomEvent('open-batch-modal'))}
@@ -190,11 +156,11 @@ const Home: React.FC = () => {
             <p>Loading dashboard data...</p>
           </div>
         ) : error ? (
-          <Alert 
-            message="Error Loading Data" 
-            description={error} 
-            type="error" 
-            showIcon 
+          <Alert
+            message="Error Loading Data"
+            description={error}
+            type="error"
+            showIcon
             style={{ marginBottom: '20px' }}
           />
         ) : (
@@ -203,7 +169,7 @@ const Home: React.FC = () => {
               <Row gutter={[16, 16]} className="stats-row">
                 <Col xs={24} sm={12} md={8} lg={6}>
                   <Card className="stat-card">
-                    <Statistic 
+                    <Statistic
                       title="Total Products"
                       value={summaryStats.totalProducts}
                       prefix={<AppstoreOutlined />}
@@ -213,21 +179,21 @@ const Home: React.FC = () => {
                 </Col>
                 <Col xs={24} sm={12} md={8} lg={6}>
                   <Card className="stat-card">
-                    <Statistic 
+                    <Statistic
                       title="Storage Utilization"
                       value={summaryStats.overallUtilization * 100}
                       precision={1}
                       suffix="%"
                       prefix={<ShopOutlined />}
-                      valueStyle={summaryStats.overallUtilization > 0.8 
-                        ? { color: '#cf1322' } 
+                      valueStyle={summaryStats.overallUtilization > 0.8
+                        ? { color: '#cf1322' }
                         : { color: '#3f8600' }}
                     />
                   </Card>
                 </Col>
                 <Col xs={24} sm={12} md={8} lg={6}>
                   <Card className="stat-card">
-                    <Statistic 
+                    <Statistic
                       title="Turnover Rate"
                       value={summaryStats.overallTurnoverRate}
                       precision={2}
@@ -238,73 +204,50 @@ const Home: React.FC = () => {
                 </Col>
                 <Col xs={24} sm={12} md={8} lg={6}>
                   <Card className="stat-card alert-card">
-                    <Statistic 
+                    <Statistic
                       title="Products Expiring Soon"
                       value={summaryStats.expiringProductsCount}
                       prefix={<ClockCircleOutlined />}
-                      valueStyle={summaryStats.expiringProductsCount > 10 
-                        ? { color: '#cf1322' } 
+                      valueStyle={summaryStats.expiringProductsCount > 10
+                        ? { color: '#cf1322' }
                         : { color: '#faad14' }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={24} sm={12} md={8} lg={6}>
-                  <Card className="stat-card">
-                    <Statistic 
-                      title="Monthly Growth Rate"
-                      value={summaryStats.monthlyGrowthRate * 100}
-                      precision={1}
-                      suffix="%"
-                      prefix={summaryStats.monthlyGrowthRate >= 0 
-                        ? <ArrowUpOutlined /> 
-                        : <ArrowDownOutlined />}
-                      valueStyle={summaryStats.monthlyGrowthRate >= 0 
-                        ? { color: '#3f8600' } 
-                        : { color: '#cf1322' }}
                     />
                   </Card>
                 </Col>
               </Row>
             )}
 
-            {/* Top Suppliers Cards - Show for Admin users */}
-            {isAdmin && (
-              <div className="financial-section">
-                <Divider orientation="left">
-                  <DashboardOutlined /> Top Suppliers by Revenue
-                </Divider>
-                <TopSuppliersCards />
-              </div>
-            )}
-
-            {/* Top Buyers Cards - Show for Admin users */}
-            {isAdmin && (
-              <div className="financial-section">
-                <Divider orientation="left">
-                  <ShoppingOutlined /> Top Buyers by Spending
-                </Divider>
-                <TopBuyersCards />
-              </div>
-            )}
-
             <div className="home-content">
+              {isAdmin && (
+                <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
+                  <Col xs={24}>
+                    <RevenueWidget />
+                  </Col>
+                </Row>
+              )}
+
               <Row gutter={[24, 24]}>
                 <Col xs={24} lg={12}>
-                  <Card 
-                    title={<span><CalendarOutlined /> Inventory Analytics</span>} 
+                  <Card
+                    title={<span><CalendarOutlined /> Inventory Analytics</span>}
                     className="overview-card"
                   >
                     <ProductTypeChart />
                   </Card>
                 </Col>
                 <Col xs={24} lg={12}>
-                  <Card 
-                    title={<span><InfoCircleOutlined /> Quick Access</span>} 
+                  <Card
+                    title={<span><InfoCircleOutlined /> Quick Access</span>}
                     className="actions-card"
                   >
                     {renderUserSpecificActions()}
                   </Card>
                 </Col>
+                {isAdmin && (
+                  <Col xs={24} lg={12}>
+                    <SectionsWidget />
+                  </Col>
+                )}
               </Row>
             </div>
           </>

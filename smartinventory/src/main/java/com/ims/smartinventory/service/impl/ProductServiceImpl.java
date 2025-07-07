@@ -15,7 +15,6 @@ import com.ims.common.entity.storage.StorageConditionEntity;
 import com.ims.smartinventory.dto.Request.ProductBatchRequestDto;
 import com.ims.smartinventory.dto.Request.ProductExportRequestDto;
 import com.ims.smartinventory.dto.Request.ProductGroupResponseDto;
-import com.ims.smartinventory.dto.Request.UpdateSecondaryPriceRequest;
 import com.ims.smartinventory.dto.Response.ProductResponse;
 import com.ims.smartinventory.dto.Response.ProductsByLotResponse;
 import com.ims.smartinventory.exception.NoSuitableSectionException;
@@ -36,30 +35,33 @@ public class ProductServiceImpl implements ProductService {
     private final SlotShelfRepository slotShelfRepository;
     private final SlotSectionRepository slotSectionRepository;
     private final SectionRepository sectionRepository;
-    private final PriceRepository priceRepository;
     private final LotItemRepository lotItemRepository;
     private final DispatchItemRepository dispatchItemRepository;
     private final DispatchRepository dispatchRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final NotificationProducerServiceImpl notificationProducerService;
+    private final PriceRepository priceRepository;
+    private final UserRepository userRepository;
 
     public ProductServiceImpl(LotRepository lotRepository, ProductRepository productRepository,
                               SlotShelfRepository slotShelfRepository, SlotSectionRepository slotSectionRepository,
-                              SectionRepository sectionRepository, PriceRepository priceRepository,
+                              SectionRepository sectionRepository,
                               LotItemRepository lotItemRepository, DispatchItemRepository dispatchItemRepository,
                               DispatchRepository dispatchRepository, InventoryTransactionRepository inventoryTransactionRepository,
-                              NotificationProducerServiceImpl notificationProducerService) {
+                              NotificationProducerServiceImpl notificationProducerService,
+                              PriceRepository priceRepository, UserRepository userRepository) {
         this.lotRepository = lotRepository;
         this.productRepository = productRepository;
         this.slotShelfRepository = slotShelfRepository;
         this.slotSectionRepository = slotSectionRepository;
         this.sectionRepository = sectionRepository;
-        this.priceRepository = priceRepository;
         this.lotItemRepository = lotItemRepository;
         this.dispatchItemRepository = dispatchItemRepository;
         this.dispatchRepository = dispatchRepository;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
         this.notificationProducerService = notificationProducerService;
+        this.priceRepository = priceRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional
@@ -70,6 +72,16 @@ public class ProductServiceImpl implements ProductService {
         lot.setUser(currentUser);
         lot.setStorageStrategy(batchRequest.getStorageStrategy());
         lot.setStatus(LotStatus.PENDING);
+
+        if (batchRequest.getCalculatedPrice() != null && batchRequest.getCalculatedPrice() > 0) {
+            PriceEntity priceEntity = new PriceEntity();
+            priceEntity.setValue(batchRequest.getCalculatedPrice());
+            priceEntity.setCurrency(batchRequest.getCurrency() != null ? batchRequest.getCurrency() : "USD");
+            priceEntity.setTransactionType(TransactionType.IMPORT);
+            priceEntity = priceRepository.save(priceEntity);
+            lot.setPrice(priceEntity);
+        }
+
         lot = lotRepository.save(lot);
 
         List<Map<String, Object>> productDetails = batchRequest.getProductDetails();
@@ -97,12 +109,6 @@ public class ProductServiceImpl implements ProductService {
                 throw new NoSuitableSectionException("No suitable section found for storage conditions. Please contact administrator to create appropriate sections.");
             }
 
-            PriceEntity price = new PriceEntity();
-            price.setValue(((Number) productData.getOrDefault("price", 0)).doubleValue());
-            price.setCurrency((String) productData.getOrDefault("currency", "VND"));
-            price.setTransactionType(TransactionType.IMPORT);
-            price = priceRepository.save(price);
-
             for (int i = 0; i < quantity; i++) {
                 BaseProductEntity product = createProduct(batchRequest, productData, onShelf, suitableSection);
                 product.setLot(lot);
@@ -112,7 +118,6 @@ public class ProductServiceImpl implements ProductService {
                 lotItem.setLot(lot);
                 lotItem.setProduct(product);
                 lotItem.setProductName(product.getName());
-                lotItem.setPrice(price);
                 lotItem.setQuantity(1);
                 lotItem.setImportDate(new Date());
                 lotItemRepository.save(lotItem);
@@ -122,10 +127,22 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductGroupResponseDto> getGroupedProducts() {
-        List<BaseProductEntity> all = productRepository.findAll();
+        List<BaseProductEntity> all = productRepository.findAll().stream()
+                .filter(product -> product.getDispatch() == null)
+                .toList();
+        return groupProducts(all);
+    }
+
+    @Override
+    public List<ProductGroupResponseDto> getGroupedProductsForSupplier(UserEntity supplier) {
+        List<BaseProductEntity> supplierProducts = productRepository.findByLotUserIdAndDispatchIsNull(supplier.getId());
+        return groupProducts(supplierProducts);
+    }
+
+    private List<ProductGroupResponseDto> groupProducts(List<BaseProductEntity> products) {
         Map<String, ProductGroupResponseDto> grouped = new LinkedHashMap<>();
 
-        for (BaseProductEntity product : all) {
+        for (BaseProductEntity product : products) {
             if (product.getSlotShelf() == null && product.getSlotSection() == null) continue;
 
             String key = generateGroupKey(product);
@@ -135,7 +152,6 @@ public class ProductServiceImpl implements ProductService {
                 newDto.setProductType(product.getClass().getSimpleName().replace("ProductEntity", "").toUpperCase());
                 newDto.setName(product.getName());
                 newDto.setDetail(extractDetail(product));
-
                 newDto.setCount(0);
                 return newDto;
             });
@@ -218,10 +234,9 @@ public class ProductServiceImpl implements ProductService {
 
         for (ProductBatchRequestDto.StorageConditionDto required : requiredConditions) {
             boolean matched = sectionConditions.stream().anyMatch(actual ->
-                            actual.getConditionType() == required.getConditionType()
-                                    && required.getMinValue() >= actual.getMinValue()
-                                    && required.getMaxValue() <= actual.getMaxValue()
-                    //cần thêm điều kiện về unit
+                    actual.getConditionType() == required.getConditionType()
+                            && required.getMinValue() >= actual.getMinValue()
+                            && required.getMaxValue() <= actual.getMaxValue()
             );
 
             if (!matched) {
@@ -299,11 +314,6 @@ public class ProductServiceImpl implements ProductService {
         product.setName((String) productData.getOrDefault("name", "Unknown Product"));
         product.setOnShelf(onShelf);
         product.setSection(sectionEntity);
-        PriceEntity price = new PriceEntity();
-        price.setValue(((Number) productData.getOrDefault("price", 0)).doubleValue());
-        price.setCurrency((String) productData.getOrDefault("currency", "VND"));
-        price.setTransactionType(TransactionType.IMPORT);
-        price = priceRepository.save(price);
         return product;
     }
 
@@ -404,6 +414,11 @@ public class ProductServiceImpl implements ProductService {
     public String createRetrieveRequest(ProductExportRequestDto request, UserEntity currentUser) {
         DispatchEntity dispatch = new DispatchEntity();
         dispatch.setCreatedAt(new Date());
+        if (currentUser.getRole().equals(UserRole.TEMPORARY)) {
+            UserEntity relatedUser = userRepository.findById(currentUser.getRelated_userID())
+                    .orElse(currentUser);
+            dispatch.setUser(relatedUser);
+        }
         dispatch.setUser(currentUser);
         dispatch.setStatus(DispatchStatus.PENDING);
         dispatch = dispatchRepository.save(dispatch);
@@ -422,7 +437,6 @@ public class ProductServiceImpl implements ProductService {
                 throw new StorageException("Not enough products to export for: " + reference.getName());
             }
 
-            // Sort candidates based on storage strategy
             switch (strategy) {
                 case FIFO -> candidates.sort(Comparator.comparing(p -> p.getLot().getImportDate()));
                 case LIFO ->
@@ -442,18 +456,12 @@ public class ProductServiceImpl implements ProductService {
             dispatchItem.setProductId(reference.getId());
             dispatchItem.setProducts(selectedProducts);
 
-            PriceEntity exportPrice = new PriceEntity();
-            exportPrice.setTransactionType(TransactionType.EXPORT);
-            exportPrice = priceRepository.save(exportPrice);
-            dispatchItem.setPrice(exportPrice);
-
             dispatchItemRepository.save(dispatchItem);
         }
 
-        // Send notification to admin
-//        notificationProducerService.sendNotification("admin",
-//                "New retrieval request created by " + currentUser.getUsername() +
-//                        ". Request ID: " + dispatch.getId());
+        notificationProducerService.sendNotification("37e4db5d-7ad4-4120-99d8-19f38ec6d8c1",
+                "New retrieval request created by " + currentUser.getUsername() +
+                        ". Request ID: " + dispatch.getId());
 
         return dispatch.getId();
     }
@@ -490,10 +498,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductsByLotResponse> getProductsByLotForSupplier(UserEntity supplier) {
-        // Return all lots imported by the supplier, regardless of their status
         List<LotEntity> supplierLots = lotRepository.findByUserId(supplier.getId());
         return supplierLots.stream().map(lot -> {
-            List<BaseProductEntity> products = productRepository.findByLotId(lot.getId());
+            List<BaseProductEntity> products = productRepository.findByLotIdAndDispatchIsNull(lot.getId());
 
             ProductsByLotResponse response = new ProductsByLotResponse();
             response.setLotId(lot.getId());
@@ -507,8 +514,6 @@ public class ProductServiceImpl implements ProductService {
                 productItem.setProductId(product.getId());
                 productItem.setProductName(product.getName());
                 productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
-
-
                 productItem.setDetails(extractDetail(product));
 
                 return productItem;
@@ -520,14 +525,47 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Transactional
-    public void updateSecondaryPrices(UpdateSecondaryPriceRequest request) {
-        if (request.getProductPrices() == null || request.getProductPrices().isEmpty()) {
-            if (request.getBulkPrice() == null) {
-                throw new IllegalArgumentException("Either product prices or bulk price must be provided");
+    public List<ProductsByLotResponse> getProductsByLotForSupplierOrTemporary(UserEntity user) {
+        String supplierId;
+
+        if (user.getRole() == UserRole.SUPPLIER) {
+            // For suppliers, use their own ID
+            supplierId = user.getId();
+        } else if (user.getRole() == UserRole.TEMPORARY) {
+            // For temporary users, use their related supplier ID
+            supplierId = user.getRelated_userID();
+            if (supplierId == null) {
+                throw new RuntimeException("Temporary user has no associated supplier");
             }
-            return;
+        } else {
+            throw new RuntimeException("User role not supported for product access");
         }
 
+        // Return all lots imported by the supplier, but only show non-dispatched products
+        List<LotEntity> supplierLots = lotRepository.findByUserId(supplierId);
+        return supplierLots.stream().map(lot -> {
+            // Only get products that haven't been dispatched
+            List<BaseProductEntity> products = productRepository.findByLotIdAndDispatchIsNull(lot.getId());
+
+            ProductsByLotResponse response = new ProductsByLotResponse();
+            response.setLotId(lot.getId());
+            response.setLotCode(lot.getLotCode());
+            response.setImportDate(lot.getImportDate());
+            response.setImportedByUser(lot.getUser() != null ? lot.getUser().getUsername() : "Unknown");
+            response.setStatus(lot.getStatus());
+
+            List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(product -> {
+                ProductsByLotResponse.ProductInLot productItem = new ProductsByLotResponse.ProductInLot();
+                productItem.setProductId(product.getId());
+                productItem.setProductName(product.getName());
+                productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
+                productItem.setDetails(extractDetail(product));
+
+                return productItem;
+            }).toList();
+
+            response.setProducts(productList);
+            return response;
+        }).toList();
     }
 }

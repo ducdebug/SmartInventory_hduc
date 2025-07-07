@@ -11,14 +11,13 @@ const Register: React.FC = () => {
     username: '', 
     password: '', 
     confirmPassword: '',
-    role: 'BUYER' as UserRole 
+    role: 'SUPPLIER' as UserRole
   });
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already authenticated
   useEffect(() => {
     console.log('Register component - isAuthenticated changed to:', isAuthenticated);
     if (isAuthenticated) {
@@ -35,8 +34,7 @@ const Register: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       setProfileImage(file);
-      
-      // Create a preview URL for the selected image
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -139,15 +137,15 @@ const Register: React.FC = () => {
           
           <div className="form-group">
             <label htmlFor="role">Role</label>
-            <select 
-              id="role" 
-              name="role" 
-              value={form.role} 
+            <select
+              id="role"
+              name="role"
+              value={form.role}
               onChange={handleChange}
               className="form-select"
+              disabled
             >
               <option value="SUPPLIER">Supplier</option>
-              <option value="BUYER">Buyer</option>
             </select>
           </div>
           

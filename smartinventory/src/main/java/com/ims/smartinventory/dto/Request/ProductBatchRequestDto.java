@@ -18,6 +18,9 @@ public class ProductBatchRequestDto {
     private List<StorageConditionDto> storageConditions;
     private List<Map<String, Object>> productDetails;
 
+    private Double calculatedPrice;
+    private String currency = "USD";
+
     @Getter
     @Setter
     @AllArgsConstructor

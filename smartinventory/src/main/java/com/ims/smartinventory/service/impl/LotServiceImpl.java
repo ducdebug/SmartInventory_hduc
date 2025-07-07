@@ -15,6 +15,7 @@ import com.ims.smartinventory.dto.Response.LotItemDto;
 import com.ims.smartinventory.exception.StorageException;
 import com.ims.smartinventory.repository.*;
 import com.ims.smartinventory.service.LotService;
+import com.ims.smartinventory.service.NotificationProducerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,20 +30,19 @@ public class LotServiceImpl implements LotService {
     private final ProductServiceImpl productService;
     private final InventoryTransactionRepository inventoryTransactionRepository;
     private final ProductRepository productRepository;
-    private final SectionRepository sectionRepository;
+    private final NotificationProducerService notificationProducerService;
 
     public LotServiceImpl(LotRepository lotRepository, SlotSectionRepository slotSectionRepository, SlotShelfRepository slotShelfRepository,
                           ProductServiceImpl productService,
                           InventoryTransactionRepository inventoryTransactionRepository,
-                          ProductRepository productRepository,
-                          SectionRepository sectionRepository) {
+                          ProductRepository productRepository, NotificationProducerService notificationProducerService) {
         this.lotRepository = lotRepository;
         this.slotSectionRepository = slotSectionRepository;
         this.slotShelfRepository = slotShelfRepository;
         this.productService = productService;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
         this.productRepository = productRepository;
-        this.sectionRepository = sectionRepository;
+        this.notificationProducerService = notificationProducerService;
     }
 
     @Override
@@ -97,6 +97,10 @@ public class LotServiceImpl implements LotService {
             inventoryTransaction.setTimestamp(new Date());
             inventoryTransactionRepository.save(inventoryTransaction);
 
+            notificationProducerService.sendNotification(
+                    lot.getUser().getId(),
+                    "Your lot request #" + lot.getId().substring(0, 8) + " has been accepted."
+            );
             return true;
         }
 
@@ -149,79 +153,9 @@ public class LotServiceImpl implements LotService {
         if (lotOpt.isPresent()) {
             List<LotEntity> singleLot = List.of(lotOpt.get());
             List<LotDto> dtos = convertLotEntitiesToDtos(singleLot);
-            return dtos.isEmpty() ? null : dtos.get(0);
+            return dtos.isEmpty() ? null : dtos.getFirst();
         }
         return null;
-    }
-
-    @Override
-    @Transactional
-    public boolean withdrawLot(String lotId, String supplierId) {
-        Optional<LotEntity> lotOpt = lotRepository.findById(lotId);
-
-        if (lotOpt.isEmpty()) {
-            return false;
-        }
-
-        LotEntity lot = lotOpt.get();
-
-        // Check if the lot belongs to the requesting supplier
-        if (!lot.getUser().getId().equals(supplierId)) {
-            throw new SecurityException("Supplier can only withdraw their own lots");
-        }
-
-        LotStatus currentStatus = lot.getStatus();
-
-        switch (currentStatus) {
-            case PENDING -> {
-                // For PENDING lots, delete all products and the lot itself
-                List<BaseProductEntity> products = productRepository.findByLotId(lot.getId());
-
-                // Remove products from their slots first
-                for (BaseProductEntity product : products) {
-                    if (product.getSlotShelf() != null) {
-                        SlotShelf slot = product.getSlotShelf();
-                        slot.setOccupied(false);
-                        slot.setProduct(null);
-                        slotShelfRepository.save(slot);
-                    }
-                    if (product.getSlotSection() != null) {
-                        SlotSection slot = product.getSlotSection();
-                        slot.setOccupied(false);
-                        slot.setProduct(null);
-                        slotSectionRepository.save(slot);
-                    }
-                }
-
-                // Delete all products
-                productRepository.deleteAll(products);
-
-                // Delete the lot
-                lotRepository.delete(lot);
-
-                return true;
-            }
-            case ACCEPTED -> {
-                // For ACCEPTED lots, change status to PEND_WITHDRAW
-                lot.setStatus(LotStatus.PEND_WITHDRAW);
-                lotRepository.save(lot);
-
-                // Create inventory transaction for withdrawal request
-                InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
-                inventoryTransaction.setType(TransactionType.EXPORT);
-                inventoryTransaction.setRelated_dispatch_lot_id(lot.getId());
-                inventoryTransaction.setTimestamp(new Date());
-                inventoryTransactionRepository.save(inventoryTransaction);
-
-                return true;
-            }
-            case PEND_WITHDRAW -> {
-                return true;
-            }
-            default -> {
-                return false;
-            }
-        }
     }
 
     private List<LotDto> convertLotEntitiesToDtos(List<LotEntity> lots) {
@@ -277,76 +211,6 @@ public class LotServiceImpl implements LotService {
             dto.setItems(groupedItems);
             return dto;
         }).toList();
-    }
-
-    @Override
-    @Transactional
-    public boolean acceptWithdrawal(String lotId) {
-        Optional<LotEntity> lotOpt = lotRepository.findById(lotId);
-
-        if (lotOpt.isEmpty()) {
-            return false;
-        }
-
-        LotEntity lot = lotOpt.get();
-
-        if (lot.getStatus() != LotStatus.PEND_WITHDRAW) {
-            return false;
-        }
-
-        List<BaseProductEntity> products = productRepository.findByLotId(lot.getId());
-
-        for (BaseProductEntity product : products) {
-            if (product.getSlotShelf() != null) {
-                SlotShelf slot = product.getSlotShelf();
-                slot.setOccupied(false);
-                slot.setProduct(null);
-                slotShelfRepository.save(slot);
-            }
-            if (product.getSlotSection() != null) {
-                SlotSection slot = product.getSlotSection();
-                slot.setOccupied(false);
-                slot.setProduct(null);
-                slotSectionRepository.save(slot);
-            }
-        }
-
-        // Delete all products
-        productRepository.deleteAll(products);
-
-        // Update lot status to WITHDRAWN
-        lot.setStatus(LotStatus.WITHDRAWN);
-        lotRepository.save(lot);
-
-        // Create inventory transaction for completed withdrawal
-        InventoryTransactionEntity inventoryTransaction = new InventoryTransactionEntity();
-        inventoryTransaction.setType(TransactionType.EXPORT);
-        inventoryTransaction.setRelated_dispatch_lot_id(lot.getId());
-        inventoryTransaction.setTimestamp(new Date());
-        inventoryTransactionRepository.save(inventoryTransaction);
-
-        return true;
-    }
-
-    @Override
-    @Transactional
-    public boolean rejectWithdrawal(String lotId) {
-        Optional<LotEntity> lotOpt = lotRepository.findById(lotId);
-
-        if (lotOpt.isEmpty()) {
-            return false;
-        }
-
-        LotEntity lot = lotOpt.get();
-
-        if (lot.getStatus() != LotStatus.PEND_WITHDRAW) {
-            return false;
-        }
-
-        lot.setStatus(LotStatus.ACCEPTED);
-        lotRepository.save(lot);
-
-        return true;
     }
 
     @Override

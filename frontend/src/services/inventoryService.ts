@@ -61,6 +61,7 @@ const inventoryService = {
     storageStrategy: StorageStrategy;
     storageConditions: Record<string, any>[];
     productDetails: Record<string, any>[];
+    calculatedPrice?: number;
   }) => {
     try {
       const response = await apiClient.post('/inventory/batch', batchData);
@@ -135,26 +136,6 @@ const inventoryService = {
     }
   },
 
-  acceptWithdrawal: async (lotId: string) => {
-    try {
-      const response = await apiClient.post(`/lot/${lotId}/accept-withdrawal`, {});
-      return response.data;
-    } catch (error) {
-
-      throw error;
-    }
-  },
-
-  rejectWithdrawal: async (lotId: string) => {
-    try {
-      const response = await apiClient.post(`/lot/${lotId}/reject-withdrawal`, {});
-      return response.data;
-    } catch (error) {
-
-      throw error;
-    }
-  },
-
   getAllLots: async () => {
     try {
       const response = await apiClient.get('/lot/all');
@@ -177,11 +158,9 @@ const inventoryService = {
 
   getAllProducts: async () => {
     try {
-      const response = await apiClient.get('/inventory/retrieveAll');
-
+      const response = await apiClient.get('/inventory/supplier/retrieveAll');
       return response.data;
     } catch (error) {
-
       throw error;
     }
   },
@@ -199,6 +178,16 @@ const inventoryService = {
   getProductsByLotForSupplier: async () => {
     try {
       const response = await apiClient.get('/inventory/supplier/products');
+      return response.data;
+    } catch (error) {
+
+      throw error;
+    }
+  },
+
+  getProductsByLotForSupplierOrTemporary: async () => {
+    try {
+      const response = await apiClient.get('/inventory/supplier-temporary/products');
       return response.data;
     } catch (error) {
 
@@ -328,12 +317,33 @@ const inventoryService = {
       throw error;
     }
   },
-  getTopBuyers: async (limit: number = 10) => {
+
+  getWarehouseRevenue: async () => {
     try {
-      const response = await apiClient.get(`/inventory/top-buyers?limit=${limit}`);
+      const response = await apiClient.get('/warehouse/revenue');
       return response.data;
     } catch (error) {
+      console.error('Error fetching warehouse revenue:', error);
+      throw error;
+    }
+  },
 
+  terminateSection: async (sectionId: string) => {
+    try {
+      const response = await apiClient.put(`/section/${sectionId}/terminate`);
+      return response.data;
+    } catch (error) {
+      console.error('Error terminating section:', error);
+      throw error;
+    }
+  },
+
+  activateSection: async (sectionId: string) => {
+    try {
+      const response = await apiClient.put(`/section/${sectionId}/activate`);
+      return response.data;
+    } catch (error) {
+      console.error('Error activating section:', error);
       throw error;
     }
   }

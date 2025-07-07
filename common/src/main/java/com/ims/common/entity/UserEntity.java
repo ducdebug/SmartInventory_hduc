@@ -35,6 +35,8 @@ public class UserEntity implements UserDetails {
     private boolean enabled;
     private boolean deleted;
 
+    private String related_userID;
+    private String tmpPassword;
     @Column(columnDefinition = "longtext")
     private String img_url;
 

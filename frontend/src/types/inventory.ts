@@ -12,7 +12,15 @@ export interface SectionInfoResponse {
   numShelves: number;
   totalSlots: number;
   usedSlots: number;
+  status?: 'ACTIVE' | 'TERMINATED';
   storageConditions: StorageConditionDto[];
+  priceInfo?: PriceInfoDto;
+}
+
+export interface PriceInfoDto {
+  monthlyPrice: number;
+  currency: string;
+  pricePerSlot: number;
 }
 
 export enum StorageConditions {

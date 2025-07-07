@@ -9,4 +9,8 @@ public interface SectionService {
     SectionEntity createSection(SectionRequestDto sectionRequest);
 
     List<?> getSectionChildren(String sectionId);
+
+    SectionEntity terminateSection(String sectionId);
+
+    SectionEntity activateSection(String sectionId);
 }

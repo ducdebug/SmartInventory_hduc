@@ -1,4 +1,5 @@
 import apiClient from '../utils/apiClient';
+import authApiClient from '../utils/authApiClient';
 import { handleAxiosError } from '../utils/errorHandler';
 
 export interface DispatchProduct {
@@ -113,8 +114,7 @@ const dispatchService = {
       const response = await apiClient.get(`/api/dispatches/${dispatchId}`);
       console.log('Raw dispatch data from API:', response.data);
       let processedData = {...response.data};
-      let totalPrice = 0;
-      let currency = 'VND';
+
       
       if (processedData.items && Array.isArray(processedData.items)) {
         processedData.items = processedData.items.map((item: any) => {
@@ -295,7 +295,61 @@ const dispatchService = {
       console.error('Error in completeDispatch:', error);
       throw handleAxiosError(error, 'Failed to complete dispatch');
     }
+  },
+
+  // Temporary User Management Functions
+  createTemporaryUser: async (userData: CreateTemporaryUserRequest): Promise<TemporaryUserResponse> => {
+    try {
+      // Use authApiClient for auth service endpoints
+      const response = await authApiClient.post('/api/temporary-users/create', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error in createTemporaryUser:', error);
+      throw handleAxiosError(error, 'Failed to create temporary user');
+    }
+  },
+
+  getTemporaryUsers: async (): Promise<TemporaryUser[]> => {
+    try {
+      const response = await authApiClient.get('/api/temporary-users');
+      return response.data;
+    } catch (error) {
+      console.error('Error in getTemporaryUsers:', error);
+      throw handleAxiosError(error, 'Failed to fetch temporary users');
+    }
   }
 };
+
+// Types for temporary user management
+export interface CreateTemporaryUserRequest {
+  username: string;
+  name: string;
+  email: string;
+  company: string;
+  temporarypassword: string;
+}
+
+export interface TemporaryUserResponse {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  company: string;
+  temporaryPassword: string;
+  supplierId: string;
+  enabled: boolean;
+}
+
+export interface TemporaryUser {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  company: string;
+  role: string;
+  enabled: boolean;
+  deleted: boolean;
+  tmpPassword?: string;
+}
 
 export default dispatchService;

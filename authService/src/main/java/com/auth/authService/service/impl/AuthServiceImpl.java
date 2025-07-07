@@ -61,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
         UserEntity user = new UserEntity();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole() != null ? request.getRole() : UserRole.BUYER);
+        user.setRole(request.getRole() != null ? request.getRole() : UserRole.SUPPLIER);
         user.setEnabled(true);
         user.setDeleted(false);
 

@@ -60,19 +60,7 @@ class WebSocketService implements IWebSocketService {
 
   public connect(userId: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      fetch('http://localhost:8083/api/actuator/health')
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Notification service returned ${response.status}: ${response.statusText}`);
-          }
-          return response.json();
-        })
-        .then(() => {
-          this.establishWebSocketConnection(userId, resolve, reject);
-        })
-        .catch(error => {
-          reject(new Error('Notification service is not running on port 8082. Please start the notification service first.'));
-        });
+      this.establishWebSocketConnection(userId, resolve, reject);
     });
   }
 
@@ -95,7 +83,7 @@ class WebSocketService implements IWebSocketService {
       
       this.stompClient = new Client({
         webSocketFactory: () => {
-          const socketUrl = `http://localhost:8082/ws?userId=${encodeURIComponent(userId)}`;
+          const socketUrl = `http://localhost:8083/ws?userId=${encodeURIComponent(userId)}`;
           return new SockJS(socketUrl);
         },
         connectHeaders: headers,

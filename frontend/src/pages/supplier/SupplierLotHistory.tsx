@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, ReactElement } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import inventoryService from '../../services/inventoryService';
 import { LotStatus } from '../../types/inventory';
@@ -8,16 +8,6 @@ interface LotProduct {
   productId: string;
   productName: string;
   productType: string;
-  primaryPrice: {
-    id: string;
-    value: number;
-    currency: string;
-  };
-  secondaryPrice?: {
-    id: string;
-    value: number;
-    currency: string;
-  };
   details: Record<string, any>;
 }
 
@@ -37,7 +27,8 @@ const SupplierLotHistory: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [withdrawingLots, setWithdrawingLots] = useState<Set<string>>(new Set());
+  const [selectedProduct, setSelectedProduct] = useState<LotProduct | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchSupplierLots();
@@ -48,7 +39,6 @@ const SupplierLotHistory: React.FC = () => {
     try {
       const data = await inventoryService.getProductsByLotForSupplier();
       
-      // Show ALL lots imported by the current supplier (not just accepted ones)
       const supplierLots = data.filter((lot: Lot) => lot.importedByUser === user?.username);
       setLots(supplierLots);
     } catch (err) {
@@ -60,17 +50,13 @@ const SupplierLotHistory: React.FC = () => {
   };
 
   const getStatusClass = (status?: LotStatus) => {
-    if (!status) return 'status-imported'; // Default fallback for backward compatibility
+    if (!status) return 'status-imported'; 
     switch (status) {
       case LotStatus.PENDING:
         return 'status-pending';
       case LotStatus.ACCEPTED:
         return 'status-accepted';
       case LotStatus.REJECTED:
-        return 'status-rejected';
-      case LotStatus.PEND_WITHDRAW:
-        return 'status-pending';
-      case LotStatus.WITHDRAWN:
         return 'status-rejected';
       default:
         return 'status-imported';
@@ -86,81 +72,59 @@ const SupplierLotHistory: React.FC = () => {
         return 'ACCEPTED';
       case LotStatus.REJECTED:
         return 'REJECTED';
-      case LotStatus.PEND_WITHDRAW:
-        return 'PENDING WITHDRAWAL';
-      case LotStatus.WITHDRAWN:
-        return 'WITHDRAWN';
       default:
         return 'UNKNOWN';
     }
   };
 
+  const handleViewDetails = (product: LotProduct, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setSelectedProduct(product);
+    setIsDetailsModalOpen(true);
+  };
+
+  const closeDetailsModal = () => {
+    setIsDetailsModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const formatDetailValue = (key: string, value: any): string | ReactElement => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+    
+    // Special handling for ingredients
+    if (key.toLowerCase() === 'ingredients' && Array.isArray(value)) {
+      return (
+        <ul style={{ margin: 0, paddingLeft: '20px' }}>
+          {value.map((ingredient, index) => (
+            <li key={index}>{ingredient}</li>
+          ))}
+        </ul>
+      );
+    }
+    
+    // Special handling for dates
+    if (key.toLowerCase().includes('date') && typeof value === 'string') {
+      try {
+        const date = new Date(value);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+      } catch {
+        return String(value);
+      }
+    }
+    
+    if (typeof value === 'object') {
+      return JSON.stringify(value, null, 2);
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+    return String(value);
+  };
+
   const handleLotSelect = (lot: Lot) => {
     setSelectedLot(lot);
-  };
-
-  const handleWithdraw = async (lotId: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent lot selection when clicking withdraw button
-    
-    if (withdrawingLots.has(lotId)) {
-      return; // Already withdrawing
-    }
-
-    const lot = lots.find(l => l.lotId === lotId);
-    if (!lot) return;
-
-    const confirmMessage = lot.status === LotStatus.PENDING 
-      ? 'Are you sure you want to withdraw this lot? This will permanently delete all products in this lot.'
-      : 'Are you sure you want to request withdrawal for this lot? An admin will need to approve the withdrawal.';
-
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
-
-    setWithdrawingLots(prev => new Set(prev).add(lotId));
-
-    try {
-      await inventoryService.withdrawLot(lotId);
-      
-      // Refresh the lots list
-      await fetchSupplierLots();
-      
-      // If the withdrawn lot was selected, clear selection
-      if (selectedLot?.lotId === lotId) {
-        setSelectedLot(null);
-      }
-      
-      // Show success message
-      const successMessage = lot.status === LotStatus.PENDING
-        ? 'Lot has been successfully withdrawn and deleted.'
-        : 'Withdrawal request has been submitted and is pending admin approval.';
-      
-      alert(successMessage);
-      
-    } catch (err: any) {
-      console.error('Error withdrawing lot:', err);
-      const errorMessage = err.response?.data || 'Failed to withdraw lot. Please try again.';
-      alert(`Error: ${errorMessage}`);
-    } finally {
-      setWithdrawingLots(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(lotId);
-        return newSet;
-      });
-    }
-  };
-
-  const canWithdraw = (status?: LotStatus) => {
-    return status === LotStatus.PENDING || status === LotStatus.ACCEPTED;
-  };
-
-  const getWithdrawButtonText = (status?: LotStatus) => {
-    if (status === LotStatus.PENDING) {
-      return 'Delete Lot';
-    } else if (status === LotStatus.ACCEPTED) {
-      return 'Request Withdrawal';
-    }
-    return 'Withdraw';
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,15 +147,6 @@ const SupplierLotHistory: React.FC = () => {
 
   const getTotalProducts = (lot: Lot) => {
     return lot.products.length;
-  };
-
-  const getTotalValue = (lot: Lot) => {
-    const total = lot.products.reduce((sum, product) => {
-      const price = product.secondaryPrice || product.primaryPrice;
-      return sum + (price?.value || 0);
-    }, 0);
-    const currency = lot.products[0]?.primaryPrice?.currency || 'VND';
-    return { value: total, currency };
   };
 
   const getProductTypeStats = (lot: Lot) => {
@@ -243,9 +198,7 @@ const SupplierLotHistory: React.FC = () => {
       ) : (
         <div className="supplier-lot-history-content">
           <div className="lot-list">
-            {filteredLots.map(lot => {
-              const totalValue = getTotalValue(lot);
-              return (
+            {filteredLots.map(lot => (
                 <div
                   key={lot.lotId}
                   className={`lot-card ${selectedLot?.lotId === lot.lotId ? 'selected' : ''}`}
@@ -255,15 +208,6 @@ const SupplierLotHistory: React.FC = () => {
                     <div className="lot-code">Lot: {lot.lotCode}</div>
                     <div className="lot-status-actions">
                       <span className={getStatusClass(lot.status)}>{getStatusDisplay(lot.status)}</span>
-                      {canWithdraw(lot.status) && (
-                        <button
-                          className={`withdraw-btn ${lot.status === LotStatus.PENDING ? 'withdraw-btn-delete' : 'withdraw-btn-request'}`}
-                          onClick={(e) => handleWithdraw(lot.lotId, e)}
-                          disabled={withdrawingLots.has(lot.lotId)}
-                        >
-                          {withdrawingLots.has(lot.lotId) ? 'Processing...' : getWithdrawButtonText(lot.status)}
-                        </button>
-                      )}
                     </div>
                   </div>
                   <div className="lot-card-body">
@@ -273,16 +217,12 @@ const SupplierLotHistory: React.FC = () => {
                     <div className="lot-summary">
                       {getTotalProducts(lot)} {getTotalProducts(lot) === 1 ? 'product' : 'products'}
                     </div>
-                    <div className="lot-value">
-                      Total Value: {totalValue.value.toLocaleString()} {totalValue.currency}
-                    </div>
                     <div className="lot-types">
                       {getProductTypeStats(lot)}
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              ))}
           </div>
 
           {selectedLot && (
@@ -302,21 +242,6 @@ const SupplierLotHistory: React.FC = () => {
                 <div>
                   <strong>Total Products:</strong> {getTotalProducts(selectedLot)}
                 </div>
-                <div className="total-value">
-                  <strong>Total Value:</strong>
-                  <span>{getTotalValue(selectedLot).value.toLocaleString()} {getTotalValue(selectedLot).currency}</span>
-                </div>
-                {canWithdraw(selectedLot.status) && (
-                  <div className="lot-actions">
-                    <button
-                      className={`withdraw-btn-large ${selectedLot.status === LotStatus.PENDING ? 'withdraw-btn-delete' : 'withdraw-btn-request'}`}
-                      onClick={(e) => handleWithdraw(selectedLot.lotId, e)}
-                      disabled={withdrawingLots.has(selectedLot.lotId)}
-                    >
-                      {withdrawingLots.has(selectedLot.lotId) ? 'Processing...' : getWithdrawButtonText(selectedLot.status)}
-                    </button>
-                  </div>
-                )}
               </div>
 
               <div className="lot-products">
@@ -326,63 +251,96 @@ const SupplierLotHistory: React.FC = () => {
                     <tr>
                       <th>Product Name</th>
                       <th>Type</th>
-                      <th>Import Price</th>
-                      <th>Selling Price</th>
-                      <th>Margin</th>
                       <th>Details</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedLot.products.map(product => {
-                      const margin = product.secondaryPrice && product.primaryPrice
-                        ? ((product.secondaryPrice.value - product.primaryPrice.value) / product.primaryPrice.value * 100)
-                        : null;
-
-                      return (
+                    {selectedLot.products.map(product => (
                         <tr key={product.productId}>
                           <td className="product-name">{product.productName}</td>
                           <td>
                             <span className="product-type-badge">{product.productType}</span>
                           </td>
                           <td>
-                            {product.primaryPrice
-                              ? `${product.primaryPrice.value.toLocaleString()} ${product.primaryPrice.currency}`
-                              : 'N/A'}
-                          </td>
-                          <td>
-                            {product.secondaryPrice
-                              ? `${product.secondaryPrice.value.toLocaleString()} ${product.secondaryPrice.currency}`
-                              : <span className="not-set">Not set</span>}
-                          </td>
-                          <td>
-                            {margin !== null ? (
-                              <span className={`margin ${margin > 0 ? 'positive' : margin < 0 ? 'negative' : 'neutral'}`}>
-                                {margin > 0 ? '+' : ''}{margin.toFixed(1)}%
-                              </span>
-                            ) : (
-                              <span className="not-available">N/A</span>
-                            )}
-                          </td>
-                          <td>
                             <button
                               className="details-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // You can add a modal or expand functionality here
-                                console.log('Product details:', product.details);
-                              }}
+                              onClick={(e) => handleViewDetails(product, e)}
                             >
                               View Details
                             </button>
                           </td>
                         </tr>
-                      );
-                    })}
+                      ))}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Product Details Modal */}
+      {isDetailsModalOpen && selectedProduct && (
+        <div className="modal-overlay" onClick={closeDetailsModal}>
+          <div className="modal-content product-details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Product Details</h2>
+              <button className="close-btn" onClick={closeDetailsModal}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="product-info-section">
+                <h3>Basic Information</h3>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <label>Product Name:</label>
+                    <span>{selectedProduct.productName}</span>
+                  </div>
+                  <div className="info-item">
+                    <label>Product Type:</label>
+                    <span className="product-type-badge">{selectedProduct.productType}</span>
+                  </div>
+                </div>
+              </div>
+
+              {selectedProduct.details && Object.keys(selectedProduct.details).length > 0 && (
+                <div className="additional-details-section">
+                  <h3>Additional Details</h3>
+                  <div className="details-grid">
+                    {Object.entries(selectedProduct.details).map(([key, value]) => {
+                      const formattedValue = formatDetailValue(key, value);
+                      const isReactElement = typeof formattedValue === 'object' && formattedValue !== null;
+                      
+                      return (
+                        <div key={key} className="detail-item">
+                          <label>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</label>
+                          {isReactElement ? (
+                            <div className="detail-value">{formattedValue}</div>
+                          ) : (
+                            <span className={typeof value === 'object' && !Array.isArray(value) ? 'detail-object' : 'detail-value'}>
+                              {formattedValue}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {(!selectedProduct.details || Object.keys(selectedProduct.details).length === 0) && (
+                <div className="no-details">
+                  <p>No additional details available for this product.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button className="close-modal-btn" onClick={closeDetailsModal}>
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

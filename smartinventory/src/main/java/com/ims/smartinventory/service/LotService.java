@@ -10,16 +10,10 @@ public interface LotService {
     List<LotDto> getPendingLots();
 
     List<LotDto> getAcceptedLots();
-    
+
     List<LotDto> getAllLotsWithAllStatuses();
 
     boolean acceptLot(String lotId);
-
-    boolean withdrawLot(String lotId, String supplierId);
-    
-    boolean acceptWithdrawal(String lotId);
-    
-    boolean rejectWithdrawal(String lotId);
 
     LotDto getLotDetails(String lotId);
 }

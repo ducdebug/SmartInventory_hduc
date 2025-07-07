@@ -1,6 +1,7 @@
 package com.ims.smartinventory.service.impl;
 
 import com.ims.common.config.SectionStatus;
+import com.ims.common.config.StorageConditions;
 import com.ims.common.config.TransactionType;
 import com.ims.common.entity.PriceEntity;
 import com.ims.common.entity.WarehouseEntity;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -25,10 +27,12 @@ import java.util.stream.Collectors;
 public class SectionServiceImpl implements SectionService {
     private final SectionRepository sectionRepository;
     private final WarehouseRepository warehouseRepository;
+    private final NotificationProducerServiceImpl notificationProducerService;
 
-    public SectionServiceImpl(SectionRepository sectionRepository, WarehouseRepository warehouseRepository) {
+    public SectionServiceImpl(SectionRepository sectionRepository, WarehouseRepository warehouseRepository, NotificationProducerServiceImpl notificationProducerService) {
         this.sectionRepository = sectionRepository;
         this.warehouseRepository = warehouseRepository;
+        this.notificationProducerService = notificationProducerService;
     }
 
     @Transactional
@@ -80,25 +84,29 @@ public class SectionServiceImpl implements SectionService {
                 .map(cond -> {
                     StorageConditionEntity newCond = new StorageConditionEntity();
                     newCond.setConditionType(cond.getConditionType());
-                    newCond.setMinValue(cond.getMinValue());
-                    newCond.setMaxValue(cond.getMaxValue());
+                    if (cond.getConditionType() == StorageConditions.HAZARDOUS_MATERIALS) {
+                        newCond.setMinValue(0);
+                        newCond.setMaxValue(0);
+                    } else {
+                        newCond.setMinValue(cond.getMinValue());
+                        newCond.setMaxValue(cond.getMaxValue());
+                    }
+
                     newCond.setUnit(cond.getUnit());
                     newCond.setSection(section);
                     return newCond;
                 }).toList();
+
         section.setStorageConditions(storageConditions);
 
         section.setStatus(SectionStatus.ACTIVE);
 
-        // Use the calculated price from the request instead of calculating it internally
         PriceEntity priceEntity = new PriceEntity();
         priceEntity.setValue(sectionRequest.getCalculatedPrice());
         priceEntity.setCurrency("USD");
         priceEntity.setTransactionType(TransactionType.MAINTENANCE);
         section.setPrice(priceEntity);
-        
-        log.info("Section created with price: ${} USD from API calculation", 
-                sectionRequest.getCalculatedPrice());
+        section.setCreatedAt(LocalDateTime.now());
 
         if (sectionRequest.getShelf_height() > 0) {
             section.setNumShelves(sectionRequest.getY_slot());
@@ -146,6 +154,8 @@ public class SectionServiceImpl implements SectionService {
         warehouse.setUsedSlots(warehouse.getUsedSlots() + requiredSlots);
 
         warehouseRepository.save(warehouse);
+        notificationProducerService.sendNotification("37e4db5d-7ad4-4120-99d8-19f38ec6d8c1",
+                "Section " + section.getName() + " was created at" + section.getCreatedAt());
         return sectionRepository.save(section);
     }
 
@@ -171,5 +181,64 @@ public class SectionServiceImpl implements SectionService {
                             slot.isOccupied()
                     )).toList();
         }
+    }
+
+    @Transactional
+    @Override
+    public SectionEntity terminateSection(String sectionId) {
+        SectionEntity section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+
+        if (section.getStatus() == SectionStatus.TERMINATED) {
+            throw new RuntimeException("Section is already terminated");
+        }
+
+        boolean hasOccupiedSlots = false;
+
+        if (section.getNumShelves() > 0) {
+            hasOccupiedSlots = section.getShelves().stream()
+                    .anyMatch(shelf -> shelf.getSlotShelves().stream()
+                            .anyMatch(SlotShelf::isOccupied));
+        } else {
+            hasOccupiedSlots = section.getSlotSections().stream()
+                    .anyMatch(SlotSection::isOccupied);
+        }
+
+        if (hasOccupiedSlots) {
+            throw new RuntimeException("Cannot terminate section with occupied slots. Please relocate items first.");
+        }
+
+        section.setStatus(SectionStatus.TERMINATED);
+
+        SectionEntity savedSection = sectionRepository.save(section);
+
+        notificationProducerService.sendNotification("37e4db5d-7ad4-4120-99d8-19f38ec6d8c1",
+                "Section " + section.getName() + " has been terminated at " + LocalDateTime.now());
+
+        log.info("Section {} has been terminated", section.getName());
+
+        return savedSection;
+    }
+
+    @Transactional
+    @Override
+    public SectionEntity activateSection(String sectionId) {
+        SectionEntity section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Section not found"));
+
+        if (section.getStatus() == SectionStatus.ACTIVE) {
+            throw new RuntimeException("Section is already active");
+        }
+
+        section.setStatus(SectionStatus.ACTIVE);
+
+        SectionEntity savedSection = sectionRepository.save(section);
+
+        notificationProducerService.sendNotification("37e4db5d-7ad4-4120-99d8-19f38ec6d8c1",
+                "Section " + section.getName() + " has been activated at " + LocalDateTime.now());
+
+        log.info("Section {} has been activated", section.getName());
+
+        return savedSection;
     }
 }

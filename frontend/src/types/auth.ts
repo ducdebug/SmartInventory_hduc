@@ -1,8 +1,15 @@
-export type UserRole = 'ADMIN' | 'SUPPLIER' | 'BUYER';
+export type UserRole = 'ADMIN' | 'SUPPLIER' | 'TEMPORARY';
 
 export interface User {
+  id?: string;
   username: string;
   role: UserRole;
+  name?: string;
+  email?: string;
+  company?: string;
+  enabled?: boolean;
+  deleted?: boolean;
+  related_userID?: string;
   img_url?: string;
 }
 

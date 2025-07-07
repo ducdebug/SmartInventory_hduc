@@ -10,12 +10,13 @@ import { ProfileImageProvider } from './context/ProfileImageContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/layout/navbar/navbar';
 import Footer from './components/layout/footer/Footer';
-import PrivateRoute from "./components/privateroute";
-import AdminRoute from "./components/adminroute";
-import SupplierRoute from "./components/supplierroute";
-import BuyerRoute from "./components/buyerroute";
+import { 
+  PrivateRoute, 
+  AdminRoute, 
+  SupplierRoute, 
+  SupplierTemporaryRoute 
+} from "./components/routes";
 import LotHistoryPage from './pages/lothistory/LotHistoryPage';
-import RetrieveProductPage from './pages/retrieveproductpage/RetrieveProductPage';
 import BuyerDashboard from './pages/buyerdashboard/BuyerDashboard';
 
 import UserManagement from './pages/user-management/user-management';
@@ -27,6 +28,7 @@ import AdminInventoryPage from './pages/inventory/AdminInventoryPage';
 import SupplierInventoryPage from './pages/supplier/SupplierInventoryPage';
 import MessagePage from './pages/messaging/MessagePage';
 import ChatBubbleWrapper from './components/chat/ChatBubbleWrapper';
+import TemporaryUserManagement from './pages/temporary-user-management/TemporaryUserManagement';
 
 function AppContent() {
   const location = useLocation();
@@ -41,14 +43,24 @@ function AppContent() {
           <Route path="/register" element={<Register />} />
           
           <Route path="/" element={
-            <PrivateRoute>
+            <AdminRoute>
               <Home />
-            </PrivateRoute>
+            </AdminRoute>
           } />
           
           <Route path="/history" element={
             <PrivateRoute>
               <History />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/unauthorized" element={
+            <PrivateRoute>
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <h2>Access Denied</h2>
+                <p>You don't have permission to access this page.</p>
+                <p>Please contact your administrator if you believe this is an error.</p>
+              </div>
             </PrivateRoute>
           } />
           
@@ -75,20 +87,13 @@ function AppContent() {
               <LotHistoryPage />
             </PrivateRoute>
           } />
-          
-          <Route path='/retrieve' element={
-            <BuyerRoute>
-              <RetrieveProductPage />
-            </BuyerRoute>
-          } />
-          
-          <Route path='/buyer-dashboard' element={
-            <BuyerRoute>
-              <BuyerDashboard />
-            </BuyerRoute>
-          } />
-          
 
+          <Route path='/buyer-dashboard' element={
+            <SupplierTemporaryRoute>
+              <BuyerDashboard />
+            </SupplierTemporaryRoute>
+          } />
+          
           <Route path='/profile' element={
             <PrivateRoute>
               <ProfilePage />
@@ -129,6 +134,12 @@ function AppContent() {
             <AdminRoute>
               <MessagePage />
             </AdminRoute>
+          } />
+          
+          <Route path='/temporary-users' element={
+            <SupplierRoute>
+              <TemporaryUserManagement />
+            </SupplierRoute>
           } />
           
           <Route path="*" element={<Navigate to="/" replace />} />

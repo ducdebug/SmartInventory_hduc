@@ -1,15 +1,26 @@
 import type React from "react"
 import { Link } from "react-router-dom"
+import { useAuth } from "../../../hooks/useAuth"
 import "./Footer.css"
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear()
+  const { user } = useAuth()
+
+  const getHomeLink = () => {
+    if (user?.role === 'ADMIN') {
+      return '/';
+    } else if (user?.role === 'SUPPLIER' || user?.role === 'TEMPORARY') {
+      return '/buyer-dashboard';
+    }
+    return '/history'; // fallback for any other authenticated user
+  };
 
   return (
     <footer className="footer" role="contentinfo" aria-label="Site footer">
       <div className="footer-container">
         <div className="footer-section">
-          <Link to="/" className="footer-logo">
+          <Link to={getHomeLink()} className="footer-logo">
             <img src="/logo.png" alt="Smart Warehouse Logo" width="32" height="32" className="logo-white" />
             <h3 className="footer-title">Smart Warehouse</h3>
           </Link>
@@ -22,9 +33,16 @@ const Footer: React.FC = () => {
           <h4 className="footer-heading">Quick Links</h4>
           <nav aria-label="Quick links navigation">
             <ul className="footer-links">
-              <li>
-                <Link to="/">Home</Link>
-              </li>
+              {user?.role === 'ADMIN' && (
+                <li>
+                  <Link to="/">Dashboard</Link>
+                </li>
+              )}
+              {(user?.role === 'SUPPLIER' || user?.role === 'TEMPORARY') && (
+                <li>
+                  <Link to="/buyer-dashboard">Product Catalog</Link>
+                </li>
+              )}
               <li>
                 <Link to="/profile">Profile</Link>
               </li>

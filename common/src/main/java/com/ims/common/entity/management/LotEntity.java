@@ -2,6 +2,7 @@ package com.ims.common.entity.management;
 
 import com.ims.common.config.LotStatus;
 import com.ims.common.config.StorageStrategy;
+import com.ims.common.entity.PriceEntity;
 import com.ims.common.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -35,6 +36,10 @@ public class LotEntity {
 
     @OneToMany(mappedBy = "lot", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LotItemEntity> items;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "price_id", referencedColumnName = "id")
+    private PriceEntity price;
 
     @PrePersist
     protected void onCreate() {

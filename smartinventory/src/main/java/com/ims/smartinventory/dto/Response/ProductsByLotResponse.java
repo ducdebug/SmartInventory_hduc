@@ -1,7 +1,6 @@
 package com.ims.smartinventory.dto.Response;
 
 import com.ims.common.config.LotStatus;
-import com.ims.common.entity.PriceEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,17 +27,6 @@ public class ProductsByLotResponse {
         private String productId;
         private String productName;
         private String productType;
-        private PriceDTO primaryPrice;
-        private PriceDTO secondaryPrice;
         private Map<String, Object> details;
-    }
-    
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PriceDTO {
-        private String id;
-        private double value;
-        private String currency;
     }
 }

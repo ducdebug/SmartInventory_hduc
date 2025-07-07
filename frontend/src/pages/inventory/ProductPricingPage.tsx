@@ -11,7 +11,7 @@ import {
   Tooltip,
   Button,
 } from 'antd';
-import { EyeOutlined, WarningOutlined } from '@ant-design/icons';
+import { EyeOutlined } from '@ant-design/icons';
 import inventoryService from '../../services/inventoryService';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -22,16 +22,6 @@ interface LotProduct {
   productId: string;
   productName: string;
   productType: string;
-  primaryPrice: {
-    id: string;
-    value: number;
-    currency: string;
-  };
-  secondaryPrice?: {
-    id: string;
-    value: number;
-    currency: string;
-  };
   details: Record<string, any>;
 }
 
@@ -44,7 +34,7 @@ interface ProductLot {
 }
 
 interface DisplayProduct extends LotProduct {
-  // No editing fields needed for view-only
+  // View-only product information
 }
 
 const ProductPricingPage: React.FC = () => {
@@ -71,42 +61,18 @@ const ProductPricingPage: React.FC = () => {
       const displayProdMap: Record<string, DisplayProduct[]> = {};
       
       (response || []).forEach((lot: ProductLot) => {
-        displayProdMap[lot.lotId] = (lot.products || []).map(product => {
-          const primaryPrice = product.primaryPrice || { value: 0, currency: 'VND' };
-          
-          return {
-            ...product,
-            primaryPrice: primaryPrice
-          };
-        });
+        displayProdMap[lot.lotId] = (lot.products || []).map(product => ({
+          ...product
+        }));
       });
       
       setDisplayProducts(displayProdMap);
     } catch (error) {
       console.error('Error fetching products by lot:', error);
-      message.error('Failed to load product pricing data');
+      message.error('Failed to load product data');
     } finally {
       setLoading(false);
     }
-  };
-
-  const renderPriceColumn = (product: DisplayProduct) => {
-    return (
-      <Space direction="vertical">
-        {product.secondaryPrice ? (
-          <Text>
-            {(product.secondaryPrice.value || 0).toLocaleString()} {product.secondaryPrice.currency || 'VND'}
-          </Text>
-        ) : (
-          <Text type="warning">
-            <WarningOutlined /> Not set by supplier
-          </Text>
-        )}
-        <Text type="secondary" style={{ fontSize: '12px' }}>
-          (View only)
-        </Text>
-      </Space>
-    );
   };
 
   if (user?.role !== 'ADMIN') {
@@ -116,11 +82,11 @@ const ProductPricingPage: React.FC = () => {
   return (
     <div style={{ padding: '20px' }}>
       <Card>
-        <Title level={3}>Admin: Product Pricing Overview</Title>
-        <Text>View the secondary (selling) prices for products by lot. Prices are managed by suppliers.</Text>
+        <Title level={3}>Admin: Product Overview</Title>
+        <Text>View products organized by lot for inventory management.</Text>
         <br />
         <Text type="secondary" style={{ fontStyle: 'italic' }}>
-          Note: This is a read-only view. Suppliers are responsible for setting secondary prices.
+          Note: This is a read-only view for product information.
         </Text>
       </Card>
 
@@ -149,7 +115,7 @@ const ProductPricingPage: React.FC = () => {
                   icon={<EyeOutlined />}
                   onClick={(e: React.MouseEvent) => { e.stopPropagation(); }}
                 >
-                  View Only
+                  View Products
                 </Button>
               }
             >
@@ -167,37 +133,20 @@ const ProductPricingPage: React.FC = () => {
                     ),
                   },
                   {
-                    title: 'Primary Price (Import)',
-                    dataIndex: 'primaryPrice',
-                    key: 'primaryPrice',
-                    render: (price: { value: number; currency: string } | undefined) => {
-                      if (!price) {
-                        return <Text type="warning">No price data</Text>;
-                      }
-                      return <Text>{(price.value || 0).toLocaleString()} {price.currency || 'VND'}</Text>;
-                    },
+                    title: 'Product ID',
+                    dataIndex: 'productId',
+                    key: 'productId',
+                    render: (text: string) => (
+                      <Text code>{text}</Text>
+                    ),
                   },
                   {
-                    title: 'Secondary Price (Export)',
-                    key: 'secondaryPrice',
-                    render: (text: string, record: DisplayProduct) => 
-                      renderPriceColumn(record)
-                  },
-                  {
-                    title: 'Price Margin',
-                    key: 'margin',
-                    render: (text: string, record: DisplayProduct) => {
-                      if (!record.secondaryPrice || !record.primaryPrice) {
-                        return <Text type="secondary">N/A</Text>;
-                      }
-                      const margin = ((record.secondaryPrice.value - record.primaryPrice.value) / record.primaryPrice.value * 100);
-                      const color = margin > 0 ? 'green' : margin < 0 ? 'red' : 'orange';
-                      return (
-                        <Text style={{ color }}>
-                          {margin > 0 ? '+' : ''}{margin.toFixed(1)}%
-                        </Text>
-                      );
-                    },
+                    title: 'Product Type',
+                    dataIndex: 'productType',
+                    key: 'productType',
+                    render: (text: string) => (
+                      <Tag color="green">{text}</Tag>
+                    ),
                   },
                   {
                     title: 'Details',

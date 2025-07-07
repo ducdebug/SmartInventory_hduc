@@ -20,9 +20,18 @@ const History: React.FC = () => {
     try {
       const data = await dispatchService.getBuyerDispatches();
       setDispatches(data);
-    } catch (err) {
+      setError(null); // Clear any previous errors
+    } catch (err: any) {
       console.error('Error fetching dispatches:', err);
-      setError('Failed to load dispatch history. Please try again later.');
+      // Check if it's a 403 error (no data) vs actual error
+      if (err.response?.status === 403) {
+        setError('You do not have permission to access dispatch history.');
+      } else if (err.response?.status === 404 || (err.response?.data && Array.isArray(err.response.data) && err.response.data.length === 0)) {
+        setError(null); // No error, just no data
+        setDispatches([]); // Empty array
+      } else {
+        setError('Failed to load request history. Please try again later.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -59,11 +68,11 @@ const History: React.FC = () => {
     }
   };
 
-  if (user?.role !== 'BUYER') {
+  if (user?.role !== 'SUPPLIER') {
     return (
       <div className="history-container">
         <div className="history-error">
-          This page is only accessible to users with the Buyer role.
+          This page is only accessible to users with the Supplier role.
         </div>
       </div>
     );
@@ -72,7 +81,7 @@ const History: React.FC = () => {
   return (
     <div className="history-container">
       <div className="history-header">
-        <h1>Your Dispatch History</h1>
+        <h1>Your Retrieval Request History</h1>
         <div className="history-controls">
           <select 
             value={statusFilter} 
@@ -88,12 +97,20 @@ const History: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="history-loading">Loading your dispatch history...</div>
+        <div className="history-loading">Loading your retrieval request history...</div>
       ) : error ? (
         <div className="history-error">{error}</div>
       ) : filteredDispatches.length === 0 ? (
         <div className="history-empty">
-          <p>No dispatches found with the selected filter.</p>
+          <div className="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="9" stroke="#9ca3af" strokeWidth="2" />
+              <path d="M12 6V12L16 14" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <h3>No Retrieval Requests Yet</h3>
+            <p>You haven't submitted any product retrieval requests yet.</p>
+            <p>Visit the <strong>Product Catalog</strong> to browse available products and submit your first request!</p>
+          </div>
         </div>
       ) : (
         <div className="history-content">
@@ -105,20 +122,17 @@ const History: React.FC = () => {
                 onClick={() => handleDispatchSelect(dispatch)}
               >
                 <div className="dispatch-card-header">
-                  <div className="dispatch-id">Dispatch #{dispatch.id.substring(0, 8)}</div>
+                  <div className="dispatch-id">Request #{dispatch.id.substring(0, 8)}</div>
                   <div className={`dispatch-status ${getStatusBadgeClass(dispatch.status)}`}>
                     {dispatch.status}
                   </div>
                 </div>
                 <div className="dispatch-card-body">
                   <div className="dispatch-date">
-                    Created: {formatDate(dispatch.createdAt)}
+                    Requested: {formatDate(dispatch.createdAt)}
                   </div>
                 <div className="dispatch-summary">
                     {dispatch.totalItems || 0} {(dispatch.totalItems || 0) === 1 ? 'item' : 'items'}
-                  </div>
-                  <div className="dispatch-price">
-                    Total: {dispatch.totalPrice ? `${dispatch.totalPrice.value.toLocaleString()} ${dispatch.totalPrice.currency}` : '0 VND'}
                   </div>
                 </div>
               </div>
@@ -127,13 +141,13 @@ const History: React.FC = () => {
 
           {selectedDispatch && (
             <div className="dispatch-details">
-              <h2>Dispatch Details</h2>
+              <h2>Request Details</h2>
               <div className="dispatch-details-header">
                 <div>
-                  <strong>Dispatch ID:</strong> {selectedDispatch.id}
+                  <strong>Request ID:</strong> {selectedDispatch.id}
                 </div>
                 <div>
-                  <strong>Created:</strong> {formatDate(selectedDispatch.createdAt)}
+                  <strong>Requested:</strong> {formatDate(selectedDispatch.createdAt)}
                 </div>
                 <div>
                   <strong>Status:</strong> 
@@ -141,21 +155,15 @@ const History: React.FC = () => {
                     {selectedDispatch.status}
                   </span> 
                 </div>
-                <div className="total-price">
-                  <strong>Total Price:</strong> 
-                  <span>{selectedDispatch.totalPrice ? `${selectedDispatch.totalPrice.value.toLocaleString()} ${selectedDispatch.totalPrice.currency}` : '0 VND'}</span>
-                </div>
               </div>
               
               <div className="dispatch-items">
-                <h3>Items</h3>
+                <h3>Requested Items</h3>
                 <table className="items-table">
                   <thead>
                     <tr>
                       <th>Product</th>
                       <th>Quantity</th>
-                      <th>Unit Price</th>
-                      <th>Subtotal</th>
                       <th>Lot</th>
                       <th>Expiration</th>
                     </tr>
@@ -163,74 +171,21 @@ const History: React.FC = () => {
                   <tbody>
                     {!selectedDispatch.items || selectedDispatch.items.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ textAlign: 'center' }}>No items found in this dispatch</td>
+                        <td colSpan={4} style={{ textAlign: 'center' }}>No items found in this request</td>
                       </tr>
                     ) : (
-                      selectedDispatch.items.map(item => {
-                        if (item.subtotal) {
-                          return (
-                            <tr key={item.id}>
-                              <td>{item.product?.name || 'N/A'}</td>
-                              <td>{item.quantity}</td>
-                              <td>
-                                {item.product?.unitPrice 
-                                  ? `${item.product.unitPrice.value.toLocaleString()} ${item.product.unitPrice.currency}`
-                                  : 'N/A'}
-                              </td>
-                              <td>
-                                {`${item.subtotal.value.toLocaleString()} ${item.subtotal.currency}`}
-                              </td>
-                              <td>{item.product?.lotCode || 'N/A'}</td>
-                              <td>
-                                {item.product?.expirationDate 
-                                  ? formatDate(item.product.expirationDate)
-                                  : 'N/A'}
-                              </td>
-                            </tr>
-                          );
-                        } else {
-                          let unitPrice = item.product?.unitPrice;
-                          
-                          if (!unitPrice) {
-                            if (item.product?.baseProduct?.secondaryPrice) {
-                              unitPrice = item.product.baseProduct.secondaryPrice;
-                            } else if (item.product?.secondaryPrice) {
-                              unitPrice = item.product.secondaryPrice;
-                            } else if (item.product?.primaryPrice) {
-                              unitPrice = item.product.primaryPrice;
-                            }
-                          }
-                           const subtotal = unitPrice
-                            ? { 
-                                value: parseFloat((unitPrice.value * item.quantity).toFixed(2)),
-                                currency: unitPrice.currency
-                              } 
-                            : null;
-                            
-                          return (
-                            <tr key={item.id}>
-                              <td>{item.product?.name || 'N/A'}</td>
-                              <td>{item.quantity}</td>
-                              <td>
-                                {unitPrice 
-                                  ? `${unitPrice.value.toLocaleString()} ${unitPrice.currency}`
-                                  : 'N/A'}
-                              </td>
-                              <td>
-                                {subtotal 
-                                  ? `${subtotal.value.toLocaleString()} ${subtotal.currency}`
-                                  : 'N/A'}
-                              </td>
-                              <td>{item.product?.lotCode || 'N/A'}</td>
-                              <td>
-                                {item.product?.expirationDate 
-                                  ? formatDate(item.product.expirationDate)
-                                  : 'N/A'}
-                              </td>
-                            </tr>
-                          );
-                        }
-                      })
+                      selectedDispatch.items.map(item => (
+                        <tr key={item.id}>
+                          <td>{item.product?.name || 'N/A'}</td>
+                          <td>{item.quantity}</td>
+                          <td>{item.product?.lotCode || 'N/A'}</td>
+                          <td>
+                            {item.product?.expirationDate 
+                              ? formatDate(item.product.expirationDate)
+                              : 'N/A'}
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
