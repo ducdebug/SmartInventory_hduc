@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface SectionRepository extends JpaRepository<SectionEntity, String> {
     @Query("SELECT s FROM SectionEntity s LEFT JOIN FETCH s.storageConditions")
@@ -16,4 +17,10 @@ public interface SectionRepository extends JpaRepository<SectionEntity, String> 
     
     // Find sections by status (for price updates)
     List<SectionEntity> findByStatus(SectionStatus status);
+    
+    // Find section by name
+    Optional<SectionEntity> findByName(String name);
+    
+    // Find first section by name (to handle duplicates)
+    Optional<SectionEntity> findFirstByName(String name);
 }

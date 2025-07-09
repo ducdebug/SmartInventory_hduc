@@ -38,7 +38,6 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        // Make sure profile image endpoint is explicitly allowed
                         .requestMatchers("/user/profile/**").authenticated()
                         .anyRequest().authenticated()
                 )

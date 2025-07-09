@@ -28,5 +28,23 @@ public class ProductsByLotResponse {
         private String productName;
         private String productType;
         private Map<String, Object> details;
+        
+        // Enhanced location tracking
+        private String sectionId;
+        private String sectionName;
+        private String shelfId;
+        private String slotId;
+        private String locationPath; // e.g., "Section A → Shelf 2 → Slot 15"
+        
+        // Enhanced dispatch tracking
+        private String dispatchId;
+        private String dispatchStatus; // "IN_WAREHOUSE" or "EXPORTED"
+        private Date dispatchDate;
+        private String buyerUsername;
+        private String buyerId;
+        
+        // Additional tracking info
+        private Date expirationDate;
+        private boolean onShelf;
     }
 }

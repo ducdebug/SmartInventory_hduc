@@ -195,6 +195,34 @@ const inventoryService = {
     }
   },
 
+  getEnhancedProductsByLotForAdmin: async (filters?: {
+    dispatchStatus?: string;
+    sectionName?: string;
+    productType?: string;
+    lotCode?: string;
+    productName?: string;
+    buyerUsername?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    try {
+      const params = new URLSearchParams();
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value && value.trim() !== '') {
+            params.append(key, value);
+          }
+        });
+      }
+      
+      const response = await apiClient.get(`/inventory/admin/products/enhanced?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching enhanced products:', error);
+      throw error;
+    }
+  },
+
   updateSecondaryPrices: async (data: { 
     productPrices: Array<{
       productId: string;

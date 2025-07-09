@@ -5,6 +5,5 @@
 /common/target
 /authService/target
 /smartinventory/target
-/frontend/.env
-/frontend/.env.development
+
 /out

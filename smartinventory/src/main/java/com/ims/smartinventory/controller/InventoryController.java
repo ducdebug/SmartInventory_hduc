@@ -129,4 +129,25 @@ public class InventoryController {
         List<ProductsByLotResponse> products = productService.getProductsByLotForSupplierOrTemporary(currentUser);
         return ResponseEntity.ok(products);
     }
+
+    @GetMapping("/admin/products/enhanced")
+    public ResponseEntity<List<ProductsByLotResponse>> getProductsByLotForAdmin(
+            @AuthenticationPrincipal UserEntity currentUser,
+            @RequestParam(required = false) String dispatchStatus,
+            @RequestParam(required = false) String sectionName,
+            @RequestParam(required = false) String productType,
+            @RequestParam(required = false) String lotCode,
+            @RequestParam(required = false) String productName,
+            @RequestParam(required = false) String supplierUsername,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        if (currentUser == null || !UserRole.ADMIN.equals(currentUser.getRole())) {
+            return ResponseEntity.status(403).body(null);
+        }
+
+        List<ProductsByLotResponse> products = productService.getProductsByLotForAdmin(
+                dispatchStatus, sectionName, productType, lotCode, productName, supplierUsername, startDate, endDate);
+        return ResponseEntity.ok(products);
+    }
 }

@@ -308,7 +308,6 @@ public class ProductServiceImpl implements ProductService {
                 cosmetic.setVolume(((Number) productData.getOrDefault("volume", 0)).doubleValue());
                 yield cosmetic;
             }
-            default -> throw new RuntimeException("Unknown product type: " + batchRequest.getProductType());
         };
 
         product.setName((String) productData.getOrDefault("name", "Unknown Product"));
@@ -479,17 +478,7 @@ public class ProductServiceImpl implements ProductService {
             response.setImportedByUser(lot.getUser() != null ? lot.getUser().getUsername() : "Unknown");
             response.setStatus(lot.getStatus());
 
-            List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(product -> {
-                ProductsByLotResponse.ProductInLot productItem = new ProductsByLotResponse.ProductInLot();
-                productItem.setProductId(product.getId());
-                productItem.setProductName(product.getName());
-                productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
-
-
-                productItem.setDetails(extractDetail(product));
-
-                return productItem;
-            }).toList();
+            List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(this::createEnhancedProductInLot).toList();
 
             response.setProducts(productList);
             return response;
@@ -509,15 +498,7 @@ public class ProductServiceImpl implements ProductService {
             response.setImportedByUser(lot.getUser() != null ? lot.getUser().getUsername() : "Unknown");
             response.setStatus(lot.getStatus());
 
-            List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(product -> {
-                ProductsByLotResponse.ProductInLot productItem = new ProductsByLotResponse.ProductInLot();
-                productItem.setProductId(product.getId());
-                productItem.setProductName(product.getName());
-                productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
-                productItem.setDetails(extractDetail(product));
-
-                return productItem;
-            }).toList();
+            List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(this::createEnhancedProductInLot).toList();
 
             response.setProducts(productList);
             return response;
@@ -529,10 +510,8 @@ public class ProductServiceImpl implements ProductService {
         String supplierId;
 
         if (user.getRole() == UserRole.SUPPLIER) {
-            // For suppliers, use their own ID
             supplierId = user.getId();
         } else if (user.getRole() == UserRole.TEMPORARY) {
-            // For temporary users, use their related supplier ID
             supplierId = user.getRelated_userID();
             if (supplierId == null) {
                 throw new RuntimeException("Temporary user has no associated supplier");
@@ -541,10 +520,8 @@ public class ProductServiceImpl implements ProductService {
             throw new RuntimeException("User role not supported for product access");
         }
 
-        // Return all lots imported by the supplier, but only show non-dispatched products
         List<LotEntity> supplierLots = lotRepository.findByUserId(supplierId);
         return supplierLots.stream().map(lot -> {
-            // Only get products that haven't been dispatched
             List<BaseProductEntity> products = productRepository.findByLotIdAndDispatchIsNull(lot.getId());
 
             ProductsByLotResponse response = new ProductsByLotResponse();
@@ -554,18 +531,168 @@ public class ProductServiceImpl implements ProductService {
             response.setImportedByUser(lot.getUser() != null ? lot.getUser().getUsername() : "Unknown");
             response.setStatus(lot.getStatus());
 
-            List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(product -> {
-                ProductsByLotResponse.ProductInLot productItem = new ProductsByLotResponse.ProductInLot();
-                productItem.setProductId(product.getId());
-                productItem.setProductName(product.getName());
-                productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
-                productItem.setDetails(extractDetail(product));
-
-                return productItem;
-            }).toList();
+            List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(this::createEnhancedProductInLot).toList();
 
             response.setProducts(productList);
             return response;
         }).toList();
+    }
+
+    @Override
+    public List<ProductsByLotResponse> getProductsByLotForAdmin(
+            String dispatchStatus, String sectionName, String productType,
+            String lotCode, String productName, String supplierUsername,
+            String startDate, String endDate) {
+
+        List<LotEntity> allLots = lotRepository.findAll();
+
+        if (lotCode != null && !lotCode.trim().isEmpty()) {
+            allLots = allLots.stream()
+                    .filter(lot -> lot.getLotCode() != null &&
+                            lot.getLotCode().toLowerCase().contains(lotCode.toLowerCase()))
+                    .toList();
+        }
+
+        if (startDate != null && endDate != null && !startDate.trim().isEmpty() && !endDate.trim().isEmpty()) {
+            try {
+                Date start = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
+                Date end = new SimpleDateFormat("yyyy-MM-dd").parse(endDate);
+                allLots = allLots.stream()
+                        .filter(lot -> lot.getImportDate() != null &&
+                                !lot.getImportDate().before(start) &&
+                                !lot.getImportDate().after(end))
+                        .toList();
+            } catch (ParseException e) {
+                System.err.println("Date parsing error: " + e.getMessage());
+            }
+        }
+
+        return allLots.stream().map(lot -> {
+                    List<BaseProductEntity> products = productRepository.findByLotId(lot.getId());
+
+                    if (dispatchStatus != null && !dispatchStatus.trim().isEmpty()) {
+                        if ("IN_WAREHOUSE".equals(dispatchStatus)) {
+                            products = products.stream()
+                                    .filter(product -> product.getDispatch() == null)
+                                    .toList();
+                        } else if ("EXPORTED".equals(dispatchStatus)) {
+                            products = products.stream()
+                                    .filter(product -> product.getDispatch() != null)
+                                    .toList();
+                        }
+                    }
+
+                    if (sectionName != null && !sectionName.trim().isEmpty()) {
+                        products = products.stream()
+                                .filter(product -> product.getSection() != null &&
+                                        product.getSection().getName().toLowerCase().contains(sectionName.toLowerCase()))
+                                .toList();
+                    }
+
+                    if (productType != null && !productType.trim().isEmpty()) {
+                        products = products.stream()
+                                .filter(product -> product.getClass().getSimpleName().replace("ProductEntity", "")
+                                        .toLowerCase().contains(productType.toLowerCase()))
+                                .toList();
+                    }
+
+                    if (productName != null && !productName.trim().isEmpty()) {
+                        products = products.stream()
+                                .filter(product -> product.getName() != null &&
+                                        product.getName().toLowerCase().contains(productName.toLowerCase()))
+                                .toList();
+                    }
+
+                    if (supplierUsername != null && !supplierUsername.trim().isEmpty()) {
+                        products = products.stream()
+                                .filter(product -> product.getLot() != null &&
+                                        product.getLot().getUser() != null &&
+                                        product.getLot().getUser().getUsername().toLowerCase()
+                                                .contains(supplierUsername.toLowerCase()))
+                                .toList();
+                    }
+
+                    ProductsByLotResponse response = new ProductsByLotResponse();
+                    response.setLotId(lot.getId());
+                    response.setLotCode(lot.getLotCode());
+                    response.setImportDate(lot.getImportDate());
+                    response.setImportedByUser(lot.getUser() != null ? lot.getUser().getUsername() : "Unknown");
+                    response.setStatus(lot.getStatus());
+
+                    List<ProductsByLotResponse.ProductInLot> productList = products.stream().map(this::createEnhancedProductInLot).toList();
+
+                    response.setProducts(productList);
+                    return response;
+                })
+                .filter(response -> !response.getProducts().isEmpty())
+                .toList();
+    }
+
+    private ProductsByLotResponse.ProductInLot createEnhancedProductInLot(BaseProductEntity product) {
+        ProductsByLotResponse.ProductInLot productItem = new ProductsByLotResponse.ProductInLot();
+
+        productItem.setProductId(product.getId());
+        productItem.setProductName(product.getName());
+        productItem.setProductType(product.getClass().getSimpleName().replace("ProductEntity", ""));
+        productItem.setDetails(extractDetail(product));
+
+        if (product.getSection() != null) {
+            productItem.setSectionId(product.getSection().getId());
+            productItem.setSectionName(product.getSection().getName());
+
+            StringBuilder locationPath = new StringBuilder();
+            locationPath.append(product.getSection().getName());
+
+            if (product.getSlotShelf() != null) {
+                productItem.setShelfId(product.getSlotShelf().getShelf().getId());
+                productItem.setSlotId(product.getSlotShelf().getId());
+                locationPath.append(" → Shelf ").append(product.getSlotShelf().getShelf().getId().substring(0, 8))
+                        .append(" → Slot ").append(product.getSlotShelf().getId().substring(0, 8));
+                productItem.setOnShelf(true);
+            } else if (product.getSlotSection() != null) {
+                productItem.setSlotId(product.getSlotSection().getId());
+                locationPath.append(" → Slot ").append(product.getSlotSection().getId().substring(0, 8));
+                productItem.setOnShelf(false);
+            } else {
+                locationPath.append(" → Location Pending");
+                productItem.setOnShelf(false);
+            }
+
+            productItem.setLocationPath(locationPath.toString());
+        } else {
+            productItem.setLocationPath("Location Pending");
+            productItem.setOnShelf(false);
+        }
+
+        if (product.getDispatch() != null) {
+            productItem.setDispatchId(product.getDispatch().getId());
+            productItem.setDispatchStatus("EXPORTED");
+            productItem.setDispatchDate(product.getDispatch().getCreatedAt());
+
+            if (product.getDispatch().getUser() != null) {
+                productItem.setBuyerId(product.getDispatch().getUser().getId());
+                productItem.setBuyerUsername(product.getDispatch().getUser().getUsername());
+            }
+        } else {
+            productItem.setDispatchStatus("IN_WAREHOUSE");
+            productItem.setDispatchId(null);
+            productItem.setDispatchDate(null);
+            productItem.setBuyerId(null);
+            productItem.setBuyerUsername(null);
+        }
+
+        productItem.setExpirationDate(getExpirationDate(product));
+
+        return productItem;
+    }
+
+    private Date getExpirationDate(BaseProductEntity product) {
+        return switch (product) {
+            case FoodProductEntity food -> food.getExpirationDate();
+            case CosmeticProductEntity cosmetic -> cosmetic.getExpirationDate();
+            case PharmaceuticalProductEntity pharma -> pharma.getExpirationDate();
+            case RawMaterialProductEntity raw -> raw.getExpirationDate();
+            default -> null;
+        };
     }
 }

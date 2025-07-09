@@ -53,7 +53,6 @@ const SectionsWidget: React.FC = () => {
       setLoading(true);
       const sectionsData = await inventoryService.getSectionInfo();
       
-      // Calculate summary statistics
       const totalSections = sectionsData.length;
       const totalSlots = sectionsData.reduce((sum: number, section: SectionInfo) => sum + section.totalSlots, 0);
       const usedSlots = sectionsData.reduce((sum: number, section: SectionInfo) => sum + section.usedSlots, 0);
@@ -61,7 +60,6 @@ const SectionsWidget: React.FC = () => {
         sum + (section.priceInfo?.monthlyPrice || 0), 0);
       const utilizationRate = totalSlots > 0 ? (usedSlots / totalSlots) * 100 : 0;
       
-      // Get top 3 most utilized sections
       const topUtilizedSections = sectionsData
         .filter((section: SectionInfo) => section.totalSlots > 0)
         .map((section: SectionInfo): SectionWithUtilization => ({
